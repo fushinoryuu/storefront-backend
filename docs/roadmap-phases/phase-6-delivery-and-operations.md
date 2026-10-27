@@ -52,12 +52,12 @@ Extend the Phase 0 workflow so every pull request runs:
 - [ ] Rollback approach documented: CloudFormation rolls back failed deployments automatically, and for a bad but successful deployment you redeploy the previous commit. Note Lambda versions and aliases as a stretch for traffic shifting.
 - [ ] Alternative: CDK Pipelines instead of GitHub Actions. Record which you chose and why.
 
-### 3. Drift and consistency
+### 4. Drift and consistency
 
 - [ ] A scheduled job that runs CloudFormation drift detection (or `cdk diff` against the deployed stack) and reports differences.
 - [ ] A rule in the docs: no console changes to deployed resources.
 
-### 4. Observability
+### 5. Observability
 
 - [ ] **Dashboards** (CDK `Dashboard`): one per service plus an overview. Include API request count, 4xx and 5xx, latency (p50 and p95), Lambda errors, throttles, duration, concurrent executions, DynamoDB throttles and consumed capacity, queue depth and age of oldest message, DLQ depth, workflow failures, Aurora ACU and connections and whether the cluster is paused.
 - [ ] **Alarms** to the SNS topic, with thresholds chosen and written down: API 5xx rate, p95 latency, Lambda error rate, any message in a DLQ, oldest message age, Pipes failures, workflow failures, database connection saturation.
@@ -66,7 +66,7 @@ Extend the Phase 0 workflow so every pull request runs:
 - [ ] **Synthetic check:** a scheduled canary or a scheduled workflow that calls `GET /version` and one authenticated read on each service, and alarms on failure. Keep it from holding the database awake (use the version and health endpoints that do not touch it, plus a rare readiness check).
 - [ ] **Custom business metrics** emitted in the embedded metric format: orders placed, orders cancelled, shipment lag.
 
-### 5. Security review
+### 6. Security review
 
 Write `docs/security.md` with findings and fixes.
 
@@ -80,7 +80,7 @@ Write `docs/security.md` with findings and fixes.
 - [ ] **WAF** as an optional stretch, noting its cost.
 - [ ] **Dependencies:** a vulnerability scan in CI and a routine for updating dependencies.
 
-### 6. Cost review
+### 7. Cost review
 
 - [ ] Compare actual spend against the budget after a week of use, by tag.
 - [ ] Verify that Aurora actually pauses when idle. Check the capacity metric over a quiet period, and find anything that holds it awake (probes, canaries, open connections, a proxy).
@@ -88,7 +88,7 @@ Write `docs/security.md` with findings and fixes.
 - [ ] Write and test the teardown procedure: the `cdk destroy` order, what survives destroy, and how to confirm the account is clean. Run it once for real on `dev` and redeploy.
 - [ ] A short summary of what costs money when idle and what only costs money when used.
 
-### 7. Runbooks
+### 8. Runbooks
 
 One page each, written for someone woken up by an alarm:
 

@@ -67,14 +67,14 @@ The orders service calls the customers API to validate a customer when an order 
 
 | Phase | Doc | Outcome |
 |---|---|---|
-| 0 | [Foundations and decisions](docs/phase-0-foundations.md) | Repo, AWS setup, stages, cost guardrails, decision records |
-| 1 | [Shared platform](docs/phase-1-shared-platform.md) | Event bus, auth, reusable constructs, shared libraries |
-| 2 | [Customers service](docs/phase-2-customers-service.md) | Aurora-backed REST API |
-| 3 | [Orders service](docs/phase-3-orders-service.md) | DynamoDB-backed REST API that publishes and consumes events |
-| 4 | [Shipping service](docs/phase-4-shipping-service.md) | Event-driven shipment lifecycle |
-| 5 | [Integration and contracts](docs/phase-5-integration-and-contracts.md) | End-to-end flows, contract tests, published specs |
-| 6 | [Delivery and operations](docs/phase-6-delivery-and-operations.md) | CI/CD, observability, security, cost, runbooks |
-| 7 | [Polish](docs/phase-7-polish.md) | README, diagrams, demo, resume material |
+| 0 | [Foundations and decisions](roadmap-phases/phase-0-foundations.md) | Repo, AWS setup, stages, cost guardrails, decision records |
+| 1 | [Shared platform](roadmap-phases/phase-1-shared-platform.md) | Event bus, auth, reusable constructs, shared libraries |
+| 2 | [Customers service](roadmap-phases/phase-2-customers-service.md) | Aurora-backed REST API |
+| 3 | [Orders service](roadmap-phases/phase-3-orders-service.md) | DynamoDB-backed REST API that publishes and consumes events |
+| 4 | [Shipping service](roadmap-phases/phase-4-shipping-service.md) | Event-driven shipment lifecycle |
+| 5 | [Integration and contracts](roadmap-phases/phase-5-integration-and-contracts.md) | End-to-end flows, contract tests, published specs |
+| 6 | [Delivery and operations](roadmap-phases/phase-6-delivery-and-operations.md) | CI/CD, observability, security, cost, runbooks |
+| 7 | [Polish](roadmap-phases/phase-7-polish.md) | README, diagrams, demo, resume material |
 
 ## Checklist
 
