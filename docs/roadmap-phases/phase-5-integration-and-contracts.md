@@ -28,7 +28,7 @@ Each service is tested on its own. This phase proves they work together, proves 
 
 - [ ] A small helper that reads base URLs from SSM and the API keys from Secrets Manager (or a local untracked file produced by the key retrieval script) for a chosen stage.
 - [ ] Plain `fetch` calls in this repo's own end-to-end tests. The library project can later replace them with generated clients, but this project should not depend on it.
-- [ ] A warm-up step that calls the customers readiness endpoint, with a generous timeout, before the first test, so an Aurora resume does not look like a failure.
+- [ ] A warm-up step that calls the customers `GET /health/ready` endpoint with the `tests` key and a generous timeout, before the first test, so an Aurora resume does not look like a failure.
 - [ ] Polling helper for eventual consistency (poll a condition with a timeout and interval, never a fixed sleep).
 - [ ] Every test creates uniquely named data and removes what it created, where a delete operation exists. For data with no delete (orders, shipments), tag it with a run id and rely on a reset script and TTLs.
 

@@ -41,8 +41,9 @@ Business rules to enforce in the database where possible: unique email, foreign 
 | `addAddress` | `POST /customers/{customerId}/addresses` | |
 | `listAddresses` | `GET /customers/{customerId}/addresses` | |
 | `updateAddress`, `deleteAddress` | `PATCH` and `DELETE /customers/{customerId}/addresses/{addressId}` | |
+| `getReadiness` | `GET /health/ready` | API key required. Runs `SELECT 1`, 503 with retry hint if the database is resuming. The warm-up call |
 
-Tags: `customers`, `addresses`, plus the `version` tag from the shared construct. Stable `operationId` values matter because the library project turns them into method names.
+Tags: `customers`, `addresses`, plus the `version` tag from the shared construct. `getReadiness` goes under the same tag as the shared health routes. Stable `operationId` values matter because the library project turns them into method names.
 
 ## Tasks
 
@@ -57,7 +58,7 @@ Follow decision 0006 from Phase 0.
 ### 2. Database infrastructure
 
 - [ ] Aurora PostgreSQL cluster, Serverless v2, one writer and no readers (readers in failover tiers 0 and 1 keep the cluster from pausing, and a demo does not need them).
-- [ ] Use an engine version that supports scale to zero (PostgreSQL 13.15, 14.12, 15.7, 16.3 or higher at the time of writing).
+- [ ] Use an engine version that supports scale to zero (PostgreSQL 13.15, 14.12, 15.7, 16.3 or higher at the time of writing). The Data API is available in `us-west-2` for all of these.
 - [ ] Capacity: minimum 0 ACUs with an auto-pause delay chosen per stage (the allowed range is 300 to 86,400 seconds), and a low maximum, so a runaway test cannot scale the cluster up.
 - [ ] Storage encrypted, credentials generated into Secrets Manager, backup retention minimal in `dev`, deletion protection off in `dev` and on in `staging`.
 - [ ] Network: an isolated VPC with no NAT. If using the Data API the functions stay outside it.
@@ -69,8 +70,8 @@ Scale to zero means the first request after idle waits for the database to resum
 
 - [ ] Set Lambda timeouts above the resume time, and note the API integration timeout limit. A limit of roughly 29 seconds (the commonly cited default for REST API integrations) is tight after a long pause, so confirm the current limit and design around it.
 - [ ] Return a clear `503` with a retry hint if the database is not ready, rather than an opaque timeout. Map connection errors in one place.
-- [ ] Provide a documented warm-up call (a cheap authenticated `GET` that runs `SELECT 1`) that test setup and demos use.
-- [ ] Remember that anything that keeps a connection open, or constant traffic from health checks, prevents pausing. Keep `GET /health` free of database access so alarms and probes do not hold the cluster awake. Use a separate `GET /health/ready` that does check the database.
+- [ ] Provide `GET /health/ready` as the one warm-up and readiness endpoint. It requires an API key, runs `SELECT 1`, and returns 503 with a retry hint if the database is not ready. Test setup and demos use it as the documented warm-up call. Requiring a key keeps anonymous traffic from waking the cluster.
+- [ ] Remember that anything that keeps a connection open, or constant traffic from health checks, prevents pausing. Keep `GET /health` free of database access so alarms and probes do not hold the cluster awake. Only `GET /health/ready` touches the database, and nothing should call it on a schedule more often than rarely.
 - [ ] Add a note in the cost doc on how to verify that the cluster actually pauses when idle.
 
 ### 4. Migrations
@@ -87,7 +88,7 @@ Scale to zero means the first request after idle waits for the database to resum
 - [ ] Cursor-based pagination with an opaque cursor, a maximum page size, and stable ordering.
 - [ ] Email normalization, and a deliberate response on duplicates (409 with the shared error shape).
 - [ ] Optimistic concurrency on update.
-- [ ] Access control: API key required on every method except health and version. Both the `tests` and `services` keys may read and write customers. Any admin-only behavior is checked in the handler against the caller's key id.
+- [ ] Access control: API key required on every method except `GET /health` and `GET /version`. `GET /health/ready` requires a key. Both the `tests` and `services` keys may read and write customers. Any admin-only behavior is checked in the handler against the caller's key id.
 - [ ] Correlation id on logs and responses.
 
 ### 6. Events (optional but useful)

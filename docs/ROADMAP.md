@@ -35,7 +35,8 @@ The orders service calls the customers API to validate a customer when an order 
 - **Infrastructure:** CDK in TypeScript, one CDK app, one stack per service plus a platform stack, deployed per stage (`dev`, `staging`).
 - **Runtime:** Lambda on Node.js, TypeScript, bundled with esbuild through CDK's `NodejsFunction`. Use a Lambda Node.js runtime that is current when you build this.
 - **Testing:** vitest, matching the library project.
-- **Data stores:** Aurora for customers, DynamoDB for orders and shipping, as you described.
+- **Account and region:** a personal AWS account in `us-west-2`, with a dedicated profile so experiments stay isolated.
+- **Data stores:** Aurora for customers, DynamoDB for orders and shipping. Cost is the priority, and Aurora Serverless v2 with scale to zero is the cheapest relational option that keeps foreign keys, constraints and triggers, so it is the working choice. The open question about alternatives is tracked in `TODO.md`.
 - **Auth:** API Gateway API keys with usage plans, so there is no separate identity system to build. API keys work only on REST APIs, not HTTP APIs, so all three services use REST APIs. See the next section for what that does and does not give you.
 
 ## Decisions to make early (Phase 0 records them)
@@ -61,7 +62,8 @@ The orders service calls the customers API to validate a customer when an order 
 - Aurora Serverless v2 can scale to zero by setting minimum capacity to 0 ACUs. The idle timeout (`SecondsUntilAutoPause`) ranges from 300 seconds (the default) to 86,400 seconds. Resume typically takes about 15 seconds, and 30 seconds or more if the database was paused for over 24 hours. Supported on Aurora PostgreSQL 13.15, 14.12, 15.7, 16.3 and higher.
 - Things that prevent pausing: an associated RDS Proxy, open connections (even idle ones), logical replication, reader instances in failover tiers 0 and 1, and frequent requests that keep it busy. RDS Data API requests resume a paused writer.
 - DynamoDB Streams retain records for up to 24 hours, and EventBridge Pipes can deliver them to an event bus with retries and a dead-letter queue. Treat delivery as at least once and make consumers idempotent.
-- Still to confirm during Phase 0 and Phase 2: current RDS Data API support for Aurora Serverless v2 PostgreSQL in your region and engine version, and the current API Gateway integration timeout for REST APIs (commonly cited as about 29 seconds by default, which a resume after a long pause can approach).
+- RDS Data API is supported for Aurora PostgreSQL (serverless and provisioned) in `us-west-2` on 13.11+, 14.8+, 15.3+, 16.1+ and 17.4+, per the AWS documentation. Every engine version that supports scale to zero is therefore covered. Recheck when picking the exact engine version.
+- Still to confirm during Phase 0 and Phase 2: the current API Gateway integration timeout for REST APIs (commonly cited as about 29 seconds by default, which a resume after a long pause can approach), and that EventBridge Pipes is available in `us-west-2`.
 
 ## Phases
 

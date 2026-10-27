@@ -57,8 +57,8 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 
 ### 2. AWS account and bootstrap
 
-- [ ] Use a dedicated sandbox account, or at least a dedicated profile and region, so experiments cannot touch anything else.
-- [ ] Choose one region and stay in it. Check that every service you plan to use (Aurora Serverless v2 with scale to zero, EventBridge Pipes) is available there.
+- [ ] Use the personal AWS account with a dedicated profile, so experiments cannot touch anything else.
+- [ ] The region is `us-west-2`, and everything stays in it. Aurora Serverless v2 with scale to zero and the Data API are confirmed there. Still check that EventBridge Pipes is available.
 - [ ] Bootstrap CDK for the account and region.
 - [ ] Prefer short-lived credentials (SSO or an assumed role) for local work. CI will use OIDC (Phase 6).
 - [ ] Create the AWS Budget with an email alert at low thresholds before deploying anything.
@@ -101,7 +101,7 @@ Each record: context, options, decision, consequences. One page.
 Notes for the harder ones:
 
 - **0004:** Spec-first (write `openapi.yaml`, then implement) makes the contract the starting point, which suits the library project. Code-first (define schemas, for example with Zod, and generate the spec) keeps validation, types, and spec in one place and removes drift. Pick one, and either way commit the spec file and check in CI that it matches. A spec-first design with REST API routes defined in CDK also works, with contract tests catching drift. REST APIs can import an OpenAPI document directly, but that needs API Gateway integration extensions inside the spec, which clutters the contract the library consumes. Prefer defining routes in CDK and keeping the published spec clean.
-- **0006:** Data API removes VPC networking from the Lambda functions and works with auto-pause, but each request is a new HTTP call and local testing needs an adapter. A VPC Lambda with a connection pool is conventional and easy to test locally, but needs private networking, and an associated RDS Proxy prevents the cluster from pausing. Confirm Data API support for your engine version and region before deciding.
+- **0006:** Data API removes VPC networking from the Lambda functions and works with auto-pause, but each request is a new HTTP call and local testing needs an adapter. A VPC Lambda with a connection pool is conventional and easy to test locally, but needs private networking, and an associated RDS Proxy prevents the cluster from pausing. Data API support for Aurora PostgreSQL in `us-west-2` is confirmed for every engine version that supports scale to zero, so it is not a blocker.
 - **0007:** After a long pause, resume can take 30 seconds or more, which approaches typical API timeouts. Decide how clients and tests cope (warm-up call, generous timeouts) or keep a small nonzero minimum on `staging`.
 
 ### 6. Cost guardrails
