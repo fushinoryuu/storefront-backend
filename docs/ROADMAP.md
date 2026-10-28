@@ -155,4 +155,6 @@ The library project needs from this one:
 - A warm-up step or generous timeouts for the first call after Aurora has paused.
 - The planned v1.1.0 (non-breaking) and v2.0.0 (breaking) spec changes, so the library demo can be rehearsed.
 
+The api-library repository does not exist yet. The library client check in Phase 0.5 and the cross-repository test workflow in Phase 6 wait until it does, and the library's client generator is still to be chosen (see the Phase 0.5 notes).
+
 The library roadmap's Phase 1 describes one demo API with an optional second service. With three services available here, you can update that doc to use all three as the multi-service example.

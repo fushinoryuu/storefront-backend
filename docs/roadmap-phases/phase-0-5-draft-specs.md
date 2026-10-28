@@ -70,7 +70,7 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 ### S.6 Hand-off draft and library check
 
 - [ ] Start `docs/spec-handoff.md`: where the specs live, that they are drafts, how to bump the version, how to run a mock server from a spec until real endpoints exist, and what is not available yet (base URLs, API keys).
-- [ ] Generate typed clients from the drafts in the library project, and record any spec problems it finds. Fix the specs.
+- [ ] Generate typed clients from the drafts in the library project, and record any spec problems it finds. Fix the specs. This waits until the library repository exists.
 
 ## Acceptance criteria
 
@@ -86,3 +86,4 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 - **Orders model churn.** The order model is the least specified today. Settle it in S.5 before Phase 3 designs the table, so the table follows the contract and not the reverse.
 - **Spec and implementation drift.** With spec-first, drift is caught by validating requests and responses against the spec and by the Phase 5 conformance tests. Do not rely on memory.
 - **Shared file complexity.** Keep the shared components file small. If bundling gets awkward, copy the few shared schemas into each spec and add a lint check that they match.
+- **Generator not chosen yet.** The library project has not picked its client generator. Of the common TypeScript generators, openapi-typescript and hey-api are confirmed to support OpenAPI 3.0 and 3.1. Orval and OpenAPI Generator were not verified. Once the generator is chosen, check that it handles 3.0.3 cleanly, as part of the library client check in S.6.
