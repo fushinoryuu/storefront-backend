@@ -32,17 +32,19 @@ The orders service calls the customers API to validate a customer when an order 
 
 ## Decisions already taken
 
-- **Infrastructure:** CDK in TypeScript, one CDK app, one stack per service plus a platform stack, deployed per stage (`dev`, `staging`).
+- **Infrastructure:** CDK in TypeScript, one CDK app, one stack per service plus a platform stack and a persistent database stack, deployed per stage (`dev`, `staging`).
+- **Test runs:** deploy, run the tests (including the library project's), then destroy everything except the database stack. The Aurora cluster persists between runs because creating it takes 10 to 15 minutes, and while paused it costs storage only. Termination protection keeps it from being destroyed by accident. Each pull request run uses its own database schema, named from the Jira ticket key in the branch name and dropped after the run with Flyway clean. The `main` schema is never dropped, so there is always one ready for ad hoc testing. Runs are serialized with a concurrency limit so two branches never collide.
 - **Runtime:** Lambda on Node.js, TypeScript, bundled with esbuild through CDK's `NodejsFunction`. Use a Lambda Node.js runtime that is current when you build this.
 - **Testing:** vitest, matching the library project.
 - **Account and region:** a personal AWS account in `us-west-2`, with a dedicated profile so experiments stay isolated.
-- **Data stores:** Aurora for customers, DynamoDB for orders and shipping. Cost is the priority, and Aurora Serverless v2 with scale to zero is the cheapest relational option that keeps foreign keys, constraints and triggers, so it is the working choice. The open question about alternatives is tracked in `TODO.md`.
-- **API definition:** spec-first. The hand-written `openapi.yaml` for each service is the source of truth, drafted in Phase 0.5 before any implementation. Routes are still defined in CDK, and the published specs stay free of API Gateway extensions. Drift is caught by validating runtime requests and responses against the spec and by the conformance tests, not by comparing generated files.
+- **Data stores:** Aurora PostgreSQL Serverless v2 with scale to zero for customers, DynamoDB for orders and shipping. Cost is the priority, and Aurora is the cheapest relational option that keeps foreign keys, constraints and triggers. Aurora DSQL was considered and ruled out because it gives up foreign keys, triggers and the Data API.
+- **Database migrations:** Flyway. Because Flyway connects over JDBC and the database sits in an isolated VPC with no NAT, it runs in a container Lambda inside the VPC, invoked on deploy, with one Secrets Manager interface endpoint for the credentials (about $7 a month while deployed, price still to verify). A NAT gateway would be about $33 a month. The app functions still use the Data API from outside the VPC.
+- **API definition:** spec-first, written as OpenAPI 3.0.3 (the version with the most documentation and the widest Zod and generator support). The hand-written `openapi.yaml` for each service is the source of truth, drafted in Phase 0.5 before any implementation. Routes are still defined in CDK, and the published specs stay free of API Gateway extensions. Drift is caught by validating runtime requests and responses against the spec and by the conformance tests, not by comparing generated files.
 - **Auth:** API Gateway API keys with usage plans, so there is no separate identity system to build. API keys work only on REST APIs, not HTTP APIs, so all three services use REST APIs. See the next section for what that does and does not give you.
 
 ## Decisions to make early (Phase 0 records them)
 
-- Aurora connectivity: RDS Data API (no VPC for Lambda, works with scale to zero) or Lambda in a VPC with RDS Proxy (conventional, costlier, and RDS Proxy prevents auto-pause).
+- Aurora connectivity: the working choice is the RDS Data API for the app (no VPC for Lambda, works with scale to zero) plus Flyway in an in-VPC Lambda for migrations. The alternative is Lambda in a VPC with RDS Proxy (conventional, costlier, and RDS Proxy prevents auto-pause). Decision record 0006 confirms or changes this.
 - Event publishing from orders: DynamoDB Streams plus EventBridge Pipes (reliable outbox) or direct `PutEvents` from the handler (simpler, small failure window).
 
 ## API key auth: what to know
@@ -63,6 +65,7 @@ The orders service calls the customers API to validate a customer when an order 
 - Things that prevent pausing: an associated RDS Proxy, open connections (even idle ones), logical replication, reader instances in failover tiers 0 and 1, and frequent requests that keep it busy. RDS Data API requests resume a paused writer.
 - DynamoDB Streams retain records for up to 24 hours, and EventBridge Pipes can deliver them to an event bus with retries and a dead-letter queue. Treat delivery as at least once and make consumers idempotent.
 - RDS Data API is supported for Aurora PostgreSQL (serverless and provisioned) in `us-west-2` on 13.11+, 14.8+, 15.3+, 16.1+ and 17.4+, per the AWS documentation. Every engine version that supports scale to zero is therefore covered. Recheck when picking the exact engine version.
+- A NAT gateway costs about $0.045 per hour (about $33 a month) plus $0.045 per GB processed, per the AWS pricing page for US East (Ohio). Oregon was not listed. The Secrets Manager interface endpoint estimate of about $7 a month per AZ is from memory and not yet verified.
 - Still to confirm during Phase 0 and Phase 2: the current API Gateway integration timeout for REST APIs (commonly cited as about 29 seconds by default, which a resume after a long pause can approach), and that EventBridge Pipes is available in `us-west-2`.
 
 ## Phases
@@ -84,7 +87,7 @@ The orders service calls the customers API to validate a customer when an order 
 ### Phase 0: Foundations and decisions
 - [ ] Monorepo skeleton with CDK app, services, shared packages
 - [ ] AWS account setup, CDK bootstrap, budget alarm
-- [ ] Stage configuration for `dev` and `staging`
+- [ ] Stage configuration for `dev` and `staging`, with the database stack marked persistent
 - [ ] Decision records for the open choices above
 - [ ] Minimal CI: lint, typecheck, unit tests, `cdk synth`
 
@@ -103,8 +106,8 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] CDK template tests and cdk-nag in the build
 
 ### Phase 2: Customers (Aurora)
-- [ ] Schema and migrations
-- [ ] Aurora Serverless v2 cluster with scale to zero
+- [ ] Schema and Flyway migrations, run on deploy by an in-VPC Lambda
+- [ ] Aurora Serverless v2 cluster with scale to zero, in a persistent database stack
 - [ ] CRUD API for customers and addresses, validation, pagination
 - [ ] Tests against a real PostgreSQL
 - [ ] Implement against the draft spec and release it as v1.0.0
@@ -131,7 +134,7 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Stage manifest, spec versioning process and CI artifact for the library project, planned v1.1.0 and v2.0.0 changes
 
 ### Phase 6: Delivery and operations
-- [ ] CI/CD with OIDC, deploy to `dev`, approval to `staging`
+- [ ] CI/CD with OIDC, deploy to `dev`, approval to `staging`, and a deploy-test-destroy mode that keeps only the database
 - [ ] Dashboards, alarms, tracing
 - [ ] Security and cost review, teardown tested
 - [ ] Runbooks
@@ -146,7 +149,7 @@ The orders service calls the customers API to validate a customer when an order 
 The library project needs from this one:
 
 - Three OpenAPI specs (customers, orders, shipping), stable `operationId` and `tag` values, a shared error schema. Draft v0.1.0 versions are available from Phase 0.5, before anything is deployed, and a mock server driven by the specs can stand in for live endpoints until then. Each spec reaches v1.0.0 when its service ships (Phases 2 to 4).
-- Base URLs for `dev` and `staging` for each service, published as stack outputs or SSM parameters.
+- Base URLs for `dev` and `staging` for each service, published as stack outputs or SSM parameters. Because stacks are destroyed after test runs, URLs and keys change on every deploy, so the library reads them from the stage manifest each run instead of using fixed values.
 - An API key for the `tests` caller type, and a documented way to retrieve it after deploy. The library sends it in the `x-api-key` header.
 - `GET /version` on every service, so test setup can confirm which build it is testing.
 - A warm-up step or generous timeouts for the first call after Aurora has paused.

@@ -26,7 +26,7 @@ Each service is tested on its own. This phase proves they work together, proves 
 
 ### 1. Test harness for deployed environments
 
-- [ ] A small helper that reads base URLs from SSM and the API keys from Secrets Manager (or a local untracked file produced by the key retrieval script) for a chosen stage.
+- [ ] A small helper that reads base URLs from SSM and the API keys from Secrets Manager (or a local untracked file produced by the key retrieval script) for a chosen stage. Per-run stacks are destroyed after tests, so URLs and keys change on every deploy and nothing should cache them between runs.
 - [ ] Plain `fetch` calls in this repo's own end-to-end tests. The library project can later replace them with generated clients, but this project should not depend on it.
 - [ ] A warm-up step that calls the customers `GET /health/ready` endpoint with the `tests` key and a generous timeout, before the first test, so an Aurora resume does not look like a failure.
 - [ ] Polling helper for eventual consistency (poll a condition with a timeout and interval, never a fixed sleep).
@@ -41,7 +41,7 @@ Each service is tested on its own. This phase proves they work together, proves 
 - [ ] **Cancel after shipment:** rejected with a 409.
 - [ ] **Customers unavailable:** simulate by pointing the orders service at a failing target in a test stage, or by using a feature flag, and assert a 503 with the shared error shape. (If this cannot be done safely in a deployed stage, cover it in the orders handler tests instead and say so.)
 - [ ] **Duplicate and poison events:** publish a duplicate `OrderPlaced` and a malformed one directly to the bus in `dev`, and assert one shipment and one DLQ message.
-- [ ] **Cold database:** after the cluster has paused, the first customer request succeeds within the documented timeout.
+- [ ] **Cold database:** after the cluster has paused, the first customer request succeeds within the documented timeout. The database persists between test runs, so this happens naturally whenever the gap between runs is longer than the auto-pause delay. Also keep an on-demand version that waits for the pause.
 - [ ] Mark long or destructive tests so they run only on demand.
 
 ### 3. API conformance tests
@@ -102,4 +102,4 @@ These feed the library demo (non-breaking then breaking). Write each as a short 
 - **Flaky end-to-end tests.** Eventual consistency and the Aurora resume are the main causes. Polling helpers and the warm-up step address both. Do not use fixed sleeps.
 - **Conformance noise.** Property-based tools can produce many findings on a first run. Triage them into real bugs, spec gaps, and tool configuration issues rather than silencing the tool.
 - **Spec drift.** The spec is the product the library consumes. Keep the response validation and conformance checks in CI (Phase 6), or the library will generate clients for an API that no longer exists.
-- **Test data in shared stages.** Run ids and cleanup keep `dev` usable. Never run reset against a stage you care about.
+- **Test data in shared stages.** PR runs use their own database schema, dropped after the run, so a PR's customers disappear with it, and orders and shipments disappear when their stacks are destroyed. The `main` schema persists, so customers created there by main-branch runs or ad hoc testing still need cleanup. Run ids and cleanup keep `dev` usable. Never run reset against a stage you care about.

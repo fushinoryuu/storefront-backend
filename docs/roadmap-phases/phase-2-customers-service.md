@@ -13,7 +13,8 @@ A relational service: customer profiles with addresses, backed by Aurora Postgre
 
 | Deliverable | Location |
 |---|---|
-| Stack | `infra/lib/stacks/customers-stack.ts` |
+| Database stack (persistent) | `infra/lib/stacks/database-stack.ts` |
+| Stack (per run) | `infra/lib/stacks/customers-stack.ts` |
 | Service code | `services/customers/src/` |
 | Migrations | `services/customers/migrations/` |
 | OpenAPI spec | `services/customers/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
@@ -51,7 +52,7 @@ Tags: `customers`, `addresses`, plus the `version` tag from the shared construct
 
 ### 1. Connectivity decision and adapter
 
-Follow decision 0006 from Phase 0.
+Follow decision 0006 from Phase 0. The working choice is the Data API for the app functions (outside the VPC) and Flyway in an in-VPC Lambda for migrations. The Data API bullet below applies to the app, and the VPC bullet applies only to the migration runner.
 
 - [ ] **If using the RDS Data API:** Lambda functions call the Data API with the cluster and secret ARNs, outside a VPC. Write a small `SqlExecutor` interface (`query`, `transaction`) with a Data API implementation for AWS and a `pg` implementation for local and CI tests, so repository code is the same in both. Parameter styles differ (named versus positional), so the adapters translate.
 - [ ] **If using a VPC Lambda:** place functions in isolated or private subnets, add the required endpoints (for example Secrets Manager) without a NAT gateway if possible, and use a connection pool that is created once per execution environment. An RDS Proxy would prevent auto-pause, so accept the cost or give up scale to zero.
@@ -63,7 +64,8 @@ Follow decision 0006 from Phase 0.
 - [ ] Use an engine version that supports scale to zero (PostgreSQL 13.15, 14.12, 15.7, 16.3 or higher at the time of writing). The Data API is available in `us-west-2` for all of these.
 - [ ] Capacity: minimum 0 ACUs with an auto-pause delay chosen per stage (the allowed range is 300 to 86,400 seconds), and a low maximum, so a runaway test cannot scale the cluster up.
 - [ ] Storage encrypted, credentials generated into Secrets Manager, backup retention minimal in `dev`, deletion protection off in `dev` and on in `staging`.
-- [ ] Network: an isolated VPC with no NAT. If using the Data API the functions stay outside it.
+- [ ] Network: an isolated VPC with no NAT. The app functions use the Data API and stay outside it. Only the Flyway runner is inside, with one Secrets Manager interface endpoint so it can read the credentials.
+- [ ] Put the VPC, cluster, credentials secret, and the cluster's security group in the persistent database stack, with termination protection on. The Flyway runner, the Secrets Manager endpoint, and the security group rule that lets the runner reach the database belong to the per-run customers stack, so destroying that stack removes the endpoint cost and the rule.
 - [ ] Alarms on ACU utilization and database connections.
 
 ### 3. Handle pauses and resume deliberately
@@ -78,10 +80,16 @@ Scale to zero means the first request after idle waits for the database to resum
 
 ### 4. Migrations
 
-- [ ] Plain, ordered SQL migration files with a migrations table that records applied versions. Choose a migration tool or write a small runner, and record the choice.
-- [ ] Run migrations as part of deployment, for example with a CDK `Trigger` or custom resource that invokes a migration function after the cluster is ready. It must be safe to run repeatedly and must fail the deployment on error.
+- [ ] Flyway with plain, ordered SQL files named `V<version>__<description>.sql` in `services/customers/migrations/`. Flyway's schema history table records applied versions.
+- [ ] Run Flyway from a container Lambda (or a small Java Lambda using `flyway-core`) inside the VPC, invoked by a CDK `Trigger` after the cluster is ready. It must be safe to run repeatedly and must fail the deployment on error.
+- [ ] The database persists between test runs, so the first connection of a run may hit a paused cluster. Set the connect timeout and Flyway's connect retries above the resume time (30 seconds or more after a long pause).
+- [ ] **Schema per run.** The `main` branch uses the fixed schema `main`, which is never dropped and is always ready for ad hoc testing. Every pull request run uses its own schema named from the Jira ticket key in the branch name (`BEP-123` becomes `bep_123`, at most 63 bytes). Because each PR schema starts empty, every PR run also proves the migrations work from scratch, and a branch with different migrations cannot break another branch's history.
+- [ ] The runner Lambda has two actions, `migrate` and `clean`. Flyway disables `clean` by default (`cleanDisabled`), so enable it only for PR schemas. The runner refuses to clean `main` or any name that does not match the PR pattern. `clean` runs after the tests and before the per-run stacks are destroyed, because the runner is part of the customers stack. Check whether `clean` also removes the schema itself when Flyway created it, and drop the schema explicitly if not.
+- [ ] Safety net for leaked schemas (a crashed or cancelled run): a cleanup job drops stale PR schemas through the Data API with `DROP SCHEMA ... CASCADE`, which needs no VPC runner, and the Flyway history table goes with the schema. Run it on a schedule and when a pull request closes.
+- [ ] Selecting the schema in the app: run each request's statements in a transaction that begins with `SET LOCAL search_path` for the configured schema (check whether the Data API `schema` parameter is enough). The schema name cannot be a bound parameter, so validate it against the PR pattern and never concatenate unchecked input. The `pg` adapter used in tests does the same.
+- [ ] Decide in record 0006 whether the app uses the same database user as the runner or a separate user that Flyway grants rights on each new schema (a callback script).
 - [ ] Migrations are forward-only. Write each so the previous application version still works against the new schema (expand, then contract), because the old Lambda version runs briefly during a deploy.
-- [ ] A test that applies all migrations to an empty database and checks the resulting schema.
+- [ ] A test that runs Flyway against an empty PostgreSQL container, applies all migrations, and checks the resulting schema.
 
 ### 5. API implementation
 
@@ -110,7 +118,8 @@ Scale to zero means the first request after idle waits for the database to resum
 
 - [ ] **Unit:** domain rules, validation, cursor encoding, error mapping.
 - [ ] **Repository tests against a real PostgreSQL** (a container started by the test run), covering uniqueness, foreign keys, the default-address rule, concurrency, and pagination.
-- [ ] **Migration test** from an empty database.
+- [ ] **Migration test** with Flyway from an empty database.
+- [ ] **Schema isolation tests:** two schemas side by side do not see each other's data, `clean` on a PR schema leaves `main` intact, and the runner refuses to clean `main` or a name outside the PR pattern.
 - [ ] **Handler tests** with fake events, asserting status codes and response bodies, and validating every response against the spec.
 - [ ] **CDK tests:** cluster has scale to zero configured, encryption on, no readers, API key required on every method except health and version.
 - [ ] **Deployed smoke test** against `dev`, including the cold resume path.

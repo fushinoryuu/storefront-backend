@@ -31,7 +31,7 @@ Make the project easy to understand and trustworthy to a reader who has two minu
 - [ ] The architecture diagram near the top.
 - [ ] A table of the services: data store, communication style, responsibilities, link to its doc.
 - [ ] Quick start: prerequisites, AWS profile and region, bootstrap, `deploy dev`, retrieve API keys, run the smoke tests.
-- [ ] Cost note: what it costs idle, what it costs in use, and how to tear it down. Link to `docs/cost.md`.
+- [ ] Cost note: what it costs idle, what it costs in use, and how to tear it down. Explain the deploy-test-destroy flow where only the paused database persists. Link to `docs/cost.md`.
 - [ ] Auth note: API keys, what they do and do not provide, and what production would use.
 - [ ] Testing section: unit, repository, CDK, contract, end-to-end, and what each costs and needs.
 - [ ] A short "design decisions" list linking to the records.

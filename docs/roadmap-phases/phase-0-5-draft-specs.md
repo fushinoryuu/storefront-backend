@@ -33,8 +33,8 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 ### S.1 Spec conventions and shared components
 
 - [ ] Write decision record 0004: spec-first, with the hand-written `openapi.yaml` as the source of truth. Routes stay defined in CDK, and API Gateway integration extensions stay out of the specs.
-- [ ] Decide how the implementation stays tied to the spec: runtime validation uses schemas taken from the spec and tests check every response against it, or types are generated from the spec and runtime validation is kept separate. Record the choice in 0004.
-- [ ] Confirm the OpenAPI version (see `TODO.md`) and record it.
+- [ ] Decide how the implementation stays tied to the spec, and record the choice in 0004. Options: (a) runtime validation uses JSON schemas taken from the spec, with tests checking every response against it; (b) types are generated from the spec and runtime validation is kept separate; (c) hand-written Zod schemas for validation, with a test that converts each one to JSON Schema and compares it with the spec; (d) Zod schemas generated from the spec. Zod is a wanted skill for this project, so weigh (c) and (d) seriously. Spec-first stays either way, and a later move to code-first would make Zod generate the spec.
+- [ ] Use OpenAPI 3.0.3 and record it in 0004. It was chosen as the version with the most documentation that Zod 4 (through `z.toJSONSchema` with its `openapi-3.0` target) and the common TypeScript generators support. Moving to 3.1 later is mostly mechanical (for example `nullable` becomes a type array) but touches every spec.
 - [ ] Shared error schema (`type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]`).
 - [ ] `apiKey` security scheme using the `x-api-key` header.
 - [ ] Cursor pagination parameters and a page envelope.
@@ -74,7 +74,7 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 
 ## Acceptance criteria
 
-- All three specs lint cleanly and bundle to standalone files in `specs/`.
+- All three specs declare `openapi: 3.0.3`, lint cleanly, and bundle to standalone files in `specs/`.
 - Every operation has a stable `operationId`, a tag, an example, and the shared error schema on its 4xx responses.
 - Decision record 0004 exists and says how the implementation stays tied to the spec.
 - The library project can generate clients from the bundled drafts.

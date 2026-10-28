@@ -24,7 +24,7 @@ Everything the three services have in common, built once: the event bus, authent
 
 - [ ] **Custom event bus** named per stage, with an archive enabled so events can be replayed during debugging (confirm retention settings and cost).
 - [ ] **API keys:** three `ApiKey` resources owned by the platform stack, one per kind of caller: `tests` (test suites and the library project), `services` (service-to-service calls), `admin` (the shipping simulation endpoint). Let CDK generate the values and publish only the key ids to SSM. Each service's usage plans attach the keys they accept.
-- [ ] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo.
+- [ ] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
 - [ ] **SSM parameters** (or stack outputs) for values other stacks and external tools need: event bus name, API key ids, and each service's base URL once deployed.
 - [ ] **Secrets:** client secrets live in Secrets Manager or are retrieved at deploy time by an authorized process, never committed.
 - [ ] **Alarm topic:** an SNS topic that sends alarms to email.
