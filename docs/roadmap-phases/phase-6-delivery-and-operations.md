@@ -31,7 +31,7 @@ Extend the Phase 0 workflow so every pull request runs:
 - [ ] Repository tests that need containers (PostgreSQL, DynamoDB Local).
 - [ ] CDK template tests with cdk-nag, and `cdk synth` for both stages.
 - [ ] `cdk diff` against `dev`, posted as a pull request comment, so infrastructure changes are reviewed like code. This needs read-only AWS access through the OIDC role.
-- [ ] OpenAPI lint, and a check that each committed `openapi.yaml` matches the implementation (decision 0004).
+- [ ] OpenAPI lint and bundle (in CI since Phase 0), plus the spec-based response validation and conformance tests, so any drift between an `openapi.yaml` and its implementation fails the build (decision 0004).
 - [ ] Event schema compatibility check.
 - [ ] A dependency vulnerability scan.
 

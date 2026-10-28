@@ -18,8 +18,8 @@ Each service is tested on its own. This phase proves they work together, proves 
 | API conformance setup | `tests/contract/api/` |
 | Event contract tests | `tests/contract/events/` |
 | Seed and reset scripts | `scripts/seed.ts`, `scripts/reset.ts` |
-| Published specs | `specs/` (copied from `services/*/openapi.yaml`) |
-| Spec publishing doc | `docs/spec-handoff.md` |
+| Published specs | `specs/` (bundled from `services/*/openapi.yaml` by the Phase 0.5 script) |
+| Spec publishing doc | `docs/spec-handoff.md` (started in Phase 0.5, extended here) |
 | Planned spec changes | `docs/spec-changes/` |
 
 ## Tasks
@@ -69,11 +69,11 @@ Check that what is deployed matches what the spec promises.
 
 ### 6. Publish specs for the library project
 
-- [ ] Each service's `openapi.yaml` has: stable `operationId` for every operation, a `tag` per endpoint group (the library turns tags into `service.group.operation` calls), `info.version` bumped on every change, the shared error schema, an `apiKey` security scheme using the `x-api-key` header, and examples.
+- [ ] The specs were drafted in Phase 0.5 and released as v1.0.0 in Phases 2 to 4. Confirm each one still has: stable `operationId` for every operation, a `tag` per endpoint group (the library turns tags into `service.group.operation` calls), `info.version` bumped on every change, the shared error schema, an `apiKey` security scheme using the `x-api-key` header, and examples. The lint rules from Phase 0.5 enforce this.
 - [ ] Keep API Gateway integration extensions out of the published specs (see decision 0004), so the library consumes a clean contract.
-- [ ] A script copies the specs to `specs/` and records the source commit in a small `sources.json`. CI uploads them as a build artifact or release asset, so the library project can pull a specific version.
+- [ ] Extend the Phase 0.5 bundle script to record the source commit in a small `sources.json`. CI uploads the bundled specs as a build artifact or release asset, so the library project can pull a specific version.
 - [ ] Publish a stage manifest (a JSON file or SSM parameter set): service names, base URLs per stage, the name of the secret holding each caller key, and the spec version deployed. The library's global setup reads this and can compare the deployed `GET /version` with the spec version it was generated from.
-- [ ] Document the handoff in `docs/spec-handoff.md`: where specs live, how versions are bumped, how a consumer gets keys, and the Aurora warm-up note.
+- [ ] Extend `docs/spec-handoff.md` (started in Phase 0.5) with the final handoff: where specs live, how versions are bumped, how a consumer gets keys, the stage manifest, and the Aurora warm-up note.
 
 ### 7. Plan the demo spec changes
 
@@ -101,5 +101,5 @@ These feed the library demo (non-breaking then breaking). Write each as a short 
 
 - **Flaky end-to-end tests.** Eventual consistency and the Aurora resume are the main causes. Polling helpers and the warm-up step address both. Do not use fixed sleeps.
 - **Conformance noise.** Property-based tools can produce many findings on a first run. Triage them into real bugs, spec gaps, and tool configuration issues rather than silencing the tool.
-- **Spec drift.** The spec is the product the library consumes. Keep the drift check in CI (Phase 6), or the library will generate clients for an API that no longer exists.
+- **Spec drift.** The spec is the product the library consumes. Keep the response validation and conformance checks in CI (Phase 6), or the library will generate clients for an API that no longer exists.
 - **Test data in shared stages.** Run ids and cleanup keep `dev` usable. Never run reset against a stage you care about.

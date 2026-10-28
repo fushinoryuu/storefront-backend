@@ -4,7 +4,7 @@ A small, deliberately realistic backend for a fake online store, built on AWS wi
 
 `storefront` is a placeholder name. Rename it freely.
 
-This project is the demo target for the spec-driven test client library (see the library roadmap). Each service publishes an OpenAPI spec, and the library generates a typed client from each one. Build this project first.
+This project is the demo target for the spec-driven test client library (see the library roadmap). Each service publishes an OpenAPI spec, and the library generates a typed client from each one. Build this project first, starting with the draft specs (Phase 0.5) so the library project can begin before anything is deployed.
 
 ## Architecture at a glance
 
@@ -37,11 +37,11 @@ The orders service calls the customers API to validate a customer when an order 
 - **Testing:** vitest, matching the library project.
 - **Account and region:** a personal AWS account in `us-west-2`, with a dedicated profile so experiments stay isolated.
 - **Data stores:** Aurora for customers, DynamoDB for orders and shipping. Cost is the priority, and Aurora Serverless v2 with scale to zero is the cheapest relational option that keeps foreign keys, constraints and triggers, so it is the working choice. The open question about alternatives is tracked in `TODO.md`.
+- **API definition:** spec-first. The hand-written `openapi.yaml` for each service is the source of truth, drafted in Phase 0.5 before any implementation. Routes are still defined in CDK, and the published specs stay free of API Gateway extensions. Drift is caught by validating runtime requests and responses against the spec and by the conformance tests, not by comparing generated files.
 - **Auth:** API Gateway API keys with usage plans, so there is no separate identity system to build. API keys work only on REST APIs, not HTTP APIs, so all three services use REST APIs. See the next section for what that does and does not give you.
 
 ## Decisions to make early (Phase 0 records them)
 
-- API definition approach: spec-first, or code-first with the OpenAPI spec generated from schemas.
 - Aurora connectivity: RDS Data API (no VPC for Lambda, works with scale to zero) or Lambda in a VPC with RDS Proxy (conventional, costlier, and RDS Proxy prevents auto-pause).
 - Event publishing from orders: DynamoDB Streams plus EventBridge Pipes (reliable outbox) or direct `PutEvents` from the handler (simpler, small failure window).
 
@@ -70,6 +70,7 @@ The orders service calls the customers API to validate a customer when an order 
 | Phase | Doc | Outcome |
 |---|---|---|
 | 0 | [Foundations and decisions](roadmap-phases/phase-0-foundations.md) | Repo, AWS setup, stages, cost guardrails, decision records |
+| 0.5 | [Draft OpenAPI specs](roadmap-phases/phase-0-5-draft-specs.md) | Spec-first drafts (v0.1.0) of all three APIs for the library project |
 | 1 | [Shared platform](roadmap-phases/phase-1-shared-platform.md) | Event bus, auth, reusable constructs, shared libraries |
 | 2 | [Customers service](roadmap-phases/phase-2-customers-service.md) | Aurora-backed REST API |
 | 3 | [Orders service](roadmap-phases/phase-3-orders-service.md) | DynamoDB-backed REST API that publishes and consumes events |
@@ -87,6 +88,12 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Decision records for the open choices above
 - [ ] Minimal CI: lint, typecheck, unit tests, `cdk synth`
 
+### Phase 0.5: Draft OpenAPI specs
+- [ ] Spec conventions, shared components, and the spec-first decision record
+- [ ] Lint and bundle tooling
+- [ ] Draft v0.1.0 specs for customers, shipping and orders
+- [ ] Hand-off draft and a check with the library project
+
 ### Phase 1: Shared platform
 - [ ] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
 - [ ] Script to retrieve key values after deploy
@@ -100,7 +107,7 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Aurora Serverless v2 cluster with scale to zero
 - [ ] CRUD API for customers and addresses, validation, pagination
 - [ ] Tests against a real PostgreSQL
-- [ ] OpenAPI spec v1.0.0
+- [ ] Implement against the draft spec and release it as v1.0.0
 
 ### Phase 3: Orders (DynamoDB)
 - [ ] Access patterns, table design, indexes
@@ -108,20 +115,20 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Customer validation through the customers API
 - [ ] Outbox: Streams to Pipes to EventBridge
 - [ ] Consumer for shipment events
-- [ ] OpenAPI spec v1.0.0
+- [ ] Implement against the draft spec and release it as v1.0.0
 
 ### Phase 4: Shipping (event driven)
 - [ ] Event rule, SQS queue with DLQ, idempotent consumer
 - [ ] Shipment lifecycle with a configurable simulated carrier
 - [ ] Read API and a protected simulation endpoint
 - [ ] Event contracts and versioning
-- [ ] OpenAPI spec v1.0.0
+- [ ] Implement against the draft spec and release it as v1.0.0
 
 ### Phase 5: Integration and contracts
 - [ ] End-to-end flows, including failure cases
 - [ ] API conformance tests against the specs
 - [ ] Event contract tests for producers and consumers
-- [ ] Specs published for the library project, planned v1.1.0 and v2.0.0 changes
+- [ ] Stage manifest, spec versioning process and CI artifact for the library project, planned v1.1.0 and v2.0.0 changes
 
 ### Phase 6: Delivery and operations
 - [ ] CI/CD with OIDC, deploy to `dev`, approval to `staging`
@@ -138,7 +145,7 @@ The orders service calls the customers API to validate a customer when an order 
 
 The library project needs from this one:
 
-- Three OpenAPI specs (customers, orders, shipping), stable `operationId` and `tag` values, a shared error schema.
+- Three OpenAPI specs (customers, orders, shipping), stable `operationId` and `tag` values, a shared error schema. Draft v0.1.0 versions are available from Phase 0.5, before anything is deployed, and a mock server driven by the specs can stand in for live endpoints until then. Each spec reaches v1.0.0 when its service ships (Phases 2 to 4).
 - Base URLs for `dev` and `staging` for each service, published as stack outputs or SSM parameters.
 - An API key for the `tests` caller type, and a documented way to retrieve it after deploy. The library sends it in the `x-api-key` header.
 - `GET /version` on every service, so test setup can confirm which build it is testing.

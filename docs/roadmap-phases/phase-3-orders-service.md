@@ -16,7 +16,7 @@ The orders service is where DynamoDB design, idempotency, concurrency control, a
 | Stack | `infra/lib/stacks/orders-stack.ts` |
 | Service code | `services/orders/src/` |
 | Product catalog seed | `services/orders/data/products.json` |
-| OpenAPI spec | `services/orders/openapi.yaml` |
+| OpenAPI spec | `services/orders/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
 | Tests | `services/orders/test/` |
 | Table design doc | `docs/services/orders-table-design.md` |
 | Service doc | `docs/services/orders.md` |
@@ -33,7 +33,7 @@ The orders service is where DynamoDB design, idempotency, concurrency control, a
 
 Suggested design: one table, `PK` and `SK` strings, with the order stored as a single item (`PK = ORDER#<id>`, `SK = META`). Line items are a nested list on the order, which is fine while an order stays far below the 400 KB item limit. Cap items per order in validation. Idempotency records use `PK = IDEM#<key>` with a TTL attribute. On-demand capacity, point-in-time recovery enabled in `staging`, streams enabled with new and old images.
 
-Write the table design doc first, with the patterns above, key schemas, and what you deliberately did not support. Keep the doc short enough that a reviewer can check each pattern against the schema.
+The order and line-item model comes from the draft spec (Phase 0.5), so the table follows the contract. If the table needs a different shape, change the spec first. Write the table design doc first, with the patterns above, key schemas, and what you deliberately did not support. Keep the doc short enough that a reviewer can check each pattern against the schema.
 
 ## Order lifecycle
 
@@ -50,6 +50,8 @@ PENDING --> CONFIRMED --> SHIPPED --> DELIVERED
 - Transitions are enforced by a small state machine in the domain layer and by conditional writes. Unit test every allowed and disallowed transition in a table-driven test.
 
 ## API
+
+The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
 | Operation | Method and path | Notes |
 |---|---|---|
@@ -117,14 +119,16 @@ The change in the table is the source of truth, and events are derived from it, 
 
 ### 7. OpenAPI spec
 
-- [ ] `openapi.yaml` v1.0.0 with the shared error schema on all error responses, an `apiKey` security scheme (header `x-api-key`), the `Idempotency-Key` header parameter, enums for status, examples.
-- [ ] Linted and checked against the implementation in CI.
+- [ ] Start from the Phase 0.5 draft. If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
+- [ ] Keep what the draft already has: the shared error schema on all error responses, an `apiKey` security scheme (header `x-api-key`), the `Idempotency-Key` header parameter, enums for status, examples.
+- [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
+- [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 
 ### 8. Tests
 
 - [ ] **Unit:** pricing, state machine (table-driven), validation, idempotency decisions, event envelope building.
 - [ ] **Repository tests** against DynamoDB Local (a container started by the test run): access patterns, conditional writes, the transaction, TTL attribute shape.
-- [ ] **Handler tests** with fake events, with the customers API client replaced by a fake that can return success, 404, timeout, and 5xx.
+- [ ] **Handler tests** with fake events, with the customers API client replaced by a fake that can return success, 404, timeout, and 5xx. Every response is validated against the spec.
 - [ ] **Consumer tests:** duplicate delivery, out-of-order events, unknown order, malformed payload.
 - [ ] **CDK tests:** stream enabled, pipe filter pattern present, DLQ present, API key required on protected methods, least-privilege table grants.
 - [ ] **Deployed checks:** place an order in `dev` and see the `OrderPlaced` event arrive (for example by a temporary rule that logs it, or the shipping service in Phase 4).

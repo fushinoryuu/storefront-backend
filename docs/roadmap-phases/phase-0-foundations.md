@@ -15,7 +15,7 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 |---|---|
 | Repo skeleton | repo root |
 | CDK app skeleton and stage config | `infra/` |
-| Decision records | `docs/decisions/NNNN-title.md` |
+| Decision records | `docs/decisions/NNNN-title.md` (0004 is written in Phase 0.5) |
 | Naming and tagging conventions | `docs/conventions.md` |
 | Cost guardrails | AWS Budgets plus `docs/cost.md` |
 | Minimal CI | `.github/workflows/ci.yml` |
@@ -41,6 +41,7 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 ├── packages/
 │   ├── shared/                   # logger, errors, correlation, idempotency
 │   └── events/                   # event schemas and types
+├── specs/                        # shared OpenAPI components and bundled specs (Phase 0.5)
 ├── docs/
 └── .github/workflows/
 ```
@@ -90,7 +91,7 @@ Each record: context, options, decision, consequences. One page.
 | 0001 | Repo layout | Monorepo with workspaces (default) or one repo per service |
 | 0002 | Stack boundaries | One stack per service plus platform (default); platform deployed first |
 | 0003 | API type | REST API (decided). Required for API keys and usage plans, which HTTP APIs do not support |
-| 0004 | API definition | Code-first with schemas generating OpenAPI, or spec-first (see below) |
+| 0004 | API definition | Spec-first (decided, written in Phase 0.5). The hand-written `openapi.yaml` is the source of truth |
 | 0005 | Auth | API Gateway API keys with usage plans (decided). Separate keys for `tests`, `services`, `admin`. Record the limits and what production would use instead |
 | 0006 | Aurora connectivity | RDS Data API (default) or VPC Lambda with RDS Proxy |
 | 0007 | Aurora scaling | Minimum capacity 0 with auto-pause in `dev`, decide for `staging` |
@@ -100,7 +101,7 @@ Each record: context, options, decision, consequences. One page.
 
 Notes for the harder ones:
 
-- **0004:** Spec-first (write `openapi.yaml`, then implement) makes the contract the starting point, which suits the library project. Code-first (define schemas, for example with Zod, and generate the spec) keeps validation, types, and spec in one place and removes drift. Pick one, and either way commit the spec file and check in CI that it matches. A spec-first design with REST API routes defined in CDK also works, with contract tests catching drift. REST APIs can import an OpenAPI document directly, but that needs API Gateway integration extensions inside the spec, which clutters the contract the library consumes. Prefer defining routes in CDK and keeping the published spec clean.
+- **0004:** Spec-first is decided. Writing `openapi.yaml` first makes the contract the starting point, which suits the library project and lets the drafts exist before anything is built (Phase 0.5). Code-first (define schemas, for example with Zod, and generate the spec) would keep validation, types, and spec in one place, but it cannot produce a spec before the code exists. With spec-first, drift is caught by validating runtime requests and responses against the spec and by the conformance tests in Phase 5. REST APIs can import an OpenAPI document directly, but that needs API Gateway integration extensions inside the spec, which clutters the contract the library consumes. Define routes in CDK and keep the published spec clean. How the implementation derives its validation from the spec is part of the 0004 record.
 - **0006:** Data API removes VPC networking from the Lambda functions and works with auto-pause, but each request is a new HTTP call and local testing needs an adapter. A VPC Lambda with a connection pool is conventional and easy to test locally, but needs private networking, and an associated RDS Proxy prevents the cluster from pausing. Data API support for Aurora PostgreSQL in `us-west-2` is confirmed for every engine version that supports scale to zero, so it is not a blocker.
 - **0007:** After a long pause, resume can take 30 seconds or more, which approaches typical API timeouts. Decide how clients and tests cope (warm-up call, generous timeouts) or keep a small nonzero minimum on `staging`.
 
@@ -115,13 +116,14 @@ Notes for the harder ones:
 ### 7. Minimal CI
 
 - [ ] On every push and pull request: install, lint, typecheck, unit tests, `cdk synth` for both stages.
+- [ ] Once Phase 0.5 adds the spec tooling: OpenAPI lint and the bundle step.
 - [ ] No AWS credentials needed yet. Deployment automation arrives in Phase 6.
 
 ## Acceptance criteria
 
 - `npm test` and `cdk synth` pass on a fresh clone for both stages.
 - Budget alarm exists and sends a test notification.
-- All ten decision records exist, even if some are short.
+- All ten decision records exist, even if some are short. Record 0004 is written in Phase 0.5.
 - Conventions are written and an Aspect applies the tags.
 
 ## Risks and notes

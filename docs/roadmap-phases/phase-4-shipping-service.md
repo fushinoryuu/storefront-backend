@@ -17,7 +17,7 @@ The shipping service has almost no request-driven behavior. It reacts to orders,
 | Service code | `services/shipping/src/` |
 | State machine definition | `services/shipping/workflow/` or in the stack |
 | Event contracts | `packages/events/src/shipping/` |
-| OpenAPI spec | `services/shipping/openapi.yaml` |
+| OpenAPI spec | `services/shipping/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
 | Tests | `services/shipping/test/` |
 | Runbooks | `docs/runbooks/shipping-dlq.md` |
 | Service doc | `docs/services/shipping.md` |
@@ -57,6 +57,8 @@ States: `CREATED`, `PICKED`, `SHIPPED`, `DELIVERED`, `CANCELLED`. Stretch: `DELI
 Event schemas live in `packages/events`. Every event carries `eventId`, `schemaVersion`, `occurredAt`, `correlationId`, and `producer`.
 
 ## API
+
+The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
 | Operation | Method and path | Notes |
 |---|---|---|
@@ -121,7 +123,9 @@ Write `docs/runbooks/shipping-dlq.md`:
 
 ### 8. OpenAPI spec and event contracts
 
-- [ ] `openapi.yaml` v1.0.0 with the shared error schema, `apiKey` security scheme, enums for status.
+- [ ] Start from the Phase 0.5 draft, which already has the shared error schema, `apiKey` security scheme, and enums for status. If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
+- [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
+- [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 - [ ] Event schemas published as JSON Schema files generated from the shared definitions, and a changelog file for events.
 
 ### 9. Tests

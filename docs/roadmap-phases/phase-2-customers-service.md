@@ -16,7 +16,7 @@ A relational service: customer profiles with addresses, backed by Aurora Postgre
 | Stack | `infra/lib/stacks/customers-stack.ts` |
 | Service code | `services/customers/src/` |
 | Migrations | `services/customers/migrations/` |
-| OpenAPI spec | `services/customers/openapi.yaml` |
+| OpenAPI spec | `services/customers/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
 | Tests | `services/customers/test/` |
 | Service doc | `docs/services/customers.md` |
 
@@ -30,6 +30,8 @@ A relational service: customer profiles with addresses, backed by Aurora Postgre
 Business rules to enforce in the database where possible: unique email, foreign key integrity, one default address per type, `updated_at` maintained consistently.
 
 ## API
+
+The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
 | Operation | Method and path | Notes |
 |---|---|---|
@@ -99,16 +101,17 @@ Scale to zero means the first request after idle waits for the database to resum
 
 ### 7. OpenAPI spec
 
-- [ ] `openapi.yaml` v1.0.0, matching decision 0004 (written first, or generated from schemas and committed).
-- [ ] Includes: stable `operationId` and `tag` values, the shared error schema on every 4xx response, an `apiKey` security scheme (header `x-api-key`), pagination parameters, examples.
-- [ ] Lint it in CI and check that the committed file matches the implementation's schemas.
+- [ ] Start from the Phase 0.5 draft. If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
+- [ ] Keep what the draft already has: stable `operationId` and `tag` values, the shared error schema on every 4xx response, an `apiKey` security scheme (header `x-api-key`), pagination parameters, examples.
+- [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
+- [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 
 ### 8. Tests
 
 - [ ] **Unit:** domain rules, validation, cursor encoding, error mapping.
 - [ ] **Repository tests against a real PostgreSQL** (a container started by the test run), covering uniqueness, foreign keys, the default-address rule, concurrency, and pagination.
 - [ ] **Migration test** from an empty database.
-- [ ] **Handler tests** with fake events, asserting status codes and response bodies.
+- [ ] **Handler tests** with fake events, asserting status codes and response bodies, and validating every response against the spec.
 - [ ] **CDK tests:** cluster has scale to zero configured, encryption on, no readers, API key required on every method except health and version.
 - [ ] **Deployed smoke test** against `dev`, including the cold resume path.
 

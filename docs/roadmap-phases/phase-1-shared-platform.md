@@ -51,7 +51,7 @@ Wraps a REST API.
 - [ ] Access logging to a log group, throttling set low by default, and a stage per deployment stage.
 - [ ] A helper to add a route with a Lambda integration in one call, with an `adminOnly` flag. Usage plans apply per stage, not per route, so admin-only routes are enforced in the handler by comparing the caller's key id from the request context with the admin key id.
 - [ ] Customized gateway responses so missing or invalid keys (403) and throttling (429) use the shared error shape.
-- [ ] Built-in `GET /health` (unauthenticated, no dependencies) and `GET /version` (build id, spec version, stage).
+- [ ] Built-in `GET /health` (unauthenticated, no dependencies) and `GET /version` (build id, spec version, stage). Their response shapes come from the shared spec components.
 - [ ] Publishes its base URL to SSM.
 - [ ] 5xx, 4xx, and latency alarms attached to the alarm topic.
 
@@ -63,7 +63,7 @@ Wraps a REST API.
 
 ### Others
 
-- [ ] `TagAspect` applying the tags from the conventions doc.
+- [ ] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
 - [ ] A removal policy helper that reads from stage config.
 - [ ] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`.
 - [ ] cdk-nag (AwsSolutions pack) added as an Aspect. Each suppression needs a written reason, kept in one place.
@@ -74,8 +74,8 @@ Wraps a REST API.
 
 - [ ] **Logger:** structured JSON, with correlation id, service, stage, and request id on every line. Powertools for AWS Lambda is a candidate (decision 0010).
 - [ ] **Correlation id:** read from `x-correlation-id` on requests (generate if absent), propagate it to downstream HTTP calls and into event envelopes, return it on responses.
-- [ ] **Error model:** one JSON error shape for every service (for example `type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]` for field validation). Map domain errors to HTTP status codes in one place. This shape becomes the shared error schema in every OpenAPI spec.
-- [ ] **Validation:** a small wrapper that validates input against schemas and returns the shared error shape.
+- [ ] **Error model:** one JSON error shape for every service (for example `type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]` for field validation). Map domain errors to HTTP status codes in one place. The shared error schema is owned by the OpenAPI shared components (Phase 0.5), and this implementation must match it.
+- [ ] **Validation:** a small wrapper that validates input against schemas taken from the OpenAPI spec (as decided in record 0004) and returns the shared error shape.
 - [ ] **Idempotency helper:** conditional-write based dedupe keyed by event id or idempotency key, with TTL.
 - [ ] **HTTP client** for service-to-service calls: timeout, correlation id propagation, attaching the `services` API key (read from Secrets Manager once per execution environment), no automatic retry on non-idempotent methods.
 
@@ -91,6 +91,7 @@ Wraps a REST API.
 - [ ] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
 - [ ] cdk-nag runs in the test suite and fails on unsuppressed findings.
+- [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
 - [ ] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, and the HTTP client's key handling and timeout behavior.
 
 ## Tasks summary
@@ -106,6 +107,7 @@ Wraps a REST API.
 - The platform stack deploys to `dev` and `staging` and its outputs are readable from SSM.
 - The throwaway service shows health, version, a protected route, and an alarm, all created from the constructs with under about thirty lines of stack code.
 - Template tests and cdk-nag pass in CI.
+- The throwaway service's health, version, and error responses validate against the shared spec components.
 - Calling a protected route without an API key is rejected (with the shared error shape), and with a valid key succeeds. An admin-only route rejects the `tests` key.
 
 ## Risks and notes
