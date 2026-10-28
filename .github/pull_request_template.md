@@ -1,6 +1,8 @@
+<!-- Add a link to the Jira ticket at the top -->
+
 ## What and why
 
-<!-- One or two sentences: what this PR changes and the reason. Link the roadmap item or issue if there is one. -->
+<!-- One or two sentences: what this PR changes and the reason. -->
 
 ## How it works
 
@@ -8,7 +10,7 @@
 
 ## How to see it work
 
-<!-- Commands a reviewer can run, with what they should see. For example `uv run poe check`. -->
+<!-- Commands a reviewer can run, with what they should see. For example `npm test`. -->
 
 ## Checks
 
