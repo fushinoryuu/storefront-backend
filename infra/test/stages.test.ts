@@ -1,6 +1,12 @@
 import { RemovalPolicy } from 'aws-cdk-lib';
 import { describe, expect, it } from 'vitest';
-import { getStageConfig, serviceNames, stageNames, stages } from '../lib/config/stages';
+import {
+  UnknownStageError,
+  getStageConfig,
+  serviceNames,
+  stageNames,
+  stages,
+} from '../lib/config/stages';
 
 describe('stage config', () => {
   it('defines every stage under its own name', () => {
@@ -40,6 +46,7 @@ describe('stage config', () => {
   });
 
   it('rejects an unknown or missing stage', () => {
+    expect(() => getStageConfig('prod')).toThrow(UnknownStageError);
     expect(() => getStageConfig('prod')).toThrow(/Unknown stage "prod".*dev, staging/);
     expect(() => getStageConfig(undefined)).toThrow(/Unknown stage "undefined"/);
   });
