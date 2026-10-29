@@ -44,7 +44,7 @@ Mermaid diagrams checked into the repo, kept in sync with the code.
 - [ ] **System overview:** clients, three APIs, data stores, event bus, queues, workflow.
 - [ ] **Place-an-order sequence:** API call, customer validation, write, stream, pipe, event bus, shipping consumer, workflow, events back, order status updates. Annotate where idempotency and retries matter.
 - [ ] **Order and shipment state machines.**
-- [ ] **Deployment pipeline:** pull request checks, deploy to `dev`, promotion to `staging`.
+- [ ] **Deployment pipeline:** pull request checks and deploys to `dev`, a deploy of `prod` on merge to `main`.
 - [ ] **Failure path:** poison message to DLQ to alarm to runbook.
 
 ### 3. Service docs and decisions

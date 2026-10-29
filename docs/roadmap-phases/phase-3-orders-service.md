@@ -31,7 +31,7 @@ The orders service is where DynamoDB design, idempotency, concurrency control, a
 | 4 | Look up a prior request by idempotency key | Idempotency item with TTL |
 | 5 | Update status from a shipment event, guarding against stale updates | Conditional update on the order item |
 
-Suggested design: one table, `PK` and `SK` strings, with the order stored as a single item (`PK = ORDER#<id>`, `SK = META`). Line items are a nested list on the order, which is fine while an order stays far below the 400 KB item limit. Cap items per order in validation. Idempotency records use `PK = IDEM#<key>` with a TTL attribute. On-demand capacity, point-in-time recovery enabled in `staging`, streams enabled with new and old images.
+Suggested design: one table, `PK` and `SK` strings, with the order stored as a single item (`PK = ORDER#<id>`, `SK = META`). Line items are a nested list on the order, which is fine while an order stays far below the 400 KB item limit. Cap items per order in validation. Idempotency records use `PK = IDEM#<key>` with a TTL attribute. On-demand capacity, point-in-time recovery enabled in `prod`, streams enabled with new and old images.
 
 The order and line-item model comes from the draft spec (Phase 0.5), so the table follows the contract. If the table needs a different shape, change the spec first. Write the table design doc first, with the patterns above, key schemas, and what you deliberately did not support. Keep the doc short enough that a reviewer can check each pattern against the schema.
 

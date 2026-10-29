@@ -96,7 +96,7 @@ export function isStageName(value: unknown): value is StageName {
   return stageNames.some((name) => name === value);
 }
 
-export class UnknownStageError extends Error { }
+export class UnknownStageError extends Error {}
 
 export function getStageConfig(stage: unknown): StageConfig {
   if (!isStageName(stage)) {
