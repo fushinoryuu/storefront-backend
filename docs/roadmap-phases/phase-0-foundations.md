@@ -117,7 +117,7 @@ Notes for the harder ones:
 
 ### 7. Minimal CI
 
-- [ ] On every push and pull request: install, lint, typecheck, unit tests, `cdk synth` for both stages.
+- [ ] On every pull request and every push to `main`: install, lint, typecheck, unit tests, `cdk synth` for both stages.
 - [ ] Once Phase 0.5 adds the spec tooling: OpenAPI lint and the bundle step.
 - [ ] No AWS credentials needed yet. Deployment automation arrives in Phase 6.
 
