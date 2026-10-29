@@ -18,7 +18,7 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 | Decision records | `docs/decisions/NNNN-title.md` (0004 is written in Phase 0.5) |
 | Naming and tagging conventions | `docs/conventions.md` |
 | Cost guardrails | AWS Budgets plus `docs/cost.md` |
-| Minimal CI | `.github/workflows/ci.yml` |
+| Minimal CI | `.github/workflows/ci.yaml` |
 
 ## Target repo layout
 

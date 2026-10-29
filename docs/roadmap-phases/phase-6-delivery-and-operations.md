@@ -13,7 +13,7 @@ Make the system deployable by a pipeline instead of by hand, observable when it 
 
 | Deliverable | Location |
 |---|---|
-| CI workflow | `.github/workflows/ci.yml` |
+| CI workflow | `.github/workflows/ci.yaml` |
 | Deploy workflow | `.github/workflows/deploy.yml` |
 | OIDC role setup | `infra/lib/stacks/ci-access-stack.ts` or documented manual setup |
 | Dashboards and alarms | `infra/lib/constructs/` and the service stacks |
