@@ -92,7 +92,7 @@ Write `docs/security.md` with findings and fixes.
 - [ ] Compare actual spend against the budget after a week of use, by tag. Also measure the cost of one deploy-test-destroy run (database capacity while awake, the Secrets Manager endpoint, everything else) and the steady cost of the paused database.
 - [ ] Verify that Aurora actually pauses when idle. Check the capacity metric over a quiet period, and find anything that holds it awake (probes, canaries, open connections, a proxy). The persistent cluster makes this checkable over days, and a run should be followed by a pause after the auto-pause delay.
 - [ ] Check for forgotten resources: log groups without retention, unused snapshots, idle queues, orphaned secrets.
-- [ ] Write and test the teardown procedure: the `cdk destroy` order, what survives destroy, and how to confirm the account is clean. Run it once for real on `dev` and redeploy. Cover both the per-run teardown that keeps the database and the full teardown that removes it.
+- [ ] Write and test the teardown procedure: the `cdk destroy` order, what survives destroy, and how to confirm the account is clean. Run the per-run teardown once for real on `dev` and redeploy. Cover both the per-run teardown, which leaves `prod` and the shared database alone, and the full teardown, which destroys the database stack that `prod` owns and so takes `prod` down until it is redeployed.
 - [ ] A short summary of what costs money when idle and what only costs money when used.
 
 ### 8. Runbooks
