@@ -151,3 +151,6 @@ vite.config.ts.timestamp-*
 
 # Personal scratch list shared with Claude (not part of the repo)
 /TODO.md
+
+# CDK synthesized output
+cdk.out
