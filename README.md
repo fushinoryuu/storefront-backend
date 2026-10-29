@@ -20,6 +20,9 @@ Run these from the repo root:
 | `npm run format:check` | Check formatting with Prettier (`npm run format` fixes it) |
 | `npm run typecheck` | Typecheck the whole repo |
 | `npm test` | Run all tests with vitest |
+| `npm run synth` | Synthesize the CDK app for `dev` and `staging` into `cdk.out/` (no AWS credentials needed) |
+
+The CDK app needs a stage: `npx cdk synth -c stage=dev` or `-c stage=staging`.
 
 ## Layout
 

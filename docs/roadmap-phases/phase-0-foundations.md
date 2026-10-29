@@ -54,7 +54,7 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 - [x] TypeScript strict mode with one root `tsconfig.json`, kept simple (no project references).
 - [x] A Node LTS version pinned in `.nvmrc` and `engines`.
 - [x] ESLint and a formatter, vitest for unit tests, one trivial passing test in each service and package folder.
-- [ ] `aws-cdk-lib` and `constructs` pinned, the CDK CLI as a dev dependency so everyone uses the same version.
+- [x] `aws-cdk-lib` and `constructs` pinned, the CDK CLI as a dev dependency so everyone uses the same version.
 
 ### 2. AWS account and bootstrap
 
@@ -66,11 +66,11 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 
 ### 3. Stages
 
-- [ ] A `stages.ts` file holds a typed config per stage: stack name prefix, removal policy, log retention, Aurora capacity settings, simulated carrier timings, alarm recipients, deletion protection.
+- [x] A `stages.ts` file holds a typed config per stage: stack name prefix, removal policy, log retention, Aurora capacity settings, simulated carrier timings, alarm recipients, deletion protection.
 - [ ] `dev`: everything destroyable (`RemovalPolicy.DESTROY`, no deletion protection), short log retention, Aurora minimum capacity 0. The exception is the database stack, which persists between test runs and has CloudFormation termination protection on, so `cdk destroy --all` cannot remove it by accident.
 - [ ] `staging`: closer to production habits (point-in-time recovery on DynamoDB, deletion protection on the database, longer retention), still easy to tear down on purpose.
 - [ ] Both stages in the same account and region as separate stacks named `Storefront-<stage>-<Service>`, including `Storefront-<stage>-Database`. Document how to move a stage into its own account later.
-- [ ] Mark each stack in `stages.ts` as persistent or per-run. The database stack is persistent, and the rest are destroyed after test runs. A teardown script lists the per-run stacks explicitly instead of destroying everything.
+- [x] Mark each stack in `stages.ts` as persistent or per-run. The database stack is persistent, and the rest are destroyed after test runs. A teardown script lists the per-run stacks explicitly instead of destroying everything.
 
 ### 4. Conventions
 
@@ -117,7 +117,7 @@ Notes for the harder ones:
 
 ### 7. Minimal CI
 
-- [ ] On every pull request and every push to `main`: install, lint, typecheck, unit tests, `cdk synth` for both stages.
+- [x] On every pull request and every push to `main`: install, lint, typecheck, unit tests, `cdk synth` for both stages.
 - [ ] Once Phase 0.5 adds the spec tooling: OpenAPI lint and the bundle step.
 - [ ] No AWS credentials needed yet. Deployment automation arrives in Phase 6.
 
