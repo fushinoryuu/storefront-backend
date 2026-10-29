@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { workspaceName } from '../src/index';
+import { name } from '../src/index';
 
-describe('@storefront/shipping', () => {
+describe('shipping', () => {
   it('loads', () => {
-    expect(workspaceName).toBe('@storefront/shipping');
+    expect(name).toBe('shipping');
   });
 });

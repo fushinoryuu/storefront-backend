@@ -1,1 +1,1 @@
-export const workspaceName = '@storefront/infra';
+export const name = 'infra';

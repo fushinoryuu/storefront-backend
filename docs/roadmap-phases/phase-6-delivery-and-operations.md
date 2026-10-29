@@ -27,7 +27,7 @@ Make the system deployable by a pipeline instead of by hand, observable when it 
 
 Extend the Phase 0 workflow so every pull request runs:
 
-- [ ] Install, lint, typecheck, unit tests for every workspace.
+- [ ] Install, lint, typecheck, unit tests for the whole repo.
 - [ ] Repository tests that need containers (PostgreSQL, DynamoDB Local).
 - [ ] CDK template tests with cdk-nag, and `cdk synth` for both stages.
 - [ ] `cdk diff` against `dev`, posted as a pull request comment, so infrastructure changes are reviewed like code. This needs read-only AWS access through the OIDC role.

@@ -1,1 +1,1 @@
-export const workspaceName = '@storefront/shipping';
+export const name = 'shipping';

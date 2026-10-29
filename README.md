@@ -18,8 +18,8 @@ Run these from the repo root:
 | `npm ci` | Install dependencies from the lockfile |
 | `npm run lint` | Lint with ESLint |
 | `npm run format:check` | Check formatting with Prettier (`npm run format` fixes it) |
-| `npm run typecheck` | Typecheck every workspace |
-| `npm test` | Run the tests of every workspace with vitest |
+| `npm run typecheck` | Typecheck the whole repo |
+| `npm test` | Run all tests with vitest |
 
 ## Layout
 

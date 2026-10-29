@@ -1,1 +1,1 @@
-export const workspaceName = '@storefront/shared';
+export const name = 'shared';
