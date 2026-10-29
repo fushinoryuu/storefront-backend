@@ -12,16 +12,25 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "synth": "npm run synth:dev && npm run synth:staging",
+    "synth:dev": "cdk synth -c stage=dev --output cdk.out/dev --quiet",
+    "synth:staging": "cdk synth -c stage=staging --output cdk.out/staging --quiet"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.19.2",
+    "aws-cdk": "2.1146.1",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.275.0",
+    "constructs": "10.8.1"
   }
 }
