@@ -18,14 +18,14 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 | Decision records | `docs/decisions/NNNN-title.md` (0004 is written in Phase 0.5) |
 | Naming and tagging conventions | `docs/conventions.md` |
 | Cost guardrails | AWS Budgets plus `docs/cost.md` |
-| Minimal CI | `.github/workflows/ci.yml` |
+| Minimal CI | `.github/workflows/ci.yaml` |
 
 ## Target repo layout
 
 ```
 .
 ├── README.md
-├── package.json                  # npm workspaces
+├── package.json                  # single package for the whole repo
 ├── cdk.json
 ├── infra/
 │   ├── bin/storefront.ts         # app entry, builds stacks per stage
@@ -50,10 +50,10 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 
 ### 1. Repo and tooling
 
-- [ ] npm workspaces (or your preferred workspace tool) with one lockfile.
-- [ ] TypeScript strict mode, a shared base `tsconfig`, project references or path aliases kept simple.
-- [ ] A Node LTS version pinned in `.nvmrc` and `engines`.
-- [ ] ESLint and a formatter, vitest for unit tests, one trivial passing test per workspace.
+- [x] One `package.json` and one lockfile for the whole repo. The services and packages are plain folders, not separate npm packages.
+- [x] TypeScript strict mode with one root `tsconfig.json`, kept simple (no project references).
+- [x] A Node LTS version pinned in `.nvmrc` and `engines`.
+- [x] ESLint and a formatter, vitest for unit tests, one trivial passing test in each service and package folder.
 - [ ] `aws-cdk-lib` and `constructs` pinned, the CDK CLI as a dev dependency so everyone uses the same version.
 
 ### 2. AWS account and bootstrap
@@ -89,7 +89,7 @@ Each record: context, options, decision, consequences. One page.
 
 | # | Decision | Options and default |
 |---|---|---|
-| 0001 | Repo layout | Monorepo with workspaces (default) or one repo per service |
+| 0001 | Repo layout | One repo with a single package (default) or one repo per service |
 | 0002 | Stack boundaries | One stack per service plus platform and a persistent database stack (default); platform and database deployed first. Per-run stacks are destroyed after test runs, the database stack is not |
 | 0003 | API type | REST API (decided). Required for API keys and usage plans, which HTTP APIs do not support |
 | 0004 | API definition | Spec-first, OpenAPI 3.0.3 (decided, written in Phase 0.5). The hand-written `openapi.yaml` is the source of truth |
@@ -117,7 +117,7 @@ Notes for the harder ones:
 
 ### 7. Minimal CI
 
-- [ ] On every push and pull request: install, lint, typecheck, unit tests, `cdk synth` for both stages.
+- [ ] On every pull request and every push to `main`: install, lint, typecheck, unit tests, `cdk synth` for both stages.
 - [ ] Once Phase 0.5 adds the spec tooling: OpenAPI lint and the bundle step.
 - [ ] No AWS credentials needed yet. Deployment automation arrives in Phase 6.
 
