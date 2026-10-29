@@ -66,7 +66,7 @@ The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 | `listShipments` | `GET /shipments` | Filters: `orderId`, `status`, cursor pagination |
 | `advanceShipment` | `POST /shipments/{shipmentId}/simulate/advance` | Admin only. Moves the shipment to its next state immediately. Used by tests |
 
-Tags: `shipments`, `simulation`, and the shared `version` tag. The simulation route is enforced in the handler by comparing the caller's API key id with the `admin` key id. Consider disabling the route by configuration in `staging` if you want it to look production-like.
+Tags: `shipments`, `simulation`, and the shared `version` tag. The simulation route is enforced in the handler by comparing the caller's API key id with the `admin` key id. Consider disabling the route by configuration in `prod` if you want it to look production-like.
 
 ## Tasks
 
@@ -87,7 +87,7 @@ Tags: `shipments`, `simulation`, and the shared `version` tag. The simulation ro
 
 ### 3. Lifecycle workflow
 
-- [ ] A Step Functions state machine drives the simulated carrier: wait, mark `PICKED`, wait, mark `SHIPPED`, wait, mark `DELIVERED`. Durations come from stage configuration (seconds in `dev` so end-to-end tests are quick, longer in `staging`).
+- [ ] A Step Functions state machine drives the simulated carrier: wait, mark `PICKED`, wait, mark `SHIPPED`, wait, mark `DELIVERED`. Durations come from stage configuration (seconds in `dev` so end-to-end tests are quick, longer in `prod`).
 - [ ] Each task updates the shipment with a conditional write and publishes the event.
 - [ ] The workflow stops cleanly if the shipment is cancelled, by checking status before each transition.
 - [ ] Execution name derived from the shipment id, so starting the workflow twice does not run it twice.

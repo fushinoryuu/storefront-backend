@@ -32,8 +32,8 @@ The orders service calls the customers API to validate a customer when an order 
 
 ## Decisions already taken
 
-- **Infrastructure:** CDK in TypeScript, one CDK app, one stack per service plus a platform stack and a persistent database stack, deployed per stage (`dev`, `staging`).
-- **Test runs:** deploy, run the tests (including the library project's), then destroy everything except the database stack. The Aurora cluster persists between runs because creating it takes 10 to 15 minutes, and while paused it costs storage only. Termination protection keeps it from being destroyed by accident. Each pull request run uses its own database schema, named from the Jira ticket key in the branch name and dropped after the run with Flyway clean. The `main` schema is never dropped, so there is always one ready for ad hoc testing. Runs are serialized with a concurrency limit so two branches never collide.
+- **Infrastructure:** CDK in TypeScript, one CDK app, one stack per service plus a platform stack and one persistent database stack, deployed per stage. `dev` is where pull request runs deploy, test and tear down. `prod` is a production-like stage deployed from `main` that stays up for ad hoc testing, and it owns the database stack that `dev` shares.
+- **Test runs:** deploy to `dev`, run the tests (including the library project's), then destroy every `dev` stack. The `prod` stage is never destroyed by a test run. It owns the one Aurora cluster, which `dev` shares: creating it takes 10 to 15 minutes, and while paused it costs storage only. Termination protection keeps it from being destroyed by accident. Each pull request run uses its own database schema in that cluster, named from the Jira ticket key in the branch name and dropped after the run with Flyway clean. `prod` uses the `main` schema, which is never dropped, and a PR run's database user cannot touch it. Runs are serialized with a concurrency limit so two branches never collide.
 - **Runtime:** Lambda on Node.js, TypeScript, bundled with esbuild through CDK's `NodejsFunction`. Use a Lambda Node.js runtime that is current when you build this.
 - **Testing:** vitest, matching the library project.
 - **Account and region:** a personal AWS account in `us-west-2`, with a dedicated profile so experiments stay isolated.
@@ -87,7 +87,7 @@ The orders service calls the customers API to validate a customer when an order 
 ### Phase 0: Foundations and decisions
 - [ ] Monorepo skeleton with CDK app, services, shared packages
 - [ ] AWS account setup, CDK bootstrap, budget alarm
-- [ ] Stage configuration for `dev` and `staging`, with the database stack marked persistent
+- [ ] Stage configuration for `dev` and `prod`, with `dev` stacks per-run and every `prod` stack persistent
 - [ ] Decision records for the open choices above
 - [ ] Minimal CI: lint, typecheck, unit tests, `cdk synth`
 
@@ -134,7 +134,7 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Stage manifest, spec versioning process and CI artifact for the library project, planned v1.1.0 and v2.0.0 changes
 
 ### Phase 6: Delivery and operations
-- [ ] CI/CD with OIDC, deploy to `dev`, approval to `staging`, and a deploy-test-destroy mode that keeps only the database
+- [ ] CI/CD with OIDC, PR runs deploy to `dev` and tear down, a merge to `main` deploys `prod` (optionally behind an approval), and a deploy-test-destroy mode that leaves `prod` and its database alone
 - [ ] Dashboards, alarms, tracing
 - [ ] Security and cost review, teardown tested
 - [ ] Runbooks
@@ -149,7 +149,7 @@ The orders service calls the customers API to validate a customer when an order 
 The library project needs from this one:
 
 - Three OpenAPI specs (customers, orders, shipping), stable `operationId` and `tag` values, a shared error schema. Draft v0.1.0 versions are available from Phase 0.5, before anything is deployed, and a mock server driven by the specs can stand in for live endpoints until then. Each spec reaches v1.0.0 when its service ships (Phases 2 to 4).
-- Base URLs for `dev` and `staging` for each service, published as stack outputs or SSM parameters. Because stacks are destroyed after test runs, URLs and keys change on every deploy, so the library reads them from the stage manifest each run instead of using fixed values.
+- Base URLs for `dev` and `prod` for each service, published as stack outputs or SSM parameters. Because the `dev` stacks are destroyed after test runs, their URLs and keys change on every deploy, so the library reads them from the stage manifest each run instead of using fixed values.
 - An API key for the `tests` caller type, and a documented way to retrieve it after deploy. The library sends it in the `x-api-key` header.
 - `GET /version` on every service, so test setup can confirm which build it is testing.
 - A warm-up step or generous timeouts for the first call after Aurora has paused.

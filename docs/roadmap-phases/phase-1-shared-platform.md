@@ -104,7 +104,7 @@ Wraps a REST API.
 
 ## Acceptance criteria
 
-- The platform stack deploys to `dev` and `staging` and its outputs are readable from SSM.
+- The platform stack deploys to `dev` and `prod` and its outputs are readable from SSM.
 - The throwaway service shows health, version, a protected route, and an alarm, all created from the constructs with under about thirty lines of stack code.
 - Template tests and cdk-nag pass in CI.
 - The throwaway service's health, version, and error responses validate against the shared spec components.

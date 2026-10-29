@@ -4,7 +4,7 @@ Make the system deployable by a pipeline instead of by hand, observable when it 
 
 ## Goals
 
-- Automated deployment to `dev` on merge, and gated promotion to `staging`.
+- Pull request runs that deploy to `dev`, test and tear down, and an automated deployment of `prod` on merge to `main`, so a production-like stage is always up.
 - Dashboards and alarms that answer "is it working?" without reading logs.
 - A security and cost review with findings recorded.
 - Runbooks for the failures you actually expect.
@@ -44,15 +44,16 @@ Extend the Phase 0 workflow so every pull request runs:
 
 ### 3. Deployment pipeline
 
-- [ ] On merge to the main branch: deploy to `dev` with the stack order platform, customers, orders, shipping (use stack dependencies so CDK orders them).
-- [ ] After deployment, run the deployed smoke checks and the end-to-end tests against `dev`. A failure marks the deployment as failed and blocks promotion.
-- [ ] Promotion to `staging` behind a manual approval (a protected GitHub environment), running the same checks afterward.
+- [ ] On a pull request: deploy the per-run stacks to `dev` against the shared database stack, run the tests, then tear down (see below). This is the gate before a merge.
+- [ ] On merge to the main branch: deploy to `prod` with the stack order platform, customers, orders, shipping (use stack dependencies so CDK orders them). `prod` is never torn down by a pipeline.
+- [ ] After deployment, run the deployed smoke checks and the end-to-end tests against `prod`. A failure marks the deployment as failed and is reported.
+- [ ] Optional: make the `prod` deployment wait for a manual approval (a protected GitHub environment), to show the pattern. Decide whether the delay is worth it, because it keeps `prod` behind `main` until someone approves.
 - [ ] The key retrieval script runs after deployment and updates the secrets the tests read.
 - [ ] Publish the specs and the stage manifest as artifacts after a successful `dev` deploy (Phase 5).
-- [ ] Concurrency control so two deployments to the same stage never run at once. This also protects the shared database, which every run uses. Use one concurrency group for all runs so pull requests on two branches queue and never collide on stack names. Only one run can wait in a group, so a newer waiting run replaces an older waiting one (check GitHub's current behavior).
-- [ ] Two deploy modes. The fast mode deploys the per-run stacks against the persistent database stack, runs the tests, and destroys the per-run stacks. The full mode also destroys and recreates the database stack (removing its termination protection first), and runs on demand or occasionally to prove a from-scratch deploy still works.
-- [ ] Pull request runs use a database schema named from the Jira ticket key in the branch name. The `main` branch uses the `main` schema, which is never dropped.
-- [ ] The teardown step runs even when the tests fail or the job is cancelled. It first cleans the PR's schema through the Flyway runner, because the runner is destroyed with its stack, then destroys an explicit list of per-run stacks. It never touches the database stack or the `main` schema.
+- [ ] Concurrency control so two deployments to the same stage never run at once. This also protects the shared database, which every run uses, including `prod`. Use one concurrency group for all runs so pull requests on two branches queue and never collide on stack names. Only one run can wait in a group, so a newer waiting run replaces an older waiting one (check GitHub's current behavior).
+- [ ] Two deploy modes. The fast mode deploys the `dev` per-run stacks against the shared database stack, runs the tests, and destroys the per-run stacks. The full mode also destroys and recreates the database stack (removing its termination protection first) and then redeploys `prod`. It runs on demand or occasionally to prove a from-scratch deploy still works, and it takes `prod` down for 10 to 15 minutes and wipes its data.
+- [ ] Pull request runs use a database schema named from the Jira ticket key in the branch name. `prod` uses the `main` schema, which is never dropped.
+- [ ] The teardown step runs even when the tests fail or the job is cancelled. It first cleans the PR's schema through the Flyway runner, because the runner is destroyed with its stack, then destroys an explicit list of the `dev` per-run stacks. It never touches the `prod` stage, the database stack or the `main` schema.
 - [ ] A scheduled cleanup job that finds per-run stacks older than a few hours and destroys them, and drops stale PR schemas through the Data API, so a failed teardown does not keep costing money. The same schema cleanup runs when a pull request closes.
 - [ ] The library project's tests run in the deploy-test-destroy flow. How the two repositories connect (this workflow checking out the library repository, or the library calling a reusable workflow here) is decided once the library repository exists.
 - [ ] Rollback approach documented: CloudFormation rolls back failed deployments automatically, and for a bad but successful deployment you redeploy the previous commit. Note Lambda versions and aliases as a stretch for traffic shifting.
@@ -91,7 +92,7 @@ Write `docs/security.md` with findings and fixes.
 - [ ] Compare actual spend against the budget after a week of use, by tag. Also measure the cost of one deploy-test-destroy run (database capacity while awake, the Secrets Manager endpoint, everything else) and the steady cost of the paused database.
 - [ ] Verify that Aurora actually pauses when idle. Check the capacity metric over a quiet period, and find anything that holds it awake (probes, canaries, open connections, a proxy). The persistent cluster makes this checkable over days, and a run should be followed by a pause after the auto-pause delay.
 - [ ] Check for forgotten resources: log groups without retention, unused snapshots, idle queues, orphaned secrets.
-- [ ] Write and test the teardown procedure: the `cdk destroy` order, what survives destroy, and how to confirm the account is clean. Run it once for real on `dev` and redeploy. Cover both the per-run teardown that keeps the database and the full teardown that removes it.
+- [ ] Write and test the teardown procedure: the `cdk destroy` order, what survives destroy, and how to confirm the account is clean. Run the per-run teardown once for real on `dev` and redeploy. Cover both the per-run teardown, which leaves `prod` and the shared database alone, and the full teardown, which destroys the database stack that `prod` owns and so takes `prod` down until it is redeployed.
 - [ ] A short summary of what costs money when idle and what only costs money when used.
 
 ### 8. Runbooks
@@ -108,8 +109,8 @@ One page each, written for someone woken up by an alarm:
 
 ## Acceptance criteria
 
-- A merge to main deploys `dev` with no manual steps and runs the end-to-end suite against it.
-- Promotion to `staging` requires approval and passes the same checks.
+- A merge to main deploys `prod` with no manual steps (or one approval, if the optional gate is on) and runs the end-to-end suite against it.
+- A pull request run deploys to `dev`, passes the same checks and leaves nothing behind except the shared database stack.
 - CI uses OIDC only, with no stored AWS access keys.
 - Dashboards show the health of every service, and each alarm has been triggered at least once on purpose in `dev` to prove it works.
 - The teardown procedure has been run and the redeploy from scratch succeeds.
