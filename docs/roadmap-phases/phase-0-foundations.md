@@ -50,10 +50,10 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 
 ### 1. Repo and tooling
 
-- [ ] One `package.json` and one lockfile for the whole repo. The services and packages are plain folders, not separate npm packages.
-- [ ] TypeScript strict mode with one root `tsconfig.json`, kept simple (no project references).
-- [ ] A Node LTS version pinned in `.nvmrc` and `engines`.
-- [ ] ESLint and a formatter, vitest for unit tests, one trivial passing test in each service and package folder.
+- [x] One `package.json` and one lockfile for the whole repo. The services and packages are plain folders, not separate npm packages.
+- [x] TypeScript strict mode with one root `tsconfig.json`, kept simple (no project references).
+- [x] A Node LTS version pinned in `.nvmrc` and `engines`.
+- [x] ESLint and a formatter, vitest for unit tests, one trivial passing test in each service and package folder.
 - [ ] `aws-cdk-lib` and `constructs` pinned, the CDK CLI as a dev dependency so everyone uses the same version.
 
 ### 2. AWS account and bootstrap
