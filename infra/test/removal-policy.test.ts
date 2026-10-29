@@ -8,8 +8,8 @@ describe('removalPolicyFor', () => {
     expect(removalPolicyFor(stages.dev)).toBe(RemovalPolicy.DESTROY);
   });
 
-  it('returns the configured policy for staging', () => {
-    expect(removalPolicyFor(stages.staging)).toBe(stages.staging.removalPolicy);
-    expect(removalPolicyFor(stages.staging)).toBe(RemovalPolicy.RETAIN);
+  it('returns the configured policy for prod', () => {
+    expect(removalPolicyFor(stages.prod)).toBe(stages.prod.removalPolicy);
+    expect(removalPolicyFor(stages.prod)).toBe(RemovalPolicy.RETAIN);
   });
 });

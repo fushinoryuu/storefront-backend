@@ -15,20 +15,28 @@ describe('stage config', () => {
     }
   });
 
-  it('marks only the database stack as persistent', () => {
-    for (const name of stageNames) {
-      for (const service of serviceNames) {
-        const expected = service === 'Database' ? 'persistent' : 'per-run';
-        expect(stages[name].stacks[service]).toBe(expected);
-      }
+  it('destroys every dev stack after a run and keeps every prod stack', () => {
+    for (const service of serviceNames) {
+      expect(stages.dev.stacks[service]).toBe(service === 'Database' ? 'external' : 'per-run');
+      expect(stages.prod.stacks[service]).toBe('persistent');
     }
   });
 
-  it('keeps dev destroyable and staging protected', () => {
+  it('shares one Aurora cluster, owned by the stage that deploys the Database stack', () => {
+    for (const name of stageNames) {
+      const owner = stages[stages[name].databaseStage];
+      expect(owner.stacks.Database).toBe('persistent');
+      expect(owner.aurora).not.toBeNull();
+      // A stage has its own capacity settings only if it owns the cluster.
+      expect(stages[name].aurora === null).toBe(stages[name].stacks.Database === 'external');
+    }
+  });
+
+  it('keeps dev destroyable and prod protected', () => {
+    expect(stages.dev.removalPolicy).toBe(RemovalPolicy.DESTROY);
     expect(stages.dev.deletionProtection).toBe(false);
-    expect(stages.dev.aurora.minCapacity).toBe(0);
-    expect(stages.staging.deletionProtection).toBe(true);
-    expect(stages.staging.removalPolicy).not.toBe(RemovalPolicy.DESTROY);
+    expect(stages.prod.deletionProtection).toBe(true);
+    expect(stages.prod.removalPolicy).not.toBe(RemovalPolicy.DESTROY);
   });
 
   it('keeps the carrier timings in order', () => {
@@ -42,12 +50,12 @@ describe('stage config', () => {
   });
 
   it('looks up a stage by name', () => {
-    expect(getStageConfig('staging')).toBe(stages.staging);
+    expect(getStageConfig('prod')).toBe(stages.prod);
   });
 
   it('rejects an unknown or missing stage', () => {
-    expect(() => getStageConfig('prod')).toThrow(UnknownStageError);
-    expect(() => getStageConfig('prod')).toThrow(/Unknown stage "prod".*dev, staging/);
+    expect(() => getStageConfig('staging')).toThrow(UnknownStageError);
+    expect(() => getStageConfig('staging')).toThrow(/Unknown stage "staging".*dev, prod/);
     expect(() => getStageConfig(undefined)).toThrow(/Unknown stage "undefined"/);
   });
 });

@@ -13,9 +13,9 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc",
     "test": "vitest run",
-    "synth": "npm run synth:dev && npm run synth:staging",
+    "synth": "npm run synth:dev && npm run synth:prod",
     "synth:dev": "cdk synth -c stage=dev --output cdk.out/dev --quiet",
-    "synth:staging": "cdk synth -c stage=staging --output cdk.out/staging --quiet"
+    "synth:prod": "cdk synth -c stage=prod --output cdk.out/prod --quiet"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
