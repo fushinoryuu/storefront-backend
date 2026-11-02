@@ -12,15 +12,15 @@ Each service is tested on its own. This phase proves they work together, proves 
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| End-to-end tests | `tests/e2e/` |
-| API conformance setup | `tests/contract/api/` |
-| Event contract tests | `tests/contract/events/` |
-| Seed and reset scripts | `scripts/seed.ts`, `scripts/reset.ts` |
-| Published specs | `specs/` (bundled from `services/*/openapi.yaml` by the Phase 0.5 script) |
-| Spec publishing doc | `docs/spec-handoff.md` (started in Phase 0.5, extended here) |
-| Planned spec changes | `docs/spec-changes/` |
+| Deliverable            | Location                                                                  |
+| ---------------------- | ------------------------------------------------------------------------- |
+| End-to-end tests       | `tests/e2e/`                                                              |
+| API conformance setup  | `tests/contract/api/`                                                     |
+| Event contract tests   | `tests/contract/events/`                                                  |
+| Seed and reset scripts | `scripts/seed.ts`, `scripts/reset.ts`                                     |
+| Published specs        | `specs/` (bundled from `services/*/openapi.yaml` by the Phase 0.5 script) |
+| Spec publishing doc    | `docs/spec-handoff.md` (started in Phase 0.5, extended here)              |
+| Planned spec changes   | `docs/spec-changes/`                                                      |
 
 ## Tasks
 

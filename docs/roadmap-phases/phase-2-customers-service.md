@@ -11,22 +11,22 @@ A relational service: customer profiles with addresses, backed by Aurora Postgre
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Database stack (persistent) | `infra/lib/stacks/database-stack.ts` |
-| Stack (per run) | `infra/lib/stacks/customers-stack.ts` |
-| Service code | `services/customers/src/` |
-| Migrations | `services/customers/migrations/` |
-| OpenAPI spec | `services/customers/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
-| Tests | `services/customers/test/` |
-| Service doc | `docs/services/customers.md` |
+| Deliverable                 | Location                                                                          |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| Database stack (persistent) | `infra/lib/stacks/database-stack.ts`                                              |
+| Stack (per run)             | `infra/lib/stacks/customers-stack.ts`                                             |
+| Service code                | `services/customers/src/`                                                         |
+| Migrations                  | `services/customers/migrations/`                                                  |
+| OpenAPI spec                | `services/customers/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
+| Tests                       | `services/customers/test/`                                                        |
+| Service doc                 | `docs/services/customers.md`                                                      |
 
 ## Data model
 
-| Table | Columns (suggested) | Notes |
-|---|---|---|
-| `customers` | `id` (uuid), `email` (unique, case-insensitive), `first_name`, `last_name`, `phone`, `status` (`active`, `suspended`, `deleted`), `created_at`, `updated_at`, `version` | Soft delete through `status`. Unique index on lowercased email. |
-| `addresses` | `id` (uuid), `customer_id` (foreign key), `type` (`billing`, `shipping`), `line1`, `line2`, `city`, `region`, `postal_code`, `country`, `is_default` | At most one default per customer and type, enforced by a partial unique index. |
+| Table       | Columns (suggested)                                                                                                                                                     | Notes                                                                          |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `customers` | `id` (uuid), `email` (unique, case-insensitive), `first_name`, `last_name`, `phone`, `status` (`active`, `suspended`, `deleted`), `created_at`, `updated_at`, `version` | Soft delete through `status`. Unique index on lowercased email.                |
+| `addresses` | `id` (uuid), `customer_id` (foreign key), `type` (`billing`, `shipping`), `line1`, `line2`, `city`, `region`, `postal_code`, `country`, `is_default`                    | At most one default per customer and type, enforced by a partial unique index. |
 
 Business rules to enforce in the database where possible: unique email, foreign key integrity, one default address per type, `updated_at` maintained consistently.
 
@@ -34,17 +34,17 @@ Business rules to enforce in the database where possible: unique email, foreign 
 
 The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
-| Operation | Method and path | Notes |
-|---|---|---|
-| `createCustomer` | `POST /customers` | 409 on duplicate email, 400 on invalid input |
-| `getCustomer` | `GET /customers/{customerId}` | 404 if missing or deleted |
-| `listCustomers` | `GET /customers` | Cursor pagination, optional `email` and `status` filters |
-| `updateCustomer` | `PATCH /customers/{customerId}` | Optimistic concurrency with `If-Match` or a `version` field |
-| `deleteCustomer` | `DELETE /customers/{customerId}` | Soft delete, idempotent |
-| `addAddress` | `POST /customers/{customerId}/addresses` | |
-| `listAddresses` | `GET /customers/{customerId}/addresses` | |
-| `updateAddress`, `deleteAddress` | `PATCH` and `DELETE /customers/{customerId}/addresses/{addressId}` | |
-| `getReadiness` | `GET /health/ready` | API key required. Runs `SELECT 1`, 503 with retry hint if the database is resuming. The warm-up call |
+| Operation                        | Method and path                                                    | Notes                                                                                                |
+| -------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `createCustomer`                 | `POST /customers`                                                  | 409 on duplicate email, 400 on invalid input                                                         |
+| `getCustomer`                    | `GET /customers/{customerId}`                                      | 404 if missing or deleted                                                                            |
+| `listCustomers`                  | `GET /customers`                                                   | Cursor pagination, optional `email` and `status` filters                                             |
+| `updateCustomer`                 | `PATCH /customers/{customerId}`                                    | Optimistic concurrency with `If-Match` or a `version` field                                          |
+| `deleteCustomer`                 | `DELETE /customers/{customerId}`                                   | Soft delete, idempotent                                                                              |
+| `addAddress`                     | `POST /customers/{customerId}/addresses`                           |                                                                                                      |
+| `listAddresses`                  | `GET /customers/{customerId}/addresses`                            |                                                                                                      |
+| `updateAddress`, `deleteAddress` | `PATCH` and `DELETE /customers/{customerId}/addresses/{addressId}` |                                                                                                      |
+| `getReadiness`                   | `GET /health/ready`                                                | API key required. Runs `SELECT 1`, 503 with retry hint if the database is resuming. The warm-up call |
 
 Tags: `customers`, `addresses`, plus the `version` tag from the shared construct. `getReadiness` goes under the same tag as the shared health routes. Stable `operationId` values matter because the library project turns them into method names.
 

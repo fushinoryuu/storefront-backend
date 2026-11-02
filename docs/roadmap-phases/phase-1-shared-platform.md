@@ -11,14 +11,14 @@ Everything the three services have in common, built once: the event bus, authent
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Platform stack | `infra/lib/stacks/platform-stack.ts` |
-| Reusable constructs | `infra/lib/constructs/` |
-| Shared runtime package | `packages/shared/` |
-| Event schemas and envelope | `packages/events/` |
-| Template tests | `infra/test/` |
-| Platform doc | `docs/platform.md` |
+| Deliverable                | Location                             |
+| -------------------------- | ------------------------------------ |
+| Platform stack             | `infra/lib/stacks/platform-stack.ts` |
+| Reusable constructs        | `infra/lib/constructs/`              |
+| Shared runtime package     | `packages/shared/`                   |
+| Event schemas and envelope | `packages/events/`                   |
+| Template tests             | `infra/test/`                        |
+| Platform doc               | `docs/platform.md`                   |
 
 ## Platform stack
 

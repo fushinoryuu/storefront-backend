@@ -11,25 +11,25 @@ The orders service is where DynamoDB design, idempotency, concurrency control, a
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Stack | `infra/lib/stacks/orders-stack.ts` |
-| Service code | `services/orders/src/` |
-| Product catalog seed | `services/orders/data/products.json` |
-| OpenAPI spec | `services/orders/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
-| Tests | `services/orders/test/` |
-| Table design doc | `docs/services/orders-table-design.md` |
-| Service doc | `docs/services/orders.md` |
+| Deliverable          | Location                                                                       |
+| -------------------- | ------------------------------------------------------------------------------ |
+| Stack                | `infra/lib/stacks/orders-stack.ts`                                             |
+| Service code         | `services/orders/src/`                                                         |
+| Product catalog seed | `services/orders/data/products.json`                                           |
+| OpenAPI spec         | `services/orders/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
+| Tests                | `services/orders/test/`                                                        |
+| Table design doc     | `docs/services/orders-table-design.md`                                         |
+| Service doc          | `docs/services/orders.md`                                                      |
 
 ## Access patterns (design the table from these)
 
-| # | Pattern | Served by |
-|---|---|---|
-| 1 | Get an order by id | Primary key |
-| 2 | List a customer's orders, newest first | GSI1 (customer id, created time) |
-| 3 | List orders by status, newest first (for operations views) | GSI2 (status, created time), optional |
-| 4 | Look up a prior request by idempotency key | Idempotency item with TTL |
-| 5 | Update status from a shipment event, guarding against stale updates | Conditional update on the order item |
+| #   | Pattern                                                             | Served by                             |
+| --- | ------------------------------------------------------------------- | ------------------------------------- |
+| 1   | Get an order by id                                                  | Primary key                           |
+| 2   | List a customer's orders, newest first                              | GSI1 (customer id, created time)      |
+| 3   | List orders by status, newest first (for operations views)          | GSI2 (status, created time), optional |
+| 4   | Look up a prior request by idempotency key                          | Idempotency item with TTL             |
+| 5   | Update status from a shipment event, guarding against stale updates | Conditional update on the order item  |
 
 Suggested design: one table, `PK` and `SK` strings, with the order stored as a single item (`PK = ORDER#<id>`, `SK = META`). Line items are a nested list on the order, which is fine while an order stays far below the 400 KB item limit. Cap items per order in validation. Idempotency records use `PK = IDEM#<key>` with a TTL attribute. On-demand capacity, point-in-time recovery enabled in `prod`, streams enabled with new and old images.
 
@@ -53,13 +53,13 @@ PENDING --> CONFIRMED --> SHIPPED --> DELIVERED
 
 The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
-| Operation | Method and path | Notes |
-|---|---|---|
-| `listProducts` | `GET /products` | Read-only catalog loaded from seed data |
-| `createOrder` | `POST /orders` | Requires `Idempotency-Key` header, validates customer, prices from catalog |
-| `getOrder` | `GET /orders/{orderId}` | |
-| `listOrders` | `GET /orders` | Filters: `customerId` (required unless admin), `status`, cursor pagination |
-| `cancelOrder` | `POST /orders/{orderId}/cancel` | 409 if the state does not allow it |
+| Operation      | Method and path                 | Notes                                                                      |
+| -------------- | ------------------------------- | -------------------------------------------------------------------------- |
+| `listProducts` | `GET /products`                 | Read-only catalog loaded from seed data                                    |
+| `createOrder`  | `POST /orders`                  | Requires `Idempotency-Key` header, validates customer, prices from catalog |
+| `getOrder`     | `GET /orders/{orderId}`         |                                                                            |
+| `listOrders`   | `GET /orders`                   | Filters: `customerId` (required unless admin), `status`, cursor pagination |
+| `cancelOrder`  | `POST /orders/{orderId}/cancel` | 409 if the state does not allow it                                         |
 
 Tags: `orders`, `products`, and the shared `version` tag. Keep `operationId` values stable.
 

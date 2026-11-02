@@ -11,15 +11,15 @@ Make the system deployable by a pipeline instead of by hand, observable when it 
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| CI workflow | `.github/workflows/ci.yaml` |
-| Deploy workflow | `.github/workflows/deploy.yml` |
-| OIDC role setup | `infra/lib/stacks/ci-access-stack.ts` or documented manual setup |
-| Dashboards and alarms | `infra/lib/constructs/` and the service stacks |
-| Security review | `docs/security.md` |
-| Cost review and teardown | `docs/cost.md` |
-| Runbooks | `docs/runbooks/` |
+| Deliverable              | Location                                                         |
+| ------------------------ | ---------------------------------------------------------------- |
+| CI workflow              | `.github/workflows/ci.yaml`                                      |
+| Deploy workflow          | `.github/workflows/deploy.yml`                                   |
+| OIDC role setup          | `infra/lib/stacks/ci-access-stack.ts` or documented manual setup |
+| Dashboards and alarms    | `infra/lib/constructs/` and the service stacks                   |
+| Security review          | `docs/security.md`                                               |
+| Cost review and teardown | `docs/cost.md`                                                   |
+| Runbooks                 | `docs/runbooks/`                                                 |
 
 ## Tasks
 

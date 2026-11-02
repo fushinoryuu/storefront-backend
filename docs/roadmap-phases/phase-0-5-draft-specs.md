@@ -11,16 +11,16 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Shared components | `specs/shared/components.yaml` |
-| Customers draft | `services/customers/openapi.yaml` |
-| Orders draft | `services/orders/openapi.yaml` |
-| Shipping draft | `services/shipping/openapi.yaml` |
-| Bundled standalone copies | `specs/` (produced by a script) |
-| Lint and bundle tooling | `scripts/` and lint config at the repo root |
-| Decision record 0004 | `docs/decisions/0004-api-definition.md` |
-| Hand-off draft | `docs/spec-handoff.md` |
+| Deliverable               | Location                                    |
+| ------------------------- | ------------------------------------------- |
+| Shared components         | `specs/shared/components.yaml`              |
+| Customers draft           | `services/customers/openapi.yaml`           |
+| Orders draft              | `services/orders/openapi.yaml`              |
+| Shipping draft            | `services/shipping/openapi.yaml`            |
+| Bundled standalone copies | `specs/` (produced by a script)             |
+| Lint and bundle tooling   | `scripts/` and lint config at the repo root |
+| Decision record 0004      | `docs/decisions/0004-api-definition.md`     |
+| Hand-off draft            | `docs/spec-handoff.md`                      |
 
 ## Versioning rule
 

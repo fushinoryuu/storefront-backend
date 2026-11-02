@@ -11,16 +11,16 @@ The shipping service has almost no request-driven behavior. It reacts to orders,
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Stack | `infra/lib/stacks/shipping-stack.ts` |
-| Service code | `services/shipping/src/` |
-| State machine definition | `services/shipping/workflow/` or in the stack |
-| Event contracts | `packages/events/src/shipping/` |
-| OpenAPI spec | `services/shipping/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
-| Tests | `services/shipping/test/` |
-| Runbooks | `docs/runbooks/shipping-dlq.md` |
-| Service doc | `docs/services/shipping.md` |
+| Deliverable              | Location                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------- |
+| Stack                    | `infra/lib/stacks/shipping-stack.ts`                                             |
+| Service code             | `services/shipping/src/`                                                         |
+| State machine definition | `services/shipping/workflow/` or in the stack                                    |
+| Event contracts          | `packages/events/src/shipping/`                                                  |
+| OpenAPI spec             | `services/shipping/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
+| Tests                    | `services/shipping/test/`                                                        |
+| Runbooks                 | `docs/runbooks/shipping-dlq.md`                                                  |
+| Service doc              | `docs/services/shipping.md`                                                      |
 
 ## Flow
 
@@ -45,14 +45,14 @@ States: `CREATED`, `PICKED`, `SHIPPED`, `DELIVERED`, `CANCELLED`. Stretch: `DELI
 
 ## Events
 
-| Event | Direction | Notes |
-|---|---|---|
-| `OrderPlaced` | in | Creates the shipment |
-| `OrderCancelled` | in | Cancels the shipment if not yet shipped |
-| `ShipmentCreated` | out | Orders moves to `CONFIRMED` |
-| `ShipmentDispatched` | out | Orders moves to `SHIPPED`, includes carrier name and tracking number (fake) |
-| `ShipmentDelivered` | out | Orders moves to `DELIVERED` |
-| `ShipmentCancelled` | out | Informational |
+| Event                | Direction | Notes                                                                       |
+| -------------------- | --------- | --------------------------------------------------------------------------- |
+| `OrderPlaced`        | in        | Creates the shipment                                                        |
+| `OrderCancelled`     | in        | Cancels the shipment if not yet shipped                                     |
+| `ShipmentCreated`    | out       | Orders moves to `CONFIRMED`                                                 |
+| `ShipmentDispatched` | out       | Orders moves to `SHIPPED`, includes carrier name and tracking number (fake) |
+| `ShipmentDelivered`  | out       | Orders moves to `DELIVERED`                                                 |
+| `ShipmentCancelled`  | out       | Informational                                                               |
 
 Event schemas live in `packages/events`. Every event carries `eventId`, `schemaVersion`, `occurredAt`, `correlationId`, and `producer`.
 
@@ -60,10 +60,10 @@ Event schemas live in `packages/events`. Every event carries `eventId`, `schemaV
 
 The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
-| Operation | Method and path | Notes |
-|---|---|---|
-| `getShipment` | `GET /shipments/{shipmentId}` | |
-| `listShipments` | `GET /shipments` | Filters: `orderId`, `status`, cursor pagination |
+| Operation         | Method and path                                 | Notes                                                                       |
+| ----------------- | ----------------------------------------------- | --------------------------------------------------------------------------- |
+| `getShipment`     | `GET /shipments/{shipmentId}`                   |                                                                             |
+| `listShipments`   | `GET /shipments`                                | Filters: `orderId`, `status`, cursor pagination                             |
 | `advanceShipment` | `POST /shipments/{shipmentId}/simulate/advance` | Admin only. Moves the shipment to its next state immediately. Used by tests |
 
 Tags: `shipments`, `simulation`, and the shared `version` tag. The simulation route is enforced in the handler by comparing the caller's API key id with the `admin` key id. Consider disabling the route by configuration in `prod` if you want it to look production-like.
