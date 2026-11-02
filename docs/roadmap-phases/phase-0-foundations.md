@@ -70,14 +70,14 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 - [ ] `dev`: where pull request runs deploy, test and tear down. Everything is destroyable (`RemovalPolicy.DESTROY`, no deletion protection) with short log retention. It has no database stack of its own: it uses the Aurora cluster owned by `prod`, with one schema per pull request.
 - [ ] `prod`: a production-like stage deployed from `main` and kept up at all times, so there is always something to test against. Every stack is persistent, with `RemovalPolicy.RETAIN`, deletion protection, point-in-time recovery on DynamoDB and longer log retention. It owns the single Aurora cluster (minimum capacity 0 unless ADR 0007 says otherwise) in a database stack with CloudFormation termination protection on, so `cdk destroy --all` cannot remove it by accident. The cluster holds the `main` schema and the PR schemas.
 - [ ] Both stages in the same account and region as separate stacks named `Storefront-<stage>-<Service>`. The one database stack is `Storefront-prod-Database`, and `dev` reads its connection details. Document how to move a stage into its own account later.
-- [x] Mark each stack in `stages.ts` as persistent, per-run or external (owned by another stage). In `dev` every stack except the database is per-run, and in `prod` every stack is persistent. A teardown script lists the per-run stacks explicitly instead of destroying everything.
+- [ ] Mark each stack in `stages.ts` as persistent, per-run or external (owned by another stage). In `dev` every stack except the database is per-run, and in `prod` every stack is persistent. A teardown script lists the per-run stacks explicitly instead of destroying everything.
 
 ### 4. Conventions
 
 Write `docs/conventions.md` once and apply it everywhere:
 
 - [ ] Resource naming: stage and service in every name, no hard-coded physical names where CloudFormation can generate them.
-- [ ] Tags applied by an Aspect: `project`, `stage`, `service`, `owner`.
+- [x] Tags applied by an Aspect: `project`, `stage`, `service`, `owner`.
 - [ ] Log group retention set explicitly on every Lambda.
 - [ ] Event naming: `source` is `storefront.<service>`, `detail-type` is PascalCase past tense (`OrderPlaced`).
 - [ ] Error responses use one shared shape across services (Phase 1).
@@ -118,7 +118,7 @@ Notes for the harder ones:
 ### 7. Minimal CI
 
 - [x] On every pull request and every push to `main`: install, lint, typecheck, unit tests, `cdk synth` for both stages.
-- [ ] Once Phase 0.5 adds the spec tooling: OpenAPI lint and the bundle step.
+- [x] Once Phase 0.5 adds the spec tooling: OpenAPI lint and the bundle step.
 - [ ] No AWS credentials needed yet. Deployment automation arrives in Phase 6.
 
 ## Acceptance criteria

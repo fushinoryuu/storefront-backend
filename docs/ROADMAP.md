@@ -85,15 +85,15 @@ The orders service calls the customers API to validate a customer when an order 
 ## Checklist
 
 ### Phase 0: Foundations and decisions
-- [ ] Monorepo skeleton with CDK app, services, shared packages
+- [x] Monorepo skeleton with CDK app, services, shared packages
 - [ ] AWS account setup, CDK bootstrap, budget alarm
-- [ ] Stage configuration for `dev` and `prod`, with `dev` stacks per-run and every `prod` stack persistent
+- [x] Stage configuration for `dev` and `prod`, with `dev` stacks per-run and every `prod` stack persistent
 - [ ] Decision records for the open choices above
-- [ ] Minimal CI: lint, typecheck, unit tests, `cdk synth`
+- [x] Minimal CI: lint, typecheck, unit tests, `cdk synth`
 
 ### Phase 0.5: Draft OpenAPI specs
 - [ ] Spec conventions, shared components, and the spec-first decision record
-- [ ] Lint and bundle tooling
+- [x] Lint and bundle tooling
 - [ ] Draft v0.1.0 specs for customers, shipping and orders
 - [ ] Hand-off draft and a check with the library project
 

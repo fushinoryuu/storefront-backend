@@ -32,21 +32,21 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 
 ### S.1 Spec conventions and shared components
 
-- [ ] Write decision record 0004: spec-first, with the hand-written `openapi.yaml` as the source of truth. Routes stay defined in CDK, and API Gateway integration extensions stay out of the specs.
-- [ ] Decide how the implementation stays tied to the spec, and record the choice in 0004. Options: (a) runtime validation uses JSON schemas taken from the spec, with tests checking every response against it; (b) types are generated from the spec and runtime validation is kept separate; (c) hand-written Zod schemas for validation, with a test that converts each one to JSON Schema and compares it with the spec; (d) Zod schemas generated from the spec. Zod is a wanted skill for this project, so weigh (c) and (d) seriously. Spec-first stays either way, and a later move to code-first would make Zod generate the spec.
-- [ ] Use OpenAPI 3.0.3 and record it in 0004. It was chosen as the version with the most documentation that Zod 4 (through `z.toJSONSchema` with its `openapi-3.0` target) and the common TypeScript generators support. Moving to 3.1 later is mostly mechanical (for example `nullable` becomes a type array) but touches every spec.
+- [x] Write decision record 0004: spec-first, with the hand-written `openapi.yaml` as the source of truth. Routes stay defined in CDK, and API Gateway integration extensions stay out of the specs.
+- [x] Decide how the implementation stays tied to the spec, and record the choice in 0004. Options: (a) runtime validation uses JSON schemas taken from the spec, with tests checking every response against it; (b) types are generated from the spec and runtime validation is kept separate; (c) hand-written Zod schemas for validation, with a test that converts each one to JSON Schema and compares it with the spec; (d) Zod schemas generated from the spec. Zod is a wanted skill for this project, so weigh (c) and (d) seriously. Spec-first stays either way, and a later move to code-first would make Zod generate the spec.
+- [x] Use OpenAPI 3.0.3 and record it in 0004. It was chosen as the version with the most documentation that Zod 4 (through `z.toJSONSchema` with its `openapi-3.0` target) and the common TypeScript generators support. Moving to 3.1 later is mostly mechanical (for example `nullable` becomes a type array) but touches every spec.
 - [ ] Shared error schema (`type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]`).
 - [ ] `apiKey` security scheme using the `x-api-key` header.
 - [ ] Cursor pagination parameters and a page envelope.
 - [ ] Common responses: 400, 403, 404, 409, 429, 503, all using the shared error schema.
 - [ ] Schemas for `GET /health` and `GET /version` (build id, spec version, stage).
-- [ ] Naming rules for `operationId` (verb plus noun, camelCase) and tags (one per endpoint group, plus the shared `version` tag).
+- [x] Naming rules for `operationId` (verb plus noun, camelCase) and tags (one per endpoint group, plus the shared `version` tag).
 
 ### S.2 Lint and bundle tooling
 
-- [ ] A linter (Spectral or Redocly) with a ruleset that enforces `operationId`, tags, examples, and the shared error schema on every 4xx.
-- [ ] A script that bundles each service spec with its references to the shared file into a standalone file in `specs/`.
-- [ ] Run both locally and in the Phase 0 CI.
+- [x] A linter (Spectral or Redocly) with a ruleset that enforces `operationId`, tags, examples, and the shared error schema on every 4xx.
+- [x] A script that bundles each service spec with its references to the shared file into a standalone file in `specs/`.
+- [x] Run both locally and in the Phase 0 CI.
 
 ### S.3 Customers draft
 
