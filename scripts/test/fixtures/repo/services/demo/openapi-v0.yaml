@@ -1,0 +1,38 @@
+openapi: 3.0.3
+info:
+  title: Demo service operations
+  version: 0.1.0
+security:
+  - apiKey: []
+paths:
+  /v0/health:
+    $ref: '../../specs/shared/paths/health.yaml'
+  /v0/health/ready:
+    get:
+      operationId: getReadiness
+      summary: Check that the database can answer
+      tags: [operations]
+      responses:
+        '200':
+          description: The database answered.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ready]
+              example:
+                status: ready
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
+  /v0/version:
+    $ref: '../../specs/shared/paths/version.yaml'
+components:
+  securitySchemes:
+    apiKey:
+      $ref: '../../specs/shared/components.yaml#/components/securitySchemes/apiKey'

@@ -1,0 +1,30 @@
+get:
+  operationId: getVersion
+  summary: Report the build and the spec versions served
+  tags: [operations]
+  security: []
+  responses:
+    '200':
+      description: The build and the spec versions served.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [buildId, stage, specVersions]
+            properties:
+              buildId:
+                type: string
+              stage:
+                type: string
+              specVersions:
+                type: object
+                additionalProperties:
+                  type: string
+          example:
+            buildId: abc1234
+            stage: dev
+            specVersions:
+              v0: 0.1.0
+              v1: 0.1.0
+    '503':
+      $ref: '../components.yaml#/components/responses/ServiceUnavailable'
