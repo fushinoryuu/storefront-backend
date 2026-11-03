@@ -13,14 +13,16 @@ The plan, decisions and phases are in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 Run these from the repo root:
 
-| Command                | What it does                                                                            |
-| ---------------------- | --------------------------------------------------------------------------------------- |
-| `npm ci`               | Install dependencies from the lockfile                                                  |
-| `npm run lint`         | Lint with ESLint                                                                        |
-| `npm run format:check` | Check formatting with Prettier (`npm run format` fixes it)                              |
-| `npm run typecheck`    | Typecheck the whole repo                                                                |
-| `npm test`             | Run all tests with vitest                                                               |
-| `npm run synth`        | Synthesize the CDK app for `dev` and `prod` into `cdk.out/` (no AWS credentials needed) |
+| Command                | What it does                                                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `npm ci`               | Install dependencies from the lockfile                                                    |
+| `npm run lint`         | Lint with ESLint                                                                          |
+| `npm run format:check` | Check formatting with Prettier (`npm run format` fixes it)                                |
+| `npm run typecheck`    | Typecheck the whole repo                                                                  |
+| `npm test`             | Run all tests with vitest                                                                 |
+| `npm run lint:specs`   | Lint the OpenAPI specs (Redocly plus the project rules in `docs/spec-conventions.md`)     |
+| `npm run bundle:specs` | Write the bundled specs to `specs/` (`-- --check` is what CI runs: fails if one is stale) |
+| `npm run synth`        | Synthesize the CDK app for `dev` and `prod` into `cdk.out/` (no AWS credentials needed)   |
 
 The CDK app needs a stage: `npx cdk synth -c stage=dev` or `-c stage=prod`.
 

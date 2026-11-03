@@ -1,22 +1,11 @@
-import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { hasErrors, lintSpecs } from '../specs/lint';
-import { copyFixture, fixtureRoot } from './support';
+import { fixtureCopies, fixtureRoot } from './support';
 
-const cleanups: (() => Promise<void>)[] = [];
+const fx = fixtureCopies();
 
-afterEach(async () => {
-  await Promise.all(cleanups.splice(0).map((remove) => remove()));
-});
-
-async function editedFixture(file: string, edit: (text: string) => string): Promise<string> {
-  const { dir, remove } = await copyFixture();
-  cleanups.push(remove);
-  const target = path.join(dir, file);
-  await writeFile(target, edit(await readFile(target, 'utf8')));
-  return dir;
-}
+afterEach(() => fx.cleanup());
 
 describe('lintSpecs', () => {
   it('passes the valid fixture repo', async () => {
@@ -35,7 +24,7 @@ describe('lintSpecs', () => {
   });
 
   it('reports a name that promises another prefix', async () => {
-    const dir = await editedFixture('services/demo/openapi-v2.yaml', (text) =>
+    const dir = await fx.edited('services/demo/openapi-v2.yaml', (text) =>
       text.replace('/v2/things', '/v1/things').replace('2.0.0', '1.0.0'),
     );
     const rules = (await lintSpecs(dir)).flatMap(({ findings }) => findings.map((f) => f.rule));
@@ -43,7 +32,7 @@ describe('lintSpecs', () => {
   });
 
   it('reports a missing summary through Redocly', async () => {
-    const dir = await editedFixture('services/demo/openapi.yaml', (text) =>
+    const dir = await fx.edited('services/demo/openapi.yaml', (text) =>
       text.replace('      summary: Get a thing\n', ''),
     );
     const results = await lintSpecs(dir);
@@ -53,7 +42,7 @@ describe('lintSpecs', () => {
   });
 
   it('reports a duplicate operationId through Redocly', async () => {
-    const dir = await editedFixture('services/demo/openapi.yaml', (text) =>
+    const dir = await fx.edited('services/demo/openapi.yaml', (text) =>
       text.replace('operationId: getThing', 'operationId: listThings'),
     );
     const rules = (await lintSpecs(dir)).flatMap(({ findings }) => findings.map((f) => f.rule));
@@ -61,7 +50,7 @@ describe('lintSpecs', () => {
   });
 
   it('reports an example that does not match its schema', async () => {
-    const dir = await editedFixture('services/demo/openapi.yaml', (text) =>
+    const dir = await fx.edited('services/demo/openapi.yaml', (text) =>
       text.replace(
         "                name: Widget\n        '400'",
         "                name: 5\n        '400'",
@@ -72,7 +61,7 @@ describe('lintSpecs', () => {
   });
 
   it('reports a reference that does not resolve', async () => {
-    const dir = await editedFixture('services/demo/openapi.yaml', (text) =>
+    const dir = await fx.edited('services/demo/openapi.yaml', (text) =>
       text.replace('components/responses/NotFound', 'components/responses/Missing'),
     );
     const rules = (await lintSpecs(dir)).flatMap(({ findings }) => findings.map((f) => f.rule));
