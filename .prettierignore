@@ -3,5 +3,4 @@ cdk.out
 coverage
 dist
 package-lock.json
-docs
-*.md
+specs/*-service-v*.yaml

@@ -12,16 +12,16 @@ Make the project easy to understand and trustworthy to a reader who has two minu
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Final README | `README.md` |
-| Architecture and flow diagrams | `docs/architecture.md` (Mermaid) |
-| Per-service docs | `docs/services/` |
-| Finalized decision records | `docs/decisions/` |
-| Demo recording or annotated trace | `docs/demo/` |
-| Measured results | `docs/results.md` |
-| Limitations and next steps | `docs/limitations.md` |
-| Resume bullets and interview notes | kept outside the repo |
+| Deliverable                        | Location                         |
+| ---------------------------------- | -------------------------------- |
+| Final README                       | `README.md`                      |
+| Architecture and flow diagrams     | `docs/architecture.md` (Mermaid) |
+| Per-service docs                   | `docs/services/`                 |
+| Finalized decision records         | `docs/decisions/`                |
+| Demo recording or annotated trace  | `docs/demo/`                     |
+| Measured results                   | `docs/results.md`                |
+| Limitations and next steps         | `docs/limitations.md`            |
+| Resume bullets and interview notes | kept outside the repo            |
 
 ## Tasks
 

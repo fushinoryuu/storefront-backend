@@ -11,14 +11,14 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Repo skeleton | repo root |
-| CDK app skeleton and stage config | `infra/` |
-| Decision records | `docs/decisions/NNNN-title.md` (0004 is written in Phase 0.5) |
-| Naming and tagging conventions | `docs/conventions.md` |
-| Cost guardrails | AWS Budgets plus `docs/cost.md` |
-| Minimal CI | `.github/workflows/ci.yaml` |
+| Deliverable                       | Location                                                      |
+| --------------------------------- | ------------------------------------------------------------- |
+| Repo skeleton                     | repo root                                                     |
+| CDK app skeleton and stage config | `infra/`                                                      |
+| Decision records                  | `docs/decisions/NNNN-title.md` (0004 is written in Phase 0.5) |
+| Naming and tagging conventions    | `docs/conventions.md`                                         |
+| Cost guardrails                   | AWS Budgets plus `docs/cost.md`                               |
+| Minimal CI                        | `.github/workflows/ci.yaml`                                   |
 
 ## Target repo layout
 
@@ -70,14 +70,14 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 - [ ] `dev`: where pull request runs deploy, test and tear down. Everything is destroyable (`RemovalPolicy.DESTROY`, no deletion protection) with short log retention. It has no database stack of its own: it uses the Aurora cluster owned by `prod`, with one schema per pull request.
 - [ ] `prod`: a production-like stage deployed from `main` and kept up at all times, so there is always something to test against. Every stack is persistent, with `RemovalPolicy.RETAIN`, deletion protection, point-in-time recovery on DynamoDB and longer log retention. It owns the single Aurora cluster (minimum capacity 0 unless ADR 0007 says otherwise) in a database stack with CloudFormation termination protection on, so `cdk destroy --all` cannot remove it by accident. The cluster holds the `main` schema and the PR schemas.
 - [ ] Both stages in the same account and region as separate stacks named `Storefront-<stage>-<Service>`. The one database stack is `Storefront-prod-Database`, and `dev` reads its connection details. Document how to move a stage into its own account later.
-- [x] Mark each stack in `stages.ts` as persistent, per-run or external (owned by another stage). In `dev` every stack except the database is per-run, and in `prod` every stack is persistent. A teardown script lists the per-run stacks explicitly instead of destroying everything.
+- [ ] Mark each stack in `stages.ts` as persistent, per-run or external (owned by another stage). In `dev` every stack except the database is per-run, and in `prod` every stack is persistent. A teardown script lists the per-run stacks explicitly instead of destroying everything.
 
 ### 4. Conventions
 
 Write `docs/conventions.md` once and apply it everywhere:
 
 - [ ] Resource naming: stage and service in every name, no hard-coded physical names where CloudFormation can generate them.
-- [ ] Tags applied by an Aspect: `project`, `stage`, `service`, `owner`.
+- [x] Tags applied by an Aspect: `project`, `stage`, `service`, `owner`.
 - [ ] Log group retention set explicitly on every Lambda.
 - [ ] Event naming: `source` is `storefront.<service>`, `detail-type` is PascalCase past tense (`OrderPlaced`).
 - [ ] Error responses use one shared shape across services (Phase 1).
@@ -87,18 +87,18 @@ Write `docs/conventions.md` once and apply it everywhere:
 
 Each record: context, options, decision, consequences. One page.
 
-| # | Decision | Options and default |
-|---|---|---|
-| 0001 | Repo layout | One repo with a single package (default) or one repo per service |
-| 0002 | Stack boundaries and stages | One stack per service plus platform and one persistent database stack (default); platform and database deployed first. Two stages: `dev` for PR runs, whose stacks are destroyed after each run, and `prod`, a production-like stage deployed from `main` that stays up and owns the database stack, shared with `dev` through per-schema database users |
-| 0003 | API type | REST API (decided). Required for API keys and usage plans, which HTTP APIs do not support |
-| 0004 | API definition | Spec-first, OpenAPI 3.0.3 (decided, written in Phase 0.5). The hand-written `openapi.yaml` is the source of truth |
-| 0005 | Auth | API Gateway API keys with usage plans (decided). Separate keys for `tests`, `services`, `admin`. Record the limits and what production would use instead |
-| 0006 | Aurora connectivity and migrations | RDS Data API for the app, and Flyway in an in-VPC container Lambda with a Secrets Manager interface endpoint for migrations (working choice). Alternatives: VPC Lambda with RDS Proxy, a NAT gateway, or a non-Flyway runner over the Data API |
-| 0007 | Aurora scaling and persistence | One shared cluster owned by `prod`, minimum capacity 0 with auto-pause (decide whether `prod` keeps a small nonzero minimum). The cluster persists between test runs in its own stack |
-| 0008 | Event publishing from orders | DynamoDB Streams plus EventBridge Pipes (default) or direct `PutEvents` |
-| 0009 | Service-to-service calls | Orders calls customers synchronously (default) or keeps a customer projection from events |
-| 0010 | Observability toolkit | Powertools for AWS Lambda (TypeScript) or a small in-house layer |
+| #    | Decision                           | Options and default                                                                                                                                                                                                                                                                                                                                      |
+| ---- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0001 | Repo layout                        | One repo with a single package (default) or one repo per service                                                                                                                                                                                                                                                                                         |
+| 0002 | Stack boundaries and stages        | One stack per service plus platform and one persistent database stack (default); platform and database deployed first. Two stages: `dev` for PR runs, whose stacks are destroyed after each run, and `prod`, a production-like stage deployed from `main` that stays up and owns the database stack, shared with `dev` through per-schema database users |
+| 0003 | API type                           | REST API (decided). Required for API keys and usage plans, which HTTP APIs do not support                                                                                                                                                                                                                                                                |
+| 0004 | API definition                     | Spec-first, OpenAPI 3.0.3 (decided, written in Phase 0.5). The hand-written `openapi.yaml` is the source of truth                                                                                                                                                                                                                                        |
+| 0005 | Auth                               | API Gateway API keys with usage plans (decided). Separate keys for `tests`, `services`, `admin`. Record the limits and what production would use instead                                                                                                                                                                                                 |
+| 0006 | Aurora connectivity and migrations | RDS Data API for the app, and Flyway in an in-VPC container Lambda with a Secrets Manager interface endpoint for migrations (working choice). Alternatives: VPC Lambda with RDS Proxy, a NAT gateway, or a non-Flyway runner over the Data API                                                                                                           |
+| 0007 | Aurora scaling and persistence     | One shared cluster owned by `prod`, minimum capacity 0 with auto-pause (decide whether `prod` keeps a small nonzero minimum). The cluster persists between test runs in its own stack                                                                                                                                                                    |
+| 0008 | Event publishing from orders       | DynamoDB Streams plus EventBridge Pipes (default) or direct `PutEvents`                                                                                                                                                                                                                                                                                  |
+| 0009 | Service-to-service calls           | Orders calls customers synchronously (default) or keeps a customer projection from events                                                                                                                                                                                                                                                                |
+| 0010 | Observability toolkit              | Powertools for AWS Lambda (TypeScript) or a small in-house layer                                                                                                                                                                                                                                                                                         |
 
 Notes for the harder ones:
 
@@ -118,7 +118,7 @@ Notes for the harder ones:
 ### 7. Minimal CI
 
 - [x] On every pull request and every push to `main`: install, lint, typecheck, unit tests, `cdk synth` for both stages.
-- [ ] Once Phase 0.5 adds the spec tooling: OpenAPI lint and the bundle step.
+- [x] Once Phase 0.5 adds the spec tooling: OpenAPI lint and the bundle step.
 - [ ] No AWS credentials needed yet. Deployment automation arrives in Phase 6.
 
 ## Acceptance criteria

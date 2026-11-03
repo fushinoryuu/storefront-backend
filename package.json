@@ -13,12 +13,15 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc",
     "test": "vitest run",
+    "lint:specs": "tsx scripts/lint-specs.ts",
+    "bundle:specs": "tsx scripts/bundle-specs.ts",
     "synth": "npm run synth:dev && npm run synth:prod",
     "synth:dev": "cdk synth -c stage=dev --output cdk.out/dev --quiet",
     "synth:prod": "cdk synth -c stage=prod --output cdk.out/prod --quiet"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@redocly/openapi-core": "^2.72.1",
     "@types/node": "^24.19.2",
     "aws-cdk": "2.1146.1",
     "eslint": "^10.13.0",

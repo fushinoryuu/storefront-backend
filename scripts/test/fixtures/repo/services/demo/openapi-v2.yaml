@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: Demo service
+  version: 2.0.0
+security:
+  - apiKey: []
+paths:
+  /v2/things:
+    get:
+      operationId: listThings
+      summary: List things
+      tags: [things]
+      responses:
+        '200':
+          description: All things.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - Widget
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+components:
+  securitySchemes:
+    apiKey:
+      $ref: '../../specs/shared/components.yaml#/components/securitySchemes/apiKey'

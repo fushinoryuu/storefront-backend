@@ -1,0 +1,71 @@
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        correlationId:
+          type: string
+  responses:
+    BadRequest:
+      description: The request is not valid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://example.test/problems/invalid-request
+            title: Invalid request
+            status: 400
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f10
+    Forbidden:
+      description: The API key is missing or not allowed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://example.test/problems/forbidden
+            title: Forbidden
+            status: 403
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f11
+    NotFound:
+      description: The resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://example.test/problems/not-found
+            title: Not found
+            status: 404
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f12
+    ServiceUnavailable:
+      description: The service cannot answer yet.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://example.test/problems/unavailable
+            title: Service unavailable
+            status: 503
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f13

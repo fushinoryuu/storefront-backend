@@ -31,4 +31,8 @@ jobs:
 
       - run: npm test
 
+      - run: npm run lint:specs
+
+      - run: npm run bundle:specs -- --check
+
       - run: npm run synth

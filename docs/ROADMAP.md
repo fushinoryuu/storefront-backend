@@ -8,11 +8,11 @@ This project is the demo target for the spec-driven test client library (see the
 
 ## Architecture at a glance
 
-| Service | Data store | Style | What it does |
-|---|---|---|---|
-| **customers** | Aurora PostgreSQL Serverless v2 | Synchronous REST API | Customer profiles and addresses (relational data, constraints, transactions) |
-| **orders** | DynamoDB | REST API plus events in and out | Places and tracks orders, with a small read-only product catalog |
-| **shipping** | DynamoDB (its own table) | Event driven | Reacts to placed orders, runs a simulated shipment lifecycle, reports status back |
+| Service       | Data store                      | Style                           | What it does                                                                      |
+| ------------- | ------------------------------- | ------------------------------- | --------------------------------------------------------------------------------- |
+| **customers** | Aurora PostgreSQL Serverless v2 | Synchronous REST API            | Customer profiles and addresses (relational data, constraints, transactions)      |
+| **orders**    | DynamoDB                        | REST API plus events in and out | Places and tracks orders, with a small read-only product catalog                  |
+| **shipping**  | DynamoDB (its own table)        | Event driven                    | Reacts to placed orders, runs a simulated shipment lifecycle, reports status back |
 
 Shared platform: a custom EventBridge bus, API Gateway API keys with usage plans for access control, reusable CDK constructs, shared libraries for logging, errors, and event envelopes.
 
@@ -70,34 +70,37 @@ The orders service calls the customers API to validate a customer when an order 
 
 ## Phases
 
-| Phase | Doc | Outcome |
-|---|---|---|
-| 0 | [Foundations and decisions](roadmap-phases/phase-0-foundations.md) | Repo, AWS setup, stages, cost guardrails, decision records |
-| 0.5 | [Draft OpenAPI specs](roadmap-phases/phase-0-5-draft-specs.md) | Spec-first drafts (v0.1.0) of all three APIs for the library project |
-| 1 | [Shared platform](roadmap-phases/phase-1-shared-platform.md) | Event bus, auth, reusable constructs, shared libraries |
-| 2 | [Customers service](roadmap-phases/phase-2-customers-service.md) | Aurora-backed REST API |
-| 3 | [Orders service](roadmap-phases/phase-3-orders-service.md) | DynamoDB-backed REST API that publishes and consumes events |
-| 4 | [Shipping service](roadmap-phases/phase-4-shipping-service.md) | Event-driven shipment lifecycle |
-| 5 | [Integration and contracts](roadmap-phases/phase-5-integration-and-contracts.md) | End-to-end flows, contract tests, published specs |
-| 6 | [Delivery and operations](roadmap-phases/phase-6-delivery-and-operations.md) | CI/CD, observability, security, cost, runbooks |
-| 7 | [Polish](roadmap-phases/phase-7-polish.md) | README, diagrams, demo, resume material |
+| Phase | Doc                                                                              | Outcome                                                              |
+| ----- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 0     | [Foundations and decisions](roadmap-phases/phase-0-foundations.md)               | Repo, AWS setup, stages, cost guardrails, decision records           |
+| 0.5   | [Draft OpenAPI specs](roadmap-phases/phase-0-5-draft-specs.md)                   | Spec-first drafts (v0.1.0) of all three APIs for the library project |
+| 1     | [Shared platform](roadmap-phases/phase-1-shared-platform.md)                     | Event bus, auth, reusable constructs, shared libraries               |
+| 2     | [Customers service](roadmap-phases/phase-2-customers-service.md)                 | Aurora-backed REST API                                               |
+| 3     | [Orders service](roadmap-phases/phase-3-orders-service.md)                       | DynamoDB-backed REST API that publishes and consumes events          |
+| 4     | [Shipping service](roadmap-phases/phase-4-shipping-service.md)                   | Event-driven shipment lifecycle                                      |
+| 5     | [Integration and contracts](roadmap-phases/phase-5-integration-and-contracts.md) | End-to-end flows, contract tests, published specs                    |
+| 6     | [Delivery and operations](roadmap-phases/phase-6-delivery-and-operations.md)     | CI/CD, observability, security, cost, runbooks                       |
+| 7     | [Polish](roadmap-phases/phase-7-polish.md)                                       | README, diagrams, demo, resume material                              |
 
 ## Checklist
 
 ### Phase 0: Foundations and decisions
-- [ ] Monorepo skeleton with CDK app, services, shared packages
+
+- [x] Monorepo skeleton with CDK app, services, shared packages
 - [ ] AWS account setup, CDK bootstrap, budget alarm
-- [ ] Stage configuration for `dev` and `prod`, with `dev` stacks per-run and every `prod` stack persistent
+- [x] Stage configuration for `dev` and `prod`, with `dev` stacks per-run and every `prod` stack persistent
 - [ ] Decision records for the open choices above
-- [ ] Minimal CI: lint, typecheck, unit tests, `cdk synth`
+- [x] Minimal CI: lint, typecheck, unit tests, `cdk synth`
 
 ### Phase 0.5: Draft OpenAPI specs
+
 - [ ] Spec conventions, shared components, and the spec-first decision record
-- [ ] Lint and bundle tooling
+- [x] Lint and bundle tooling
 - [ ] Draft v0.1.0 specs for customers, shipping and orders
 - [ ] Hand-off draft and a check with the library project
 
 ### Phase 1: Shared platform
+
 - [ ] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
 - [ ] Script to retrieve key values after deploy
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
@@ -106,6 +109,7 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] CDK template tests and cdk-nag in the build
 
 ### Phase 2: Customers (Aurora)
+
 - [ ] Schema and Flyway migrations, run on deploy by an in-VPC Lambda
 - [ ] Aurora Serverless v2 cluster with scale to zero, in a persistent database stack
 - [ ] CRUD API for customers and addresses, validation, pagination
@@ -113,6 +117,7 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Implement against the draft spec and release it as v1.0.0
 
 ### Phase 3: Orders (DynamoDB)
+
 - [ ] Access patterns, table design, indexes
 - [ ] Order API with idempotency key and optimistic locking
 - [ ] Customer validation through the customers API
@@ -121,6 +126,7 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Implement against the draft spec and release it as v1.0.0
 
 ### Phase 4: Shipping (event driven)
+
 - [ ] Event rule, SQS queue with DLQ, idempotent consumer
 - [ ] Shipment lifecycle with a configurable simulated carrier
 - [ ] Read API and a protected simulation endpoint
@@ -128,18 +134,21 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Implement against the draft spec and release it as v1.0.0
 
 ### Phase 5: Integration and contracts
+
 - [ ] End-to-end flows, including failure cases
 - [ ] API conformance tests against the specs
 - [ ] Event contract tests for producers and consumers
 - [ ] Stage manifest, spec versioning process and CI artifact for the library project, planned v1.1.0 and v2.0.0 changes
 
 ### Phase 6: Delivery and operations
+
 - [ ] CI/CD with OIDC, PR runs deploy to `dev` and tear down, a merge to `main` deploys `prod` (optionally behind an approval), and a deploy-test-destroy mode that leaves `prod` and its database alone
 - [ ] Dashboards, alarms, tracing
 - [ ] Security and cost review, teardown tested
 - [ ] Runbooks
 
 ### Phase 7: Polish
+
 - [ ] README, diagrams, demo, measured results
 - [ ] Repo hygiene
 - [ ] Resume bullets and interview answers
