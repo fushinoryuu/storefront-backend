@@ -35,4 +35,4 @@ The CDK app needs a stage: `npx cdk synth -c stage=dev` or `-c stage=prod`.
 | `packages/` | `shared` and `events` libraries             |
 | `specs/`    | OpenAPI shared components and bundled specs |
 | `scripts/`  | Helper scripts                              |
-| `docs/`     | Roadmap, phase docs and decision records    |
+| `docs/`     | Roadmap, conventions and decision records   |
