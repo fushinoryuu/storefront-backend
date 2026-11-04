@@ -40,4 +40,4 @@ Pull request runs have to deploy, test and tear down everything they create, qui
 - `dev` stack names are the same on every run, so runs have to be serialized, or two branches would deploy over each other.
 - One shared cluster is a shared failure point. A run's database user must have no access to the `main` schema, so a mistaken clean cannot reach it (ADR 0006).
 - Both stages share an account, so isolation comes from names, tags and permissions, not an account boundary. A full teardown has to remove termination protection from the database stack first.
-- `prod` costs money while it is deployed, even when idle. `docs/cost.md` records how much.
+- `prod` costs money while it is deployed, even when idle. `docs/cost.md` will record how much, once the cost guardrails are written.
