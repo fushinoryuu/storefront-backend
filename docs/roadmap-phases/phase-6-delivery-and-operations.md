@@ -55,7 +55,7 @@ Extend the Phase 0 workflow so every pull request runs:
 - [ ] Pull request runs use a database schema named from the Jira ticket key in the branch name. `prod` uses the `main` schema, which is never dropped.
 - [ ] The teardown step runs even when the tests fail or the job is cancelled. It first cleans the PR's schema through the Flyway runner, because the runner is destroyed with its stack, then destroys an explicit list of the `dev` per-run stacks. It never touches the `prod` stage, the database stack or the `main` schema.
 - [ ] A scheduled cleanup job that finds per-run stacks older than a few hours and destroys them, and drops stale PR schemas through the Data API, so a failed teardown does not keep costing money. The same schema cleanup runs when a pull request closes.
-- [ ] The library project's tests run in the deploy-test-destroy flow. How the two repositories connect (this workflow checking out the library repository, or the library calling a reusable workflow here) is decided once the library repository exists.
+- [ ] The library project's tests run in the deploy-test-destroy flow. How the two repositories connect (this workflow checking out the library repository, or the library calling a reusable workflow here) is still to be decided. Two things to settle with it: the library's runs are not covered by this repository's concurrency group, and both repositories use the same `dev` LaunchDarkly environment and `dev` stacks.
 - [ ] Rollback approach documented: CloudFormation rolls back failed deployments automatically, and for a bad but successful deployment you redeploy the previous commit. Note Lambda versions and aliases as a stretch for traffic shifting.
 - [ ] Alternative: CDK Pipelines instead of GitHub Actions. Record which you chose and why.
 
@@ -70,7 +70,7 @@ Extend the Phase 0 workflow so every pull request runs:
 - [ ] **Alarms** to the SNS topic, with thresholds chosen and written down: API 5xx rate, p95 latency, Lambda error rate, any message in a DLQ, oldest message age, Pipes failures, workflow failures, database connection saturation.
 - [ ] **Tracing:** X-Ray enabled on APIs, functions, and the state machine, with correlation ids searchable in logs.
 - [ ] **Log queries:** saved CloudWatch Logs Insights queries for "follow one correlation id across services" and "errors in the last hour".
-- [ ] **Synthetic check:** a scheduled canary or a scheduled workflow that calls `GET /version` and one authenticated read on each service, and alarms on failure. Keep it from holding the database awake (use the version and health endpoints that do not touch it, plus a rare readiness check).
+- [ ] **Synthetic check:** a scheduled canary or a scheduled workflow that calls `GET /v0/version` and one authenticated read on each service, and alarms on failure. Keep it from holding the database awake (use the version and health endpoints that do not touch it, plus a rare readiness check).
 - [ ] **Custom business metrics** emitted in the embedded metric format: orders placed, orders cancelled, shipment lag.
 
 ### 6. Security review
