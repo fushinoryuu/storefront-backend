@@ -18,6 +18,7 @@ A relational service: customer profiles with addresses, backed by Aurora Postgre
 | Service code                | `services/customers/src/`                                                         |
 | Migrations                  | `services/customers/migrations/`                                                  |
 | OpenAPI spec                | `services/customers/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
+| Operational spec            | `services/customers/openapi-v0.yaml` (health, readiness and version, stays `0.x`) |
 | Tests                       | `services/customers/test/`                                                        |
 | Service doc                 | `docs/services/customers.md`                                                      |
 
@@ -34,19 +35,19 @@ Business rules to enforce in the database where possible: unique email, foreign 
 
 The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
-| Operation                        | Method and path                                                    | Notes                                                                                                |
-| -------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `createCustomer`                 | `POST /customers`                                                  | 409 on duplicate email, 400 on invalid input                                                         |
-| `getCustomer`                    | `GET /customers/{customerId}`                                      | 404 if missing or deleted                                                                            |
-| `listCustomers`                  | `GET /customers`                                                   | Cursor pagination, optional `email` and `status` filters                                             |
-| `updateCustomer`                 | `PATCH /customers/{customerId}`                                    | Optimistic concurrency with `If-Match` or a `version` field                                          |
-| `deleteCustomer`                 | `DELETE /customers/{customerId}`                                   | Soft delete, idempotent                                                                              |
-| `addAddress`                     | `POST /customers/{customerId}/addresses`                           |                                                                                                      |
-| `listAddresses`                  | `GET /customers/{customerId}/addresses`                            |                                                                                                      |
-| `updateAddress`, `deleteAddress` | `PATCH` and `DELETE /customers/{customerId}/addresses/{addressId}` |                                                                                                      |
-| `getReadiness`                   | `GET /health/ready`                                                | API key required. Runs `SELECT 1`, 503 with retry hint if the database is resuming. The warm-up call |
+| Operation                        | Method and path                                                       | Notes                                                                                                            |
+| -------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `createCustomer`                 | `POST /v1/customers`                                                  | 409 on duplicate email (a deleted customer keeps its email), 400 on invalid input                                |
+| `getCustomer`                    | `GET /v1/customers/{customerId}`                                      | 404 if missing or deleted                                                                                        |
+| `listCustomers`                  | `GET /v1/customers`                                                   | Cursor pagination, optional `email` and `status` filters. Deleted customers are left out unless `status=deleted` |
+| `updateCustomer`                 | `PATCH /v1/customers/{customerId}`                                    | Optimistic concurrency with `If-Match` or a `version` field                                                      |
+| `deleteCustomer`                 | `DELETE /v1/customers/{customerId}`                                   | Soft delete, idempotent                                                                                          |
+| `addAddress`                     | `POST /v1/customers/{customerId}/addresses`                           |                                                                                                                  |
+| `listAddresses`                  | `GET /v1/customers/{customerId}/addresses`                            |                                                                                                                  |
+| `updateAddress`, `deleteAddress` | `PATCH` and `DELETE /v1/customers/{customerId}/addresses/{addressId}` |                                                                                                                  |
+| `getReadiness`                   | `GET /v0/health/ready`                                                | API key required. Runs `SELECT 1`, 503 with a `Retry-After` header if the database is resuming. The warm-up call |
 
-Tags: `customers`, `addresses`, plus the `version` tag from the shared construct. `getReadiness` goes under the same tag as the shared health routes. Stable `operationId` values matter because the library project turns them into method names.
+Tags: `customers` and `addresses`. `getReadiness` is in the `/v0` spec with the built-in health and version routes (`getHealth` and `getVersion`), under the shared `operations` tag. Stable `operationId` values matter because the library project turns them into method names.
 
 ## Tasks
 
@@ -73,9 +74,9 @@ Follow decision 0006 from Phase 0. The working choice is the Data API for the ap
 Scale to zero means the first request after idle waits for the database to resume, typically about 15 seconds, and 30 seconds or more after a pause longer than 24 hours.
 
 - [ ] Set Lambda timeouts above the resume time, and note the API integration timeout limit. A limit of roughly 29 seconds (the commonly cited default for REST API integrations) is tight after a long pause, so confirm the current limit and design around it.
-- [ ] Return a clear `503` with a retry hint if the database is not ready, rather than an opaque timeout. Map connection errors in one place.
-- [ ] Provide `GET /health/ready` as the one warm-up and readiness endpoint. It requires an API key, runs `SELECT 1`, and returns 503 with a retry hint if the database is not ready. Test setup and demos use it as the documented warm-up call. Requiring a key keeps anonymous traffic from waking the cluster.
-- [ ] Remember that anything that keeps a connection open, or constant traffic from health checks, prevents pausing. Keep `GET /health` free of database access so alarms and probes do not hold the cluster awake. Only `GET /health/ready` touches the database, and nothing should call it on a schedule more often than rarely.
+- [ ] Return a clear `503` with a `Retry-After` header (in seconds) if the database is not ready, rather than an opaque timeout. Map connection errors in one place.
+- [ ] Provide `GET /v0/health/ready` as the one warm-up and readiness endpoint. It requires an API key, runs `SELECT 1`, and returns 503 with a retry hint if the database is not ready. Test setup and demos use it as the documented warm-up call. Requiring a key keeps anonymous traffic from waking the cluster.
+- [ ] Remember that anything that keeps a connection open, or constant traffic from health checks, prevents pausing. Keep `GET /v0/health` free of database access so alarms and probes do not hold the cluster awake. Only `GET /v0/health/ready` touches the database, and nothing should call it on a schedule more often than rarely.
 - [ ] Add a note in the cost doc on how to verify that the cluster actually pauses when idle.
 
 ### 4. Migrations
@@ -96,9 +97,10 @@ Scale to zero means the first request after idle waits for the database to resum
 - [ ] One handler per operation (or a small router per resource), thin handlers calling a domain layer, repositories behind interfaces.
 - [ ] Input validation with schemas, mapped to the shared error shape.
 - [ ] Cursor-based pagination with an opaque cursor, a maximum page size, and stable ordering.
-- [ ] Email normalization, and a deliberate response on duplicates (409 with the shared error shape).
+- [ ] Email normalization, and a deliberate response on duplicates (409 with the shared error shape). A deleted customer keeps its email, so creating a customer with that email also returns 409.
+- [ ] `listCustomers` leaves out deleted customers by default, and `status=deleted` shows them.
 - [ ] Optimistic concurrency on update.
-- [ ] Access control: API key required on every method except `GET /health` and `GET /version`. `GET /health/ready` requires a key. Both the `tests` and `services` keys may read and write customers. Any admin-only behavior is checked in the handler against the caller's key id.
+- [ ] Access control: API key required on every method except `GET /v0/health` and `GET /v0/version`. `GET /v0/health/ready` requires a key. Both the `tests` and `services` keys may read and write customers. Any admin-only behavior is checked in the handler against the caller's key id.
 - [ ] Correlation id on logs and responses.
 
 ### 6. Events (optional but useful)
@@ -109,8 +111,8 @@ Scale to zero means the first request after idle waits for the database to resum
 
 ### 7. OpenAPI spec
 
-- [ ] Start from the Phase 0.5 draft. If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
-- [ ] Keep what the draft already has: stable `operationId` and `tag` values, the shared error schema on every 4xx response, an `apiKey` security scheme (header `x-api-key`), pagination parameters, examples.
+- [ ] Start from the Phase 0.5 drafts (`openapi.yaml` under `/v1`, and `openapi-v0.yaml`). If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
+- [ ] Keep what the draft already has: stable `operationId` and `tag` values, the `Problem` schema on every 4xx response, an `apiKey` security scheme (header `x-api-key`), pagination parameters, examples.
 - [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
 - [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 

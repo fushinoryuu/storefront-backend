@@ -18,6 +18,7 @@ The shipping service has almost no request-driven behavior. It reacts to orders,
 | State machine definition | `services/shipping/workflow/` or in the stack                                    |
 | Event contracts          | `packages/events/src/shipping/`                                                  |
 | OpenAPI spec             | `services/shipping/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
+| Operational spec         | `services/shipping/openapi-v0.yaml` (health and version, stays `0.x`)            |
 | Tests                    | `services/shipping/test/`                                                        |
 | Runbooks                 | `docs/runbooks/shipping-dlq.md`                                                  |
 | Service doc              | `docs/services/shipping.md`                                                      |
@@ -60,13 +61,13 @@ Event schemas live in `packages/events`. Every event carries `eventId`, `schemaV
 
 The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
-| Operation         | Method and path                                 | Notes                                                                       |
-| ----------------- | ----------------------------------------------- | --------------------------------------------------------------------------- |
-| `getShipment`     | `GET /shipments/{shipmentId}`                   |                                                                             |
-| `listShipments`   | `GET /shipments`                                | Filters: `orderId`, `status`, cursor pagination                             |
-| `advanceShipment` | `POST /shipments/{shipmentId}/simulate/advance` | Admin only. Moves the shipment to its next state immediately. Used by tests |
+| Operation         | Method and path                                    | Notes                                                                                                    |
+| ----------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `getShipment`     | `GET /v1/shipments/{shipmentId}`                   |                                                                                                          |
+| `listShipments`   | `GET /v1/shipments`                                | Filters: `orderId`, `status`, cursor pagination                                                          |
+| `advanceShipment` | `POST /v1/shipments/{shipmentId}/simulate/advance` | Admin only, and gated by a feature flag. Moves the shipment to its next state immediately. Used by tests |
 
-Tags: `shipments`, `simulation`, and the shared `version` tag. The simulation route is enforced in the handler by comparing the caller's API key id with the `admin` key id. Consider disabling the route by configuration in `prod` if you want it to look production-like.
+Tags: `shipments` and `simulation`. The health and version routes (`getHealth` and `getVersion`) are in the `/v0` spec under the shared `operations` tag. The simulation route is enforced in the handler by comparing the caller's API key id with the `admin` key id. It is also gated by a LaunchDarkly flag (Phase 1): the route exists in every stage, and the flag decides whether it works, which also lets `prod` look production-like. What a call returns when the flag is off is documented in the spec.
 
 ## Tasks
 
@@ -104,6 +105,7 @@ Tags: `shipments`, `simulation`, and the shared `version` tag. The simulation ro
 - [ ] Read endpoints with the shared error shape and cursor pagination.
 - [ ] `advanceShipment` runs the next transition through the same code path as the workflow, so tests exercise real logic. Returns 409 if the shipment cannot advance.
 - [ ] Admin-only enforcement and a test proving the `tests` key is rejected.
+- [ ] Gate `advanceShipment` with a feature flag from the flag client. A test covers the flag-off case, using the SDK's test data source.
 
 ### 6. Observability
 
@@ -123,7 +125,7 @@ Write `docs/runbooks/shipping-dlq.md`:
 
 ### 8. OpenAPI spec and event contracts
 
-- [ ] Start from the Phase 0.5 draft, which already has the shared error schema, `apiKey` security scheme, and enums for status. If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
+- [ ] Start from the Phase 0.5 drafts (`openapi.yaml` under `/v1`, and `openapi-v0.yaml`), which already have the `Problem` schema, `apiKey` security scheme, and enums for status. If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
 - [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
 - [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 - [ ] Event schemas published as JSON Schema files generated from the shared definitions, and a changelog file for events.
@@ -150,4 +152,4 @@ Write `docs/runbooks/shipping-dlq.md`:
 - **Retries create duplicates.** At-least-once delivery is the default everywhere. The tests for duplicates are the most important tests in this phase.
 - **Visibility timeout mistakes** cause messages to be processed twice while still in flight. Verify the relationship between timeout values in the CDK tests.
 - **Workflow cost and complexity.** Step Functions is a good fit for a visible lifecycle, but keep the state machine small.
-- **Simulation endpoints in real systems.** It is a test affordance. Note in the docs that production would not expose it.
+- **Simulation endpoints in real systems.** It is a test affordance. Note in the docs that production would not expose it, and that the feature flag is what keeps it off in a production-like stage.

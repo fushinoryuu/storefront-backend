@@ -4,7 +4,7 @@ A small, deliberately realistic backend for a fake online store, built on AWS wi
 
 `storefront` is a placeholder name. Rename it freely.
 
-This project is the demo target for the spec-driven test client library (see the library roadmap). Each service publishes an OpenAPI spec, and the library generates a typed client from each one. Build this project first, starting with the draft specs (Phase 0.5) so the library project can begin before anything is deployed.
+This project is the demo target for the spec-driven test client library, [`spec-driven-test-client`](https://github.com/fushinoryuu/spec-driven-test-client) (see the library roadmap). Each service publishes OpenAPI specs, and the library generates a typed client from each one. Build this project first, starting with the draft specs (Phase 0.5) so the library project can begin before anything is deployed.
 
 ## Architecture at a glance
 
@@ -14,7 +14,7 @@ This project is the demo target for the spec-driven test client library (see the
 | **orders**    | DynamoDB                        | REST API plus events in and out | Places and tracks orders, with a small read-only product catalog                  |
 | **shipping**  | DynamoDB (its own table)        | Event driven                    | Reacts to placed orders, runs a simulated shipment lifecycle, reports status back |
 
-Shared platform: a custom EventBridge bus, API Gateway API keys with usage plans for access control, reusable CDK constructs, shared libraries for logging, errors, and event envelopes.
+Shared platform: a custom EventBridge bus, API Gateway API keys with usage plans for access control, reusable CDK constructs, shared libraries for logging, errors, event envelopes and feature flags (LaunchDarkly).
 
 ```
 Client --> customers API --> Lambda --> Aurora (Serverless v2)
@@ -39,7 +39,9 @@ The orders service calls the customers API to validate a customer when an order 
 - **Account and region:** a personal AWS account in `us-west-2`, with a dedicated profile so experiments stay isolated.
 - **Data stores:** Aurora PostgreSQL Serverless v2 with scale to zero for customers, DynamoDB for orders and shipping. Cost is the priority, and Aurora is the cheapest relational option that keeps foreign keys, constraints and triggers. Aurora DSQL was considered and ruled out because it gives up foreign keys, triggers and the Data API.
 - **Database migrations:** Flyway. Because Flyway connects over JDBC and the database sits in an isolated VPC with no NAT, it runs in a container Lambda inside the VPC, invoked on deploy, with one Secrets Manager interface endpoint for the credentials (about $7 a month while deployed, price still to verify). A NAT gateway would be about $33 a month. The app functions still use the Data API from outside the VPC.
-- **API definition:** spec-first, written as OpenAPI 3.0.3 (the version with the most documentation and the widest Zod and generator support). The hand-written `openapi.yaml` for each service is the source of truth, drafted in Phase 0.5 before any implementation. Routes are still defined in CDK, and the published specs stay free of API Gateway extensions. Drift is caught by validating runtime requests and responses against the spec and by the conformance tests, not by comparing generated files.
+- **API definition:** spec-first, written as OpenAPI 3.0.3 (the version with the most documentation and the widest Zod and generator support). The hand-written specs of each service are the source of truth, drafted in Phase 0.5 before any implementation. Routes are still defined in CDK, and the published specs have no API Gateway extensions and no `servers` entry. Drift is caught by validating runtime requests and responses against the spec and by the conformance tests, not by comparing generated files. The shared error schema is `Problem`. Decision record 0004 has the details.
+- **API versions side by side:** every path starts with a version prefix. Business routes are under `/v1`, and a later major is served next to it under `/v2` (Phase 5 does this for real). The operational routes (`/v0/health`, `/v0/health/ready` and `/v0/version`) live under a reserved `/v0` prefix, in their own small spec per service, so they are defined once. Each prefix is its own spec and its own bundle, `specs/<service>-service-v<N>.yaml`, and `GET /v0/version` reports every prefix a service serves (`specVersions`).
+- **Feature flags:** LaunchDarkly on its free Developer plan, chosen over AWS AppConfig because it is the more common product. Flags are plain booleans, read through a small flag client with in-code defaults, so the code never depends on LaunchDarkly being reachable. There are two LaunchDarkly environments, `dev` (shared by every pull request run) and `prod`. The backend exposes no flag state through its API. The first uses are the shipping simulation endpoint (Phase 4) and the "customers unavailable" test (Phase 5). A decision record in Phase 1 covers the details.
 - **Auth:** API Gateway API keys with usage plans, so there is no separate identity system to build. API keys work only on REST APIs, not HTTP APIs, so all three services use REST APIs. See the next section for what that does and does not give you.
 
 ## Decisions to make early (Phase 0 records them)
@@ -51,7 +53,7 @@ The orders service calls the customers API to validate a customer when an order 
 
 - API keys identify and throttle callers. They are shared secrets with no per-user identity and no scopes. That is fine for a demo and for machine callers such as test suites.
 - Use separate keys per kind of caller: `tests` (test suites and the library project), `services` (service-to-service calls), and `admin` (the shipping simulation endpoint). The platform stack owns the three keys, and each service's usage plan accepts the ones it should. Usage plans carry the throttle and quota limits.
-- Routes set `apiKeyRequired`. `GET /health` and `GET /version` stay open so probes and test setup work without a key.
+- Routes set `apiKeyRequired`. `GET /v0/health` and `GET /v0/version` stay open so probes and test setup work without a key.
 - Usage plans apply per API stage, not per route, so admin-only routes are enforced in the handler by comparing the caller's key id (API Gateway passes it in the request context) with the admin key id.
 - A key's value is not available as a CloudFormation output. Let CDK generate the keys, then retrieve the values after deploy with a small script and store them in Secrets Manager or an untracked local file. Never hard-code a key value, because it would end up in the template and the repo.
 - API Gateway rejects a missing or invalid key with its own 403 response, and throttling returns 429, both outside your error shape. Customize the gateway responses so clients see the shared error shape.
@@ -105,7 +107,8 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Script to retrieve key values after deploy
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
 - [ ] Shared packages: logger, correlation id, error shape, event envelope, idempotency
-- [ ] Every API exposes `GET /health` and `GET /version`
+- [ ] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
+- [ ] Every API exposes `GET /v0/health` and `GET /v0/version`, and `ServiceApi` serves several versions under one API
 - [ ] CDK template tests and cdk-nag in the build
 
 ### Phase 2: Customers (Aurora)
@@ -129,7 +132,7 @@ The orders service calls the customers API to validate a customer when an order 
 
 - [ ] Event rule, SQS queue with DLQ, idempotent consumer
 - [ ] Shipment lifecycle with a configurable simulated carrier
-- [ ] Read API and a protected simulation endpoint
+- [ ] Read API and a protected simulation endpoint, gated by a feature flag
 - [ ] Event contracts and versioning
 - [ ] Implement against the draft spec and release it as v1.0.0
 
@@ -138,7 +141,7 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] End-to-end flows, including failure cases
 - [ ] API conformance tests against the specs
 - [ ] Event contract tests for producers and consumers
-- [ ] Stage manifest, spec versioning process and CI artifact for the library project, planned v1.1.0 and v2.0.0 changes
+- [ ] Stage manifest, spec versioning process and CI artifact for the library project, the planned v1.1.0 change, and a real `/v2` served next to `/v1`
 
 ### Phase 6: Delivery and operations
 
@@ -157,13 +160,14 @@ The orders service calls the customers API to validate a customer when an order 
 
 The library project needs from this one:
 
-- Three OpenAPI specs (customers, orders, shipping), stable `operationId` and `tag` values, a shared error schema. Draft v0.1.0 versions are available from Phase 0.5, before anything is deployed, and a mock server driven by the specs can stand in for live endpoints until then. Each spec reaches v1.0.0 when its service ships (Phases 2 to 4).
+- OpenAPI specs for the three services (customers, orders, shipping), bundled as `specs/<service>-service-v<N>.yaml`: a `/v1` business spec and a `/v0` operational spec for each, and later a `/v2` one. They have stable `operationId` and `tag` values and the shared `Problem` error schema. Draft v0.1.0 versions are available from Phase 0.5, before anything is deployed, and a mock server driven by the specs can stand in for live endpoints until then. Each business spec reaches v1.0.0 when its service ships (Phases 2 to 4). The bundles are on `main` until the CI artifact exists.
 - Base URLs for `dev` and `prod` for each service, published as stack outputs or SSM parameters. Because the `dev` stacks are destroyed after test runs, their URLs and keys change on every deploy, so the library reads them from the stage manifest each run instead of using fixed values.
 - An API key for the `tests` caller type, and a documented way to retrieve it after deploy. The library sends it in the `x-api-key` header.
-- `GET /version` on every service, so test setup can confirm which build it is testing.
-- A warm-up step or generous timeouts for the first call after Aurora has paused.
-- The planned v1.1.0 (non-breaking) and v2.0.0 (breaking) spec changes, so the library demo can be rehearsed.
+- `GET /v0/version` on every service, so test setup can confirm which build it is testing. It reports `specVersions`, keyed by prefix (`v0`, `v1`, `v2`), and the library compares each entry with the `info.version` of the spec whose file suffix matches.
+- A warm-up step or generous timeouts for the first call after Aurora has paused (`GET /v0/health/ready` on customers).
+- The LaunchDarkly project, environment keys and flag keys, but not flag state. The backend exposes no flag state, so the library reads flags from LaunchDarkly itself with a personal API token that has the built-in Reader role.
+- The planned v1.1.0 (non-breaking) spec change and the real `/v2` (breaking changes) served next to `/v1`, so the library demo can be rehearsed. `docs/spec-change-notes.md` has the exact edits.
 
-The api-library repository does not exist yet. The library client check in Phase 0.5 and the cross-repository test workflow in Phase 6 wait until it does, and the library's client generator is still to be chosen (see the Phase 0.5 notes).
+The library repository exists. It generates its clients with hey-api `openapi-ts`, names each spec's version after the bundle file, and raises spec problems as GitHub issues in this repository. The library client check in Phase 0.5 can run as soon as the drafts exist. How the cross-repository test workflow in Phase 6 connects the two repositories is still undecided.
 
 The library roadmap's Phase 1 describes one demo API with an optional second service. With three services available here, you can update that doc to use all three as the multi-service example.
