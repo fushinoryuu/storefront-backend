@@ -76,12 +76,12 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 
 Write `docs/conventions.md` once and apply it everywhere:
 
-- [ ] Resource naming: stage and service in every name, no hard-coded physical names where CloudFormation can generate them.
+- [x] Resource naming: stage and service in every name, no hard-coded physical names where CloudFormation can generate them.
 - [x] Tags applied by an Aspect: `project`, `stage`, `service`, `owner`.
 - [ ] Log group retention set explicitly on every Lambda.
-- [ ] Event naming: `source` is `storefront.<service>`, `detail-type` is PascalCase past tense (`OrderPlaced`).
+- [x] Event naming: `source` is `storefront.<service>`, `detail-type` is PascalCase past tense (`OrderPlaced`).
 - [ ] Error responses use one shared shape across services (Phase 1).
-- [ ] Commit and branch conventions, and how decision records are numbered. Every branch name starts with the Jira ticket key (for example `BEP-123-add-address-api`). Pipelines derive the PR's database schema name from that key: lowercase, hyphen replaced by underscore (`bep_123`), at most 63 bytes. The main branch uses the fixed schema name `main`.
+- [x] Commit and branch conventions, and how decision records are numbered. Every branch name starts with the Jira ticket key (for example `BEP-123-add-address-api`). Pipelines derive the PR's database schema name from that key: lowercase, hyphen replaced by underscore (`bep_123`), at most 63 bytes. The main branch uses the fixed schema name `main`.
 
 ### 5. Decision records
 
