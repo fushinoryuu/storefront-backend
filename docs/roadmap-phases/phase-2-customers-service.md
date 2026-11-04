@@ -53,7 +53,7 @@ Tags: `customers` and `addresses`. `getReadiness` is in the `/v0` spec with the 
 
 ### 1. Connectivity decision and adapter
 
-Follow decision 0006 from Phase 0. The working choice is the Data API for the app functions (outside the VPC) and Flyway in an in-VPC Lambda for migrations. The Data API bullet below applies to the app, and the VPC bullet applies only to the migration runner.
+Follow decision 0006 from Phase 0: the Data API for the app functions (outside the VPC) and Flyway in an in-VPC Lambda for migrations. The Data API bullet below applies to the app, and the VPC bullet applies only to the migration runner.
 
 - [ ] **If using the RDS Data API:** Lambda functions call the Data API with the cluster and secret ARNs, outside a VPC. Write a small `SqlExecutor` interface (`query`, `transaction`) with a Data API implementation for AWS and a `pg` implementation for local and CI tests, so repository code is the same in both. Parameter styles differ (named versus positional), so the adapters translate.
 - [ ] **If using a VPC Lambda:** place functions in isolated or private subnets, add the required endpoints (for example Secrets Manager) without a NAT gateway if possible, and use a connection pool that is created once per execution environment. An RDS Proxy would prevent auto-pause, so accept the cost or give up scale to zero.
@@ -63,7 +63,7 @@ Follow decision 0006 from Phase 0. The working choice is the Data API for the ap
 
 - [ ] Aurora PostgreSQL cluster, Serverless v2, one writer and no readers (readers in failover tiers 0 and 1 keep the cluster from pausing, and a demo does not need them).
 - [ ] Use an engine version that supports scale to zero (PostgreSQL 13.15, 14.12, 15.7, 16.3 or higher at the time of writing). The Data API is available in `us-west-2` for all of these.
-- [ ] Capacity: minimum 0 ACUs with an auto-pause delay chosen per stage (the allowed range is 300 to 86,400 seconds), and a low maximum, so a runaway test cannot scale the cluster up.
+- [ ] Capacity: minimum 0 ACUs with an auto-pause delay of one hour (the allowed range is 300 to 86,400 seconds), and a low maximum, so a runaway test cannot scale the cluster up (decision 0007).
 - [ ] Storage encrypted, credentials generated into Secrets Manager, backup retention minimal, and deletion protection on. The one cluster is owned by `prod`, so its settings follow `prod`; `dev` uses the same cluster.
 - [ ] Network: an isolated VPC with no NAT. The app functions use the Data API and stay outside it. Only the Flyway runner is inside, with one Secrets Manager interface endpoint so it can read the credentials.
 - [ ] Put the VPC, cluster, credentials secret, and the cluster's security group in the persistent database stack (`Storefront-prod-Database`), with termination protection on. The Flyway runner, the Secrets Manager endpoint, and the security group rule that lets the runner reach the database belong to each customers stack. Destroying the per-run `dev` customers stack removes its endpoint cost and rule; the `prod` customers stack keeps its own for as long as it is deployed.
@@ -73,7 +73,7 @@ Follow decision 0006 from Phase 0. The working choice is the Data API for the ap
 
 Scale to zero means the first request after idle waits for the database to resume, typically about 15 seconds, and 30 seconds or more after a pause longer than 24 hours.
 
-- [ ] Set Lambda timeouts above the resume time, and note the API integration timeout limit. A limit of roughly 29 seconds (the commonly cited default for REST API integrations) is tight after a long pause, so confirm the current limit and design around it.
+- [ ] Set Lambda timeouts above the resume time, and note the API integration timeout limit. The default limit of 29 seconds for REST API integrations (decision 0003) is tight after a long pause, so a paused cluster is reported as a 503 instead of waited for (decision 0007).
 - [ ] Return a clear `503` with a `Retry-After` header (in seconds) if the database is not ready, rather than an opaque timeout. Map connection errors in one place.
 - [ ] Provide `GET /v0/health/ready` as the one warm-up and readiness endpoint. It requires an API key, runs `SELECT 1`, and returns 503 with a retry hint if the database is not ready. Test setup and demos use it as the documented warm-up call. Requiring a key keeps anonymous traffic from waking the cluster.
 - [ ] Remember that anything that keeps a connection open, or constant traffic from health checks, prevents pausing. Keep `GET /v0/health` free of database access so alarms and probes do not hold the cluster awake. Only `GET /v0/health/ready` touches the database, and nothing should call it on a schedule more often than rarely.
@@ -85,10 +85,10 @@ Scale to zero means the first request after idle waits for the database to resum
 - [ ] Run Flyway from a container Lambda (or a small Java Lambda using `flyway-core`) inside the VPC, invoked by a CDK `Trigger` after the cluster is ready. It must be safe to run repeatedly and must fail the deployment on error.
 - [ ] The database persists between test runs, so the first connection of a run may hit a paused cluster. Set the connect timeout and Flyway's connect retries above the resume time (30 seconds or more after a long pause).
 - [ ] **Schema per run.** The `prod` stage, deployed from the `main` branch, uses the fixed schema `main`, which is never dropped and is always ready for ad hoc testing. `dev` and `prod` share one cluster, so the database users matter: a pull request run's user can create and clean only PR schemas and has no access to `main`. Every pull request run uses its own schema named from the Jira ticket key in the branch name (`BEP-123` becomes `bep_123`, at most 63 bytes). Because each PR schema starts empty, every PR run also proves the migrations work from scratch, and a branch with different migrations cannot break another branch's history.
-- [ ] The runner Lambda has two actions, `migrate` and `clean`. Flyway disables `clean` by default (`cleanDisabled`), so enable it only for PR schemas. The runner refuses to clean `main` or any name that does not match the PR pattern. `clean` runs after the tests and before the per-run stacks are destroyed, because the runner is part of the customers stack. Check whether `clean` also removes the schema itself when Flyway created it, and drop the schema explicitly if not.
+- [ ] The runner Lambda has two actions, `migrate` and `clean`. Flyway disables `clean` by default (`cleanDisabled`), so enable it only for PR schemas. The runner refuses to clean `main` or any name that does not match the PR pattern. `clean` runs after the tests and before the per-run stacks are destroyed, because the runner is part of the customers stack. `clean` also removes a schema that Flyway created (decision 0006), and the runner checks that the schema is gone and drops it if not.
 - [ ] Safety net for leaked schemas (a crashed or cancelled run): a cleanup job drops stale PR schemas through the Data API with `DROP SCHEMA ... CASCADE`, which needs no VPC runner, and the Flyway history table goes with the schema. Run it on a schedule and when a pull request closes.
-- [ ] Selecting the schema in the app: run each request's statements in a transaction that begins with `SET LOCAL search_path` for the configured schema (check whether the Data API `schema` parameter is enough). The schema name cannot be a bound parameter, so validate it against the PR pattern and never concatenate unchecked input. The `pg` adapter used in tests does the same.
-- [ ] Decide in record 0006 whether the app uses the same database user as the runner or a separate user that Flyway grants rights on each new schema (a callback script).
+- [ ] Selecting the schema in the app: run each request's statements in a transaction that begins with `SET LOCAL search_path` for the configured schema (the Data API `schema` parameter is not supported, see decision 0006). The schema name cannot be a bound parameter, so validate it against the PR pattern and never concatenate unchecked input. The `pg` adapter used in tests does the same.
+- [ ] The app uses its own database user, separate from the runner's, and an `afterMigrate` callback script grants it rights on each new schema (decision 0006).
 - [ ] Migrations are forward-only. Write each so the previous application version still works against the new schema (expand, then contract), because the old Lambda version runs briefly during a deploy.
 - [ ] A test that runs Flyway against an empty PostgreSQL container, applies all migrations, and checks the resulting schema.
 
@@ -106,7 +106,7 @@ Scale to zero means the first request after idle waits for the database to resum
 ### 6. Events (optional but useful)
 
 - [ ] Publish `CustomerCreated`, `CustomerUpdated`, `CustomerDeleted` to the event bus after a successful commit, using the envelope from Phase 1.
-- [ ] Note the limitation: publishing after commit can lose an event if the function fails in between. Record it in the decision record, and keep it as a known tradeoff for a demo (a transactional outbox table with a poller is the robust alternative).
+- [ ] Note the limitation: publishing after commit can lose an event if the function fails in between. Decision 0008 records it, and it stays a known tradeoff for a demo (a transactional outbox table with a poller is the robust alternative).
 - [ ] No other service has to consume these in the baseline. They exist so the event bus carries data from more than one producer.
 
 ### 7. OpenAPI spec

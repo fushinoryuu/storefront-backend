@@ -93,7 +93,7 @@ Tags: `orders` and `products`. The health and version routes (`getHealth` and `g
 - [ ] Return 201 with the order and a `Location` header.
 - [ ] Do not publish the event here. The outbox (below) does it from the table change.
 
-Record the decision to call customers synchronously (decision 0009), and what you would do at larger scale (keep a local customer projection updated by `CustomerCreated` and `CustomerUpdated` events, accepting eventual consistency).
+Decision 0009 records the synchronous call to customers, and what you would do at larger scale (keep a local customer projection updated by `CustomerCreated` and `CustomerUpdated` events, accepting eventual consistency).
 
 ### 4. Concurrency
 
@@ -108,7 +108,7 @@ The change in the table is the source of truth, and events are derived from it, 
 - [ ] A transformation (input template, or a small enrichment function if the template is not enough) that builds the shared event envelope with `eventId`, `occurredAt`, `correlationId` (stored on the order item), and a typed payload.
 - [ ] A dead-letter queue on the pipe, an alarm on it, and a short runbook for redrive.
 - [ ] Remember the delivery guarantees: records stay in the stream for up to 24 hours, and delivery should be treated as at least once. Consumers must tolerate duplicates, and this service's own consumer must too.
-- [ ] Fallback if Pipes proves awkward: publish with `PutEvents` from the handler after the write, and record the small failure window in the decision record.
+- [ ] Fallback if Pipes proves awkward: publish with `PutEvents` from the handler after the write, and add the small failure window to decision 0008.
 
 ### 6. Consumer for shipment events
 
