@@ -53,7 +53,7 @@ Every request body and every response that has a body has an example, including 
 
 ## Pagination
 
-Lists take the `cursor` and `limit` query parameters and return a page envelope with a nullable `nextCursor`.
+Lists take the shared `cursor` and `limit` query parameters (`limit` is 1 to 100 and defaults to 20) and return a page envelope: an object with `items` and a required, nullable `nextCursor` (the shared `NextCursor` schema). A cursor is opaque. OpenAPI 3.0 has no generic schemas, so each list defines its own page schema with that shape.
 
 ## Checking and bundling
 
