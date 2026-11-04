@@ -65,5 +65,5 @@ npm run synth
 - A decision record explains a choice that is costly to reverse or that a later reader would otherwise have to guess. It lives in `docs/decisions/NNNN-short-title.md`.
 - `NNNN` is a four-digit number, the next free one. Numbers are never reused or renumbered. Copy [decisions/0000-template.md](decisions/0000-template.md) to start one.
 - A record has Context, Options, Decision and Consequences, and fits on about one page.
-- The `Status:` line is `proposed`, `accepted on <date>` or `superseded by <number>`.
+- The `Status:` line is `proposed`, `accepted on <date>` or `superseded by <number>`. It may end with a short note, for example `accepted on 2026-11-02. To be revisited after Phase 5.`
 - An accepted record is not rewritten. To change a decision, write a new record that supersedes it and update only the old record's `Status:` line.
