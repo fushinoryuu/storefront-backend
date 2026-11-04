@@ -46,8 +46,8 @@ The orders service calls the customers API to validate a customer when an order 
 
 ## Decisions to make early (Phase 0 records them)
 
-- Aurora connectivity: the working choice is the RDS Data API for the app (no VPC for Lambda, works with scale to zero) plus Flyway in an in-VPC Lambda for migrations. The alternative is Lambda in a VPC with RDS Proxy (conventional, costlier, and RDS Proxy prevents auto-pause). Decision record 0006 confirms or changes this.
-- Event publishing from orders: DynamoDB Streams plus EventBridge Pipes (reliable outbox) or direct `PutEvents` from the handler (simpler, small failure window).
+- Aurora connectivity: the RDS Data API for the app (no VPC for Lambda, works with scale to zero) plus Flyway in an in-VPC Lambda for migrations. The alternative is Lambda in a VPC with RDS Proxy (conventional, costlier, and RDS Proxy prevents auto-pause). Decision record 0006 confirms this, and 0007 covers scaling and persistence.
+- Event publishing from orders: DynamoDB Streams plus EventBridge Pipes (reliable outbox), decided in record 0008. Direct `PutEvents` from the handler (simpler, small failure window) is the fallback, and shipping and customers use it.
 
 ## API key auth: what to know
 
@@ -67,8 +67,14 @@ The orders service calls the customers API to validate a customer when an order 
 - Things that prevent pausing: an associated RDS Proxy, open connections (even idle ones), logical replication, reader instances in failover tiers 0 and 1, and frequent requests that keep it busy. RDS Data API requests resume a paused writer.
 - DynamoDB Streams retain records for up to 24 hours, and EventBridge Pipes can deliver them to an event bus with retries and a dead-letter queue. Treat delivery as at least once and make consumers idempotent.
 - RDS Data API is supported for Aurora PostgreSQL (serverless and provisioned) in `us-west-2` on 13.11+, 14.8+, 15.3+, 16.1+ and 17.4+, per the AWS documentation. Every engine version that supports scale to zero is therefore covered. Recheck when picking the exact engine version.
-- A NAT gateway costs about $0.045 per hour (about $33 a month) plus $0.045 per GB processed, per the AWS pricing page for US East (Ohio). Oregon was not listed. The Secrets Manager interface endpoint estimate of about $7 a month per AZ is from memory and not yet verified.
-- Still to confirm during Phase 0 and Phase 2: the current API Gateway integration timeout for REST APIs (commonly cited as about 29 seconds by default, which a resume after a long pause can approach), and that EventBridge Pipes is available in `us-west-2`.
+- A NAT gateway costs about $0.045 per hour (about $33 a month) plus $0.045 per GB processed, per the AWS pricing page for US East (Ohio). Oregon was not listed.
+- The Data API `ExecuteStatement` reference says of the `schema` parameter: "Currently, the `schema` parameter isn't supported." The app therefore sets the schema itself (ADR 0006). A paused cluster makes the Data API return `DatabaseResumingException` and resume, and a response over 1 MiB ends the call.
+- Flyway's `clean` is disabled by default (`cleanDisabled`, since Flyway 9). It drops all objects in the configured schemas, and drops the schemas themselves when Flyway created them (`createSchemas`, on by default).
+- EventBridge Pipes is available in `us-west-2`: the AWS General Reference lists `pipes.us-west-2.amazonaws.com`, with a limit of 3000 concurrent pipe executions there. A Pipes source for a DynamoDB stream delivers at least once, and AWS suggests a retry maximum age shorter than the stream's retention.
+- The API Gateway integration timeout for REST APIs is 29 seconds by default (ADR 0003).
+- A GitHub Actions concurrency group runs one run at a time and by default keeps at most one waiting run, replacing an older waiting run with a newer one. `queue: max` keeps up to 100 waiting runs and cannot be combined with `cancel-in-progress`.
+- The AWS PrivateLink pricing example for US East uses $0.01 per hour for each interface endpoint in each availability zone (about $7 a month) and $0.01 per GB processed. The AWS Aurora pricing page gives $0.12 per ACU-hour for Aurora Serverless v2 Standard in US East (N. Virginia) as an example.
+- Still to confirm: the `us-west-2` rates for interface endpoints and Aurora ACU-hours (neither is on a page I could read), which Node.js versions Powertools supports, and the price of EventBridge Pipes. `docs/cost.md` should check the rates and the Pipes price when it is written, and the Phase 1 ticket that installs Powertools should check the Node.js versions.
 
 ## Phases
 

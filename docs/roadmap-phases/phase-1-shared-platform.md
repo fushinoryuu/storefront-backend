@@ -74,7 +74,7 @@ Wraps a REST API.
 
 ### `packages/shared`
 
-- [ ] **Logger:** structured JSON, with correlation id, service, stage, and request id on every line. Powertools for AWS Lambda is a candidate (decision 0010).
+- [ ] **Logger:** structured JSON, with correlation id, service, stage, and request id on every line. Powertools for AWS Lambda, wrapped in this package (decision 0010).
 - [ ] **Correlation id:** read from `x-correlation-id` on requests (generate if absent), propagate it to downstream HTTP calls and into event envelopes, return it on responses.
 - [ ] **Error model:** one JSON error shape for every service (for example `type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]` for field validation). Map domain errors to HTTP status codes in one place. The shared error schema is `Problem`, owned by the OpenAPI shared components (Phase 0.5), and this implementation must match it.
 - [ ] **Validation:** a small wrapper that validates input against schemas taken from the OpenAPI spec (as decided in record 0004) and returns the shared error shape.
