@@ -1,0 +1,25 @@
+# Shared path item for GET /v0/health. Each service's /v0 spec references it from `paths`.
+get:
+  operationId: getHealth
+  summary: Check that the service is running
+  description: >-
+    Answers without checking any dependency, so it says only that the service is running. It does
+    not need an API key.
+  tags: [operations]
+  security: []
+  responses:
+    '200':
+      description: The service is running.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [status]
+            properties:
+              status:
+                type: string
+                enum: [ok]
+          example:
+            status: ok
+    '503':
+      $ref: '../components.yaml#/components/responses/ServiceUnavailable'

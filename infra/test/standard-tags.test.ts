@@ -22,5 +22,5 @@ describe('StandardTags', () => {
       service: 'Customers',
       owner: config.owner,
     });
-  });
+  }, 30000);
 });

@@ -67,7 +67,7 @@ The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 | `listShipments`   | `GET /v1/shipments`                                | Filters: `orderId`, `status`, cursor pagination                                                          |
 | `advanceShipment` | `POST /v1/shipments/{shipmentId}/simulate/advance` | Admin only, and gated by a feature flag. Moves the shipment to its next state immediately. Used by tests |
 
-Tags: `shipments` and `simulation`. The health and version routes (`getHealth` and `getVersion`) are in the `/v0` spec under the shared `operations` tag. The simulation route is enforced in the handler by comparing the caller's API key id with the `admin` key id. It is also gated by a LaunchDarkly flag (Phase 1): the route exists in every stage, and the flag decides whether it works, which also lets `prod` look production-like. What a call returns when the flag is off is documented in the spec.
+Tags: `shipments` and `simulation`. The health and version routes (`getHealth` and `getVersion`) are in the `/v0` spec under the shared `operations` tag. The simulation route is enforced in the handler by comparing the caller's API key id with the `admin` key id. It is also gated by a LaunchDarkly flag (Phase 1): the route exists in every stage, and the flag decides whether it works, which also lets `prod` look production-like. When the flag is off, a call answers 404, the same as a route that does not exist (see the spec).
 
 ## Tasks
 

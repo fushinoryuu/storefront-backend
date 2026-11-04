@@ -27,4 +27,4 @@ Guidance for Claude Code in this repo. The rules themselves are in `docs/`; this
 
 ## Before you say it is done
 
-Run what CI runs: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test`, `npm run lint:specs`, `npm run bundle:specs -- --check` and `npm run synth`. Two CDK tests can time out on a slow machine; `npx vitest run --testTimeout=30000` shows whether the failure is only the timeout.
+Run what CI runs: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test`, `npm run lint:specs`, `npm run bundle:specs -- --check` and `npm run synth`.

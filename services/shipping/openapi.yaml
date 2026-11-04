@@ -1,0 +1,196 @@
+openapi: 3.0.3
+info:
+  title: Shipping service
+  version: 0.1.0
+  description: >-
+    Shipments for placed orders. The service creates a shipment when an order is placed and moves it
+    through a simulated carrier, so the API only reads shipments, plus one admin route that moves a
+    shipment along for tests.
+
+
+    This is a draft. It can change until the service is built and matches it.
+security:
+  - apiKey: []
+tags:
+  - name: shipments
+    description: Read shipments.
+  - name: simulation
+    description: Drive the simulated carrier. For tests, and not available in every stage.
+paths:
+  /v1/shipments:
+    get:
+      operationId: listShipments
+      summary: List shipments
+      description: Newest first. A page holds at most `limit` shipments.
+      tags: [shipments]
+      parameters:
+        - name: orderId
+          in: query
+          required: false
+          description: Only the shipment of this order. An order has at most one.
+          schema:
+            type: string
+          example: ord_5b8a2e1c
+        - name: status
+          in: query
+          required: false
+          description: Only shipments in this status.
+          schema:
+            $ref: '#/components/schemas/ShipmentStatus'
+          example: SHIPPED
+        - $ref: '../../specs/shared/components.yaml#/components/parameters/Cursor'
+        - $ref: '../../specs/shared/components.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: One page of shipments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentPage'
+              example:
+                items:
+                  - shipmentId: shp_2f9c41d7
+                    orderId: ord_5b8a2e1c
+                    status: SHIPPED
+                    carrier: Fakeship
+                    trackingNumber: FS0000123456
+                    createdAt: '2026-11-02T17:48:58Z'
+                    updatedAt: '2026-11-02T17:52:10Z'
+                nextCursor: null
+        '400':
+          $ref: '../../specs/shared/components.yaml#/components/responses/BadRequest'
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '429':
+          $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+  /v1/shipments/{shipmentId}:
+    get:
+      operationId: getShipment
+      summary: Get a shipment
+      tags: [shipments]
+      parameters:
+        - $ref: '#/components/parameters/ShipmentId'
+      responses:
+        '200':
+          description: The shipment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+              example:
+                shipmentId: shp_2f9c41d7
+                orderId: ord_5b8a2e1c
+                status: CREATED
+                carrier: null
+                trackingNumber: null
+                createdAt: '2026-11-02T17:48:58Z'
+                updatedAt: '2026-11-02T17:48:58Z'
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
+        '429':
+          $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+  /v1/shipments/{shipmentId}/simulate/advance:
+    post:
+      operationId: advanceShipment
+      summary: Move a shipment to its next status
+      description: >-
+        Moves the shipment to its next status right away, through the same code as the simulated
+        carrier (`CREATED` to `PICKED`, `PICKED` to `SHIPPED`, `SHIPPED` to `DELIVERED`). Tests use
+        it so they do not wait for the carrier.
+
+
+        **Admin only.** Only the `admin` API key may call it, and any other key gets a 403.
+
+
+        **Switched by a feature flag.** The route exists in every stage, and a flag decides whether
+        it works. When the flag is off, the route answers 404, the same as a route that does not
+        exist, with the problem type `https://storefront.example/problems/not-found`. The API does
+        not report the flag.
+
+
+        A shipment that is `DELIVERED` or `CANCELLED` cannot advance, and the answer is 409.
+      tags: [simulation]
+      parameters:
+        - $ref: '#/components/parameters/ShipmentId'
+      responses:
+        '200':
+          description: The shipment, in its new status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+              example:
+                shipmentId: shp_2f9c41d7
+                orderId: ord_5b8a2e1c
+                status: PICKED
+                carrier: null
+                trackingNumber: null
+                createdAt: '2026-11-02T17:48:58Z'
+                updatedAt: '2026-11-02T17:50:03Z'
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
+        '409':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
+        '429':
+          $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+components:
+  securitySchemes:
+    apiKey:
+      $ref: '../../specs/shared/components.yaml#/components/securitySchemes/apiKey'
+  parameters:
+    ShipmentId:
+      name: shipmentId
+      in: path
+      required: true
+      description: The id of the shipment.
+      schema:
+        type: string
+      example: shp_2f9c41d7
+  schemas:
+    ShipmentStatus:
+      type: string
+      description: >-
+        Where the shipment is. It moves forward through `CREATED`, `PICKED`, `SHIPPED` and
+        `DELIVERED`. It can become `CANCELLED` until it is `SHIPPED`, and then it stays there.
+      enum: [CREATED, PICKED, SHIPPED, DELIVERED, CANCELLED]
+    Shipment:
+      type: object
+      required: [shipmentId, orderId, status, carrier, trackingNumber, createdAt, updatedAt]
+      properties:
+        shipmentId:
+          type: string
+          description: The id of the shipment.
+        orderId:
+          type: string
+          description: The order this shipment is for. An order has at most one shipment.
+        status:
+          $ref: '#/components/schemas/ShipmentStatus'
+        carrier:
+          type: string
+          nullable: true
+          description: The simulated carrier. It is null until the shipment is `SHIPPED`.
+        trackingNumber:
+          type: string
+          nullable: true
+          description: A made-up tracking number. It is null until the shipment is `SHIPPED`.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the status last changed.
+    ShipmentPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shipment'
+        nextCursor:
+          $ref: '../../specs/shared/components.yaml#/components/schemas/NextCursor'

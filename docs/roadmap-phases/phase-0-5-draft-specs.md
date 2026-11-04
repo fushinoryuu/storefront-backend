@@ -42,11 +42,11 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 - [x] Decide how the implementation stays tied to the spec, and record the choice in 0004. Options: (a) runtime validation uses JSON schemas taken from the spec, with tests checking every response against it; (b) types are generated from the spec and runtime validation is kept separate; (c) hand-written Zod schemas for validation, with a test that converts each one to JSON Schema and compares it with the spec; (d) Zod schemas generated from the spec. Zod is a wanted skill for this project, so weigh (c) and (d) seriously. Spec-first stays either way, and a later move to code-first would make Zod generate the spec.
 - [x] Use OpenAPI 3.0.3 and record it in 0004. It was chosen as the version with the most documentation that Zod 4 (through `z.toJSONSchema` with its `openapi-3.0` target) and the common TypeScript generators support. Moving to 3.1 later is mostly mechanical (for example `nullable` becomes a type array) but touches every spec.
 - [x] Write the rules down in `docs/spec-conventions.md`: the files, the `/v<N>` prefixes, no `servers` entry, `nullable: true` for nullable fields, a `discriminator` wherever `oneOf` or `anyOf` is used, an example on every request body and response, and the `apiKey` security rule.
-- [ ] Shared error schema named `Problem` (`type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]`). It is not called `Error`, which collides with the JavaScript global in generated TypeScript.
-- [ ] `apiKey` security scheme using the `x-api-key` header.
-- [ ] Cursor pagination: the `cursor` and `limit` query parameters, and a page envelope with a nullable `nextCursor`.
-- [ ] Common responses: 400, 403, 404, 409, 429, 503, all using `Problem`. The 503 documents a `Retry-After` header in seconds.
-- [ ] Shared path items for `GET /v0/health` and `GET /v0/version`. The version response reports the build id, the stage and `specVersions`, an object keyed by prefix whose keys equal the bundle file suffixes (`v0`, `v1`, `v2`).
+- [x] Shared error schema named `Problem` (`type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]`). It is not called `Error`, which collides with the JavaScript global in generated TypeScript.
+- [x] `apiKey` security scheme using the `x-api-key` header.
+- [x] Cursor pagination: the `cursor` and `limit` query parameters, and a page envelope with a nullable `nextCursor`.
+- [x] Common responses: 400, 403, 404, 409, 429, 503, all using `Problem`. The 503 documents a `Retry-After` header in seconds.
+- [x] Shared path items for `GET /v0/health` and `GET /v0/version`. The version response reports the build id, the stage and `specVersions`, an object keyed by prefix whose keys equal the bundle file suffixes (`v0`, `v1`, `v2`).
 - [x] Naming rules for `operationId` (verb plus noun, camelCase) and tags (one per endpoint group, plus the shared `operations` tag for the `/v0` routes).
 
 ### S.2 Lint and bundle tooling
@@ -64,9 +64,9 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 
 ### S.4 Shipping draft
 
-- [ ] `getShipment`, `listShipments` (filters `orderId`, `status`), and `advanceShipment` in `openapi.yaml`, under `/v1`, plus `openapi-v0.yaml` with health and version.
-- [ ] `Shipment` and the status enum (`CREATED`, `PICKED`, `SHIPPED`, `DELIVERED`, `CANCELLED`).
-- [ ] Note in the description of `advanceShipment` that it is admin-only, returns 409 when the shipment cannot advance, and is gated by a feature flag. Decide what a call returns when the flag is off, and document it.
+- [x] `getShipment`, `listShipments` (filters `orderId`, `status`), and `advanceShipment` in `openapi.yaml`, under `/v1`, plus `openapi-v0.yaml` with health and version.
+- [x] `Shipment` and the status enum (`CREATED`, `PICKED`, `SHIPPED`, `DELIVERED`, `CANCELLED`).
+- [x] Note in the description of `advanceShipment` that it is admin-only, returns 409 when the shipment cannot advance, and is gated by a feature flag. When the flag is off, it answers 404, the same as a route that does not exist.
 
 ### S.5 Orders draft
 

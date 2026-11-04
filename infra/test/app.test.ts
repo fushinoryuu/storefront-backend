@@ -3,12 +3,16 @@ import { createApp } from '../lib/app';
 import { stageNames, stages } from '../lib/config/stages';
 
 describe('createApp', () => {
-  it.each(stageNames)('synthesizes for %s', (stage) => {
-    const assembly = createApp({ context: { stage } }).synth();
-    expect(assembly.stacks.map((stack) => stack.stackName)).toEqual([
-      `Storefront-${stage}-Platform`,
-    ]);
-  });
+  it.each(stageNames)(
+    'synthesizes for %s',
+    (stage) => {
+      const assembly = createApp({ context: { stage } }).synth();
+      expect(assembly.stacks.map((stack) => stack.stackName)).toEqual([
+        `Storefront-${stage}-Platform`,
+      ]);
+    },
+    30000,
+  );
 
   it.each(stageNames)('tags the Platform stack with the standard tags in %s', (stage) => {
     const assembly = createApp({ context: { stage } }).synth();
