@@ -1,0 +1,39 @@
+# Shared path item for GET /v0/version. Each service's /v0 spec references it from `paths`.
+get:
+  operationId: getVersion
+  summary: Report the build and the spec versions served
+  description: >-
+    Reports what is deployed. A caller can compare `specVersions` with the `info.version` of the
+    specs it was built from. It does not need an API key.
+  tags: [operations]
+  security: []
+  responses:
+    '200':
+      description: The build and the spec versions served.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [buildId, stage, specVersions]
+            properties:
+              buildId:
+                type: string
+                description: Identifies the build that is deployed (the commit it was built from).
+              stage:
+                type: string
+                description: The stage this deployment belongs to.
+              specVersions:
+                type: object
+                description: >-
+                  The `info.version` of each spec the service serves. The keys are the version
+                  prefixes, which are also the suffixes of the bundle files (`v0`, `v1`, `v2`).
+                additionalProperties:
+                  type: string
+          example:
+            buildId: 7768f92
+            stage: dev
+            specVersions:
+              v0: 0.1.0
+              v1: 0.1.0
+    '503':
+      $ref: '../components.yaml#/components/responses/ServiceUnavailable'

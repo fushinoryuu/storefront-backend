@@ -1,0 +1,178 @@
+# Components shared by every service spec. Referenced with relative $refs, never edited in a bundle.
+# See docs/spec-conventions.md.
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: >-
+        An API key. There are three kinds (`tests`, `services` and `admin`), and each route accepts
+        the ones it should. The key values are not in this repository.
+
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: >-
+        Where to continue a list. Pass the `nextCursor` of the previous page, unchanged. Leave it
+        out to start at the beginning. The value is opaque and its format can change.
+      schema:
+        type: string
+        minLength: 1
+      example: eyJsYXN0IjoiMmY5YzQifQ
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: The most items to return in one page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+
+  schemas:
+    Problem:
+      type: object
+      description: >-
+        The error shape of every service, including the responses API Gateway produces itself. It
+        follows RFC 9457 (problem details), plus a correlation id.
+      required: [type, title, status, correlationId]
+      properties:
+        type:
+          type: string
+          description: A URI that names the kind of problem. The same kind always has the same value.
+          example: https://storefront.example/problems/not-found
+        title:
+          type: string
+          description: A short summary of the kind of problem. It does not change between occurrences.
+          example: Not found
+        status:
+          type: integer
+          description: The HTTP status code of the response.
+          example: 404
+        detail:
+          type: string
+          description: What went wrong this time, for a person reading it.
+          example: There is no shipment with this id.
+        correlationId:
+          type: string
+          description: >-
+            Identifies the request in the logs of every service. It is the `x-correlation-id` request
+            header, or a generated value when the header was missing.
+          example: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f10
+        errors:
+          type: array
+          description: The fields that failed validation. Only validation errors (400) have it.
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: The field that failed, as a path in the request (`limit`, `items[0].quantity`).
+          example: limit
+        message:
+          type: string
+          description: Why the value was not accepted.
+          example: must be at most 100
+    NextCursor:
+      type: string
+      nullable: true
+      description: >-
+        The cursor of the next page, or null on the last page. A list response is an object with
+        `items` and a required `nextCursor` of this type, and the list's operation names the item
+        schema.
+      example: eyJsYXN0IjoiMmY5YzQifQ
+
+  responses:
+    BadRequest:
+      description: The request is not valid. `errors` lists the fields that failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://storefront.example/problems/invalid-request
+            title: Invalid request
+            status: 400
+            detail: One or more fields are not valid.
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f10
+            errors:
+              - field: limit
+                message: must be at most 100
+    Forbidden:
+      description: >-
+        The API key is missing, or it is not allowed to call this route. API Gateway produces this
+        response when the key is missing or unknown.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://storefront.example/problems/forbidden
+            title: Forbidden
+            status: 403
+            detail: The API key is missing or not allowed.
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f11
+    NotFound:
+      description: The resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://storefront.example/problems/not-found
+            title: Not found
+            status: 404
+            detail: There is no resource with this id.
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f12
+    Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://storefront.example/problems/conflict
+            title: Conflict
+            status: 409
+            detail: The resource is not in a state that allows this.
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f13
+    TooManyRequests:
+      description: >-
+        The key has used up its rate or quota. API Gateway produces this response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://storefront.example/problems/too-many-requests
+            title: Too many requests
+            status: 429
+            detail: The rate limit for this API key was reached.
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f14
+    ServiceUnavailable:
+      description: The service cannot answer yet. Try again after the time in `Retry-After`.
+      headers:
+        Retry-After:
+          description: The seconds to wait before trying again.
+          schema:
+            type: integer
+            minimum: 0
+          example: 30
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://storefront.example/problems/service-unavailable
+            title: Service unavailable
+            status: 503
+            detail: A service this one depends on did not answer.
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f15
