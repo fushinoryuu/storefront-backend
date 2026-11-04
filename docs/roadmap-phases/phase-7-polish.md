@@ -67,7 +67,7 @@ Pick one format.
 
 Only claim what you measured. Record the date, region, and settings.
 
-- [ ] End-to-end latency from `POST /orders` to `CONFIRMED`, `SHIPPED`, `DELIVERED` with the dev timings.
+- [ ] End-to-end latency from `POST /v1/orders` to `CONFIRMED`, `SHIPPED`, `DELIVERED` with the dev timings.
 - [ ] Cold start times for the Lambda functions, and the Aurora resume time after a pause (measured, not quoted).
 - [ ] Test counts by type, and how long the CI pipeline takes.
 - [ ] Idle versus active cost behavior, from the cost review.

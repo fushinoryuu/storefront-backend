@@ -17,6 +17,7 @@ The orders service is where DynamoDB design, idempotency, concurrency control, a
 | Service code         | `services/orders/src/`                                                         |
 | Product catalog seed | `services/orders/data/products.json`                                           |
 | OpenAPI spec         | `services/orders/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
+| Operational spec     | `services/orders/openapi-v0.yaml` (health and version, stays `0.x`)            |
 | Tests                | `services/orders/test/`                                                        |
 | Table design doc     | `docs/services/orders-table-design.md`                                         |
 | Service doc          | `docs/services/orders.md`                                                      |
@@ -53,15 +54,15 @@ PENDING --> CONFIRMED --> SHIPPED --> DELIVERED
 
 The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 
-| Operation      | Method and path                 | Notes                                                                      |
-| -------------- | ------------------------------- | -------------------------------------------------------------------------- |
-| `listProducts` | `GET /products`                 | Read-only catalog loaded from seed data                                    |
-| `createOrder`  | `POST /orders`                  | Requires `Idempotency-Key` header, validates customer, prices from catalog |
-| `getOrder`     | `GET /orders/{orderId}`         |                                                                            |
-| `listOrders`   | `GET /orders`                   | Filters: `customerId` (required unless admin), `status`, cursor pagination |
-| `cancelOrder`  | `POST /orders/{orderId}/cancel` | 409 if the state does not allow it                                         |
+| Operation      | Method and path                    | Notes                                                                      |
+| -------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| `listProducts` | `GET /v1/products`                 | Read-only catalog loaded from seed data                                    |
+| `createOrder`  | `POST /v1/orders`                  | Requires `Idempotency-Key` header, validates customer, prices from catalog |
+| `getOrder`     | `GET /v1/orders/{orderId}`         |                                                                            |
+| `listOrders`   | `GET /v1/orders`                   | Filters: `customerId` (required unless admin), `status`, cursor pagination |
+| `cancelOrder`  | `POST /v1/orders/{orderId}/cancel` | 409 if the state does not allow it                                         |
 
-Tags: `orders`, `products`, and the shared `version` tag. Keep `operationId` values stable.
+Tags: `orders` and `products`. The health and version routes (`getHealth` and `getVersion`) are in the `/v0` spec under the shared `operations` tag. Keep `operationId` values stable.
 
 ## Tasks
 
@@ -82,7 +83,7 @@ Tags: `orders`, `products`, and the shared `version` tag. Keep `operationId` val
 
 ### 3. Order placement
 
-`POST /orders` should do, in order:
+`POST /v1/orders` should do, in order:
 
 - [ ] Validate the body and the `Idempotency-Key` header (required, length and charset limits).
 - [ ] Return the stored response for a repeated key with the same body, and a 409 for a repeated key with a different body.
@@ -119,8 +120,8 @@ The change in the table is the source of truth, and events are derived from it, 
 
 ### 7. OpenAPI spec
 
-- [ ] Start from the Phase 0.5 draft. If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
-- [ ] Keep what the draft already has: the shared error schema on all error responses, an `apiKey` security scheme (header `x-api-key`), the `Idempotency-Key` header parameter, enums for status, examples.
+- [ ] Start from the Phase 0.5 drafts (`openapi.yaml` under `/v1`, and `openapi-v0.yaml`). If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
+- [ ] Keep what the draft already has: the `Problem` schema on all error responses, an `apiKey` security scheme (header `x-api-key`), the `Idempotency-Key` header parameter, enums for status, examples.
 - [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
 - [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 
@@ -135,7 +136,7 @@ The change in the table is the source of truth, and events are derived from it, 
 
 ## Acceptance criteria
 
-- `POST /orders` is idempotent: the same key and body twice produces one order.
+- `POST /v1/orders` is idempotent: the same key and body twice produces one order.
 - A client-supplied price cannot change the total.
 - Customer lookup failures produce clear 4xx or 503 responses, never a generic 500.
 - A placed order results in exactly one `OrderPlaced` event, and a replayed shipment event does not change an order twice.
