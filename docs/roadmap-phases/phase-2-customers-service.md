@@ -77,7 +77,7 @@ Scale to zero means the first request after idle waits for the database to resum
 - [ ] Return a clear `503` with a `Retry-After` header (in seconds) if the database is not ready, rather than an opaque timeout. Map connection errors in one place.
 - [ ] Provide `GET /v0/health/ready` as the one warm-up and readiness endpoint. It requires an API key, runs `SELECT 1`, and returns 503 with a retry hint if the database is not ready. Test setup and demos use it as the documented warm-up call. Requiring a key keeps anonymous traffic from waking the cluster.
 - [ ] Remember that anything that keeps a connection open, or constant traffic from health checks, prevents pausing. Keep `GET /v0/health` free of database access so alarms and probes do not hold the cluster awake. Only `GET /v0/health/ready` touches the database, and nothing should call it on a schedule more often than rarely.
-- [ ] Add a note in the cost doc on how to verify that the cluster actually pauses when idle.
+- [x] Add a note in the cost doc on how to verify that the cluster actually pauses when idle. It is in `docs/cost.md`, and the Phase 6 cost review checks it against the real cluster.
 
 ### 4. Migrations
 
