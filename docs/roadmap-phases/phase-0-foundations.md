@@ -58,11 +58,11 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 
 ### 2. AWS account and bootstrap
 
-- [ ] Use the personal AWS account with a dedicated profile, so experiments cannot touch anything else.
-- [ ] The region is `us-west-2`, and everything stays in it. Aurora Serverless v2 with scale to zero and the Data API are confirmed there. Still check that EventBridge Pipes is available.
-- [ ] Bootstrap CDK for the account and region.
-- [ ] Prefer short-lived credentials (SSO or an assumed role) for local work. CI will use OIDC (Phase 6).
-- [ ] Create the AWS Budget with an email alert at low thresholds before deploying anything.
+- [x] Use a dedicated AWS account (a member account of an AWS Organization) with its own profile, so experiments cannot touch anything else.
+- [x] The region is `us-west-2`, and everything stays in it. Aurora Serverless v2 with scale to zero, the Data API and EventBridge Pipes are confirmed there (see `docs/aws-setup.md`).
+- [x] Bootstrap CDK for the account and region.
+- [x] Prefer short-lived credentials (SSO or an assumed role) for local work. CI will use OIDC (Phase 6).
+- [x] Create the AWS Budget with an email alert at low thresholds before deploying anything.
 
 ### 3. Stages
 
@@ -103,17 +103,17 @@ Each record: context, options, decision, consequences. One page.
 Notes for the harder ones:
 
 - **0004:** Spec-first is decided. Writing `openapi.yaml` first makes the contract the starting point, which suits the library project and lets the drafts exist before anything is built (Phase 0.5). Code-first (define schemas, for example with Zod, and generate the spec) would keep validation, types, and spec in one place, but it cannot produce a spec before the code exists. With spec-first, drift is caught by validating runtime requests and responses against the spec and by the conformance tests in Phase 5. REST APIs can import an OpenAPI document directly, but that needs API Gateway integration extensions inside the spec, which clutters the contract the library consumes. Define routes in CDK and keep the published spec clean. How the implementation derives its validation from the spec is part of the 0004 record.
-- **0006:** Data API removes VPC networking from the Lambda functions and works with auto-pause, but each request is a new HTTP call and local testing needs an adapter. A VPC Lambda with a connection pool is conventional and easy to test locally, but needs private networking, and an associated RDS Proxy prevents the cluster from pausing. Data API support for Aurora PostgreSQL in `us-west-2` is confirmed for every engine version that supports scale to zero, so it is not a blocker. Flyway connects over JDBC, which the Data API does not support, and the database sits in an isolated VPC with no NAT. Migrations therefore run from a Lambda inside the VPC, and that Lambda reaches Secrets Manager through one interface endpoint (about $7 a month, to verify) because a NAT gateway would cost about $33 a month. The record should also cover credentials for the runner, and a connect timeout and retries longer than the resume time, since the first connection of a run may hit a paused cluster. It should also cover the schema-per-run model on the shared cluster: each PR run gets its own schema, dropped with Flyway clean after the run, the `main` schema (used by `prod`) is never dropped, how the app selects its schema, and what permissions the app's database user has on each schema. Because `dev` and `prod` share one cluster, a PR run's Flyway user must have no access to the `main` schema, so a mistaken clean cannot reach it.
+- **0006:** Data API removes VPC networking from the Lambda functions and works with auto-pause, but each request is a new HTTP call and local testing needs an adapter. A VPC Lambda with a connection pool is conventional and easy to test locally, but needs private networking, and an associated RDS Proxy prevents the cluster from pausing. Data API support for Aurora PostgreSQL in `us-west-2` is confirmed for every engine version that supports scale to zero, so it is not a blocker. Flyway connects over JDBC, which the Data API does not support, and the database sits in an isolated VPC with no NAT. Migrations therefore run from a Lambda inside the VPC, and that Lambda reaches Secrets Manager through one interface endpoint (about $7 a month, see `docs/cost.md`) because a NAT gateway would cost about $33 a month. The record should also cover credentials for the runner, and a connect timeout and retries longer than the resume time, since the first connection of a run may hit a paused cluster. It should also cover the schema-per-run model on the shared cluster: each PR run gets its own schema, dropped with Flyway clean after the run, the `main` schema (used by `prod`) is never dropped, how the app selects its schema, and what permissions the app's database user has on each schema. Because `dev` and `prod` share one cluster, a PR run's Flyway user must have no access to the `main` schema, so a mistaken clean cannot reach it.
 - **0007:** After a long pause, resume can take 30 seconds or more, which approaches typical API timeouts. Decide how clients and tests cope (warm-up call, generous timeouts) or keep a small nonzero minimum on `prod`. Because `prod` is meant for ad hoc testing, the first call after a long idle is the one that waits. The cluster is shared, so the record should also say what the full deploy mode does to `prod`: it destroys and recreates the cluster, so `prod` is down for 10 to 15 minutes and its data is lost.
 
 ### 6. Cost guardrails
 
-- [ ] Budget alarm in place (see above), with a monthly limit you are comfortable with.
+- [x] Budget alarm in place (see above), with a monthly limit you are comfortable with.
 - [ ] Avoid NAT gateways. They are a common source of surprise cost, and the default design does not need one.
 - [ ] DynamoDB in on-demand mode, short log retention, API throttling set low.
-- [ ] A documented `cdk destroy` order and a list of resources that survive destroy (log groups with retention, snapshots, secrets pending deletion).
-- [ ] Test runs deploy to `dev`, test, then destroy every per-run stack. The `prod` stage stays up, including the shared database stack, because creating the cluster takes 10 to 15 minutes and a paused cluster costs storage only. `prod` also keeps its own Flyway runner and Secrets Manager interface endpoint (about $7 a month, price still to verify) for as long as it is deployed. Pull request runs also drop their own database schema before the stacks are destroyed. Document the full teardown too, which first removes termination protection from the database stack.
-- [ ] `docs/cost.md` records expected idle and active cost behavior in words, with a note to check current AWS pricing when you build, since prices change.
+- [x] A documented `cdk destroy` order and a list of resources that survive destroy (log groups with retention, snapshots, secrets pending deletion). It is in `docs/cost.md`, and Phase 6 builds and rehearses it.
+- [ ] Test runs deploy to `dev`, test, then destroy every per-run stack. The `prod` stage stays up, including the shared database stack, because creating the cluster takes 10 to 15 minutes and a paused cluster costs storage only. `prod` also keeps its own Flyway runner and Secrets Manager interface endpoint (about $7 a month, see `docs/cost.md`) for as long as it is deployed. Pull request runs also drop their own database schema before the stacks are destroyed. Document the full teardown too, which first removes termination protection from the database stack.
+- [x] `docs/cost.md` records expected idle and active cost behavior in words, with a note to check current AWS pricing when you build, since prices change.
 
 ### 7. Minimal CI
 
@@ -124,7 +124,7 @@ Notes for the harder ones:
 ## Acceptance criteria
 
 - `npm test` and `cdk synth` pass on a fresh clone for both stages.
-- Budget alarm exists and sends a test notification.
+- Budget alarm exists, with email alerts at low thresholds.
 - All ten decision records exist, even if some are short. Record 0004 is written in Phase 0.5.
 - Conventions are written and an Aspect applies the tags.
 

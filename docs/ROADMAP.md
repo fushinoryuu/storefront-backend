@@ -74,7 +74,9 @@ The orders service calls the customers API to validate a customer when an order 
 - The API Gateway integration timeout for REST APIs is 29 seconds by default (ADR 0003).
 - A GitHub Actions concurrency group runs one run at a time and by default keeps at most one waiting run, replacing an older waiting run with a newer one. `queue: max` keeps up to 100 waiting runs and cannot be combined with `cancel-in-progress`.
 - The AWS PrivateLink pricing example for US East uses $0.01 per hour for each interface endpoint in each availability zone (about $7 a month) and $0.01 per GB processed. The AWS Aurora pricing page gives $0.12 per ACU-hour for Aurora Serverless v2 Standard in US East (N. Virginia) as an example.
-- Still to confirm: the `us-west-2` rates for interface endpoints and Aurora ACU-hours (neither is on a page I could read), which Node.js versions Powertools supports, and the price of EventBridge Pipes. `docs/cost.md` should check the rates and the Pipes price when it is written, and the Phase 1 ticket that installs Powertools should check the Node.js versions.
+- The `us-west-2` rates, from AWS's public price list files (read on 2026-11-06): an interface endpoint is $0.01 per hour and $0.01 per GB, a public IPv4 address is $0.005 per hour, Aurora PostgreSQL Serverless v2 (Standard) is $0.12 per ACU-hour, Aurora storage is $0.10 per GB-month, the Data API is $0.35 per million requests at the first tier, and a Secrets Manager secret is $0.40 a month. EventBridge Pipes is $0.40 per million requests after filtering, but its pricing page does not name a region. `docs/cost.md` has the detail.
+- Checked against the account on 2026-11-06: every Aurora PostgreSQL engine version in `us-west-2` (13.23 to 18.6) reports a minimum capacity of 0, and Pipes answers in the region (`docs/aws-setup.md`).
+- Still to confirm: the Oregon rate of a NAT gateway (the figure is from the US East page), and which Node.js versions Powertools supports. The Phase 1 ticket that installs Powertools should check the Node.js versions.
 
 ## Phases
 
@@ -95,7 +97,7 @@ The orders service calls the customers API to validate a customer when an order 
 ### Phase 0: Foundations and decisions
 
 - [x] Monorepo skeleton with CDK app, services, shared packages
-- [ ] AWS account setup, CDK bootstrap, budget alarm
+- [x] AWS account setup, CDK bootstrap, budget alarm
 - [x] Stage configuration for `dev` and `prod`, with `dev` stacks per-run and every `prod` stack persistent
 - [ ] Decision records for the open choices above
 - [x] Minimal CI: lint, typecheck, unit tests, `cdk synth`

@@ -1,6 +1,6 @@
 # 0006: Aurora connectivity and migrations
 
-Status: accepted on 2026-11-04. One price is unverified (see Consequences).
+Status: accepted on 2026-11-04. The one unverified price was checked later: see `docs/cost.md`.
 
 ## Context
 
