@@ -1,6 +1,6 @@
 # 0007: Aurora scaling and persistence
 
-Status: accepted on 2026-11-04.
+Status: accepted on 2026-11-04. The `us-west-2` rate was checked later: see `docs/cost.md`.
 
 ## Context
 

@@ -38,7 +38,7 @@ The orders service calls the customers API to validate a customer when an order 
 - **Testing:** vitest, matching the library project.
 - **Account and region:** a personal AWS account in `us-west-2`, with a dedicated profile so experiments stay isolated.
 - **Data stores:** Aurora PostgreSQL Serverless v2 with scale to zero for customers, DynamoDB for orders and shipping. Cost is the priority, and Aurora is the cheapest relational option that keeps foreign keys, constraints and triggers. Aurora DSQL was considered and ruled out because it gives up foreign keys, triggers and the Data API.
-- **Database migrations:** Flyway. Because Flyway connects over JDBC and the database sits in an isolated VPC with no NAT, it runs in a container Lambda inside the VPC, invoked on deploy, with one Secrets Manager interface endpoint for the credentials (about $7 a month while deployed, price still to verify). A NAT gateway would be about $33 a month. The app functions still use the Data API from outside the VPC.
+- **Database migrations:** Flyway. Because Flyway connects over JDBC and the database sits in an isolated VPC with no NAT, it runs in a container Lambda inside the VPC, invoked on deploy, with one Secrets Manager interface endpoint for the credentials (about $7 a month while deployed, see `docs/cost.md`). A NAT gateway would be about $33 a month. The app functions still use the Data API from outside the VPC.
 - **API definition:** spec-first, written as OpenAPI 3.0.3 (the version with the most documentation and the widest Zod and generator support). The hand-written specs of each service are the source of truth, drafted in Phase 0.5 before any implementation. Routes are still defined in CDK, and the published specs have no API Gateway extensions and no `servers` entry. Drift is caught by validating runtime requests and responses against the spec and by the conformance tests, not by comparing generated files. The shared error schema is `Problem`. Decision record 0004 has the details.
 - **API versions side by side:** every path starts with a version prefix. Business routes are under `/v1`, and a later major is served next to it under `/v2` (Phase 5 does this for real). The operational routes (`/v0/health`, `/v0/health/ready` and `/v0/version`) live under a reserved `/v0` prefix, in their own small spec per service, so they are defined once. Each prefix is its own spec and its own bundle, `specs/<service>-service-v<N>.yaml`, and `GET /v0/version` reports every prefix a service serves (`specVersions`).
 - **Feature flags:** LaunchDarkly on its free Developer plan, chosen over AWS AppConfig because it is the more common product. Flags are plain booleans, read through a small flag client with in-code defaults, so the code never depends on LaunchDarkly being reachable. There are two LaunchDarkly environments, `dev` (shared by every pull request run) and `prod`. The backend exposes no flag state through its API. The first uses are the shipping simulation endpoint (Phase 4) and the "customers unavailable" test (Phase 5). A decision record in Phase 1 covers the details.
@@ -74,7 +74,9 @@ The orders service calls the customers API to validate a customer when an order 
 - The API Gateway integration timeout for REST APIs is 29 seconds by default (ADR 0003).
 - A GitHub Actions concurrency group runs one run at a time and by default keeps at most one waiting run, replacing an older waiting run with a newer one. `queue: max` keeps up to 100 waiting runs and cannot be combined with `cancel-in-progress`.
 - The AWS PrivateLink pricing example for US East uses $0.01 per hour for each interface endpoint in each availability zone (about $7 a month) and $0.01 per GB processed. The AWS Aurora pricing page gives $0.12 per ACU-hour for Aurora Serverless v2 Standard in US East (N. Virginia) as an example.
-- Still to confirm: the `us-west-2` rates for interface endpoints and Aurora ACU-hours (neither is on a page I could read), which Node.js versions Powertools supports, and the price of EventBridge Pipes. `docs/cost.md` should check the rates and the Pipes price when it is written, and the Phase 1 ticket that installs Powertools should check the Node.js versions.
+- The `us-west-2` rates, from AWS's public price list files (read on 2026-11-06): an interface endpoint is $0.01 per hour and $0.01 per GB, a public IPv4 address is $0.005 per hour, Aurora PostgreSQL Serverless v2 (Standard) is $0.12 per ACU-hour, Aurora storage is $0.10 per GB-month, the Data API is $0.35 per million requests at the first tier, and a Secrets Manager secret is $0.40 a month. EventBridge Pipes is $0.40 per million requests after filtering, but its pricing page does not name a region. `docs/cost.md` has the detail.
+- Checked against the account on 2026-11-06: every Aurora PostgreSQL engine version in `us-west-2` (13.23 to 18.6) reports a minimum capacity of 0, and Pipes answers in the region (`docs/aws-setup.md`).
+- Still to confirm: the Oregon rate of a NAT gateway (the figure is from the US East page), and which Node.js versions Powertools supports. The Phase 1 ticket that installs Powertools should check the Node.js versions.
 
 ## Phases
 
@@ -95,14 +97,14 @@ The orders service calls the customers API to validate a customer when an order 
 ### Phase 0: Foundations and decisions
 
 - [x] Monorepo skeleton with CDK app, services, shared packages
-- [ ] AWS account setup, CDK bootstrap, budget alarm
+- [x] AWS account setup, CDK bootstrap, budget alarm
 - [x] Stage configuration for `dev` and `prod`, with `dev` stacks per-run and every `prod` stack persistent
-- [ ] Decision records for the open choices above
+- [x] Decision records for the open choices above
 - [x] Minimal CI: lint, typecheck, unit tests, `cdk synth`
 
 ### Phase 0.5: Draft OpenAPI specs
 
-- [ ] Spec conventions, shared components, and the spec-first decision record
+- [x] Spec conventions, shared components, and the spec-first decision record
 - [x] Lint and bundle tooling
 - [ ] Draft v0.1.0 specs for customers, shipping and orders
 - [ ] Hand-off draft and a check with the library project
