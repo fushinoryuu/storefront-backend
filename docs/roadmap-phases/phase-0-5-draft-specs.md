@@ -70,10 +70,10 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 
 ### S.5 Orders draft
 
-- [ ] Design the `Order` and line-item model here. Phase 3 follows it: prices come from the catalog, totals are integer minor units, and the number of items per order is capped.
-- [ ] `listProducts`, `createOrder`, `getOrder`, `listOrders`, `cancelOrder` in `openapi.yaml`, under `/v1`, plus `openapi-v0.yaml` with health and version.
-- [ ] The `Idempotency-Key` header parameter, the `Location` header on 201, the status enum, and the 409 cases (cancel not allowed, key reuse with a different body).
-- [ ] Examples for each operation.
+- [x] Design the `Order` and line-item model here. Phase 3 follows it: prices come from the catalog, totals are integer minor units, and the number of items per order is capped (20 lines).
+- [x] `listProducts`, `createOrder`, `getOrder`, `listOrders`, `cancelOrder` in `openapi.yaml`, under `/v1`, plus `openapi-v0.yaml` with health and version.
+- [x] The `Idempotency-Key` header parameter, the `Location` header on 201, the status enum, and the 409 cases (cancel not allowed, key reuse with a different body).
+- [x] Examples for each operation.
 
 ### S.6 Hand-off draft and library check
 

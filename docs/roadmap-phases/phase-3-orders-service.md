@@ -87,7 +87,7 @@ Tags: `orders` and `products`. The health and version routes (`getHealth` and `g
 
 - [ ] Validate the body and the `Idempotency-Key` header (required, length and charset limits).
 - [ ] Return the stored response for a repeated key with the same body, and a 409 for a repeated key with a different body.
-- [ ] Validate that the customer exists by calling the customers API with the `services` API key and the correlation id. Use a short timeout, no retry on this path beyond a single attempt, and map failures clearly: unknown customer is a 422 or 400, customers unavailable is a 503 (not a 500).
+- [ ] Validate that the customer exists by calling the customers API with the `services` API key and the correlation id. Use a short timeout, no retry on this path beyond a single attempt, and map failures clearly: unknown customer is a 422, customers unavailable is a 503 (not a 500).
 - [ ] Price the items from the catalog.
 - [ ] Write the order item and the idempotency record in one `TransactWriteItems` call.
 - [ ] Return 201 with the order and a `Location` header.
