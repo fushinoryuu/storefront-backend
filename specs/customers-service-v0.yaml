@@ -4,6 +4,9 @@ openapi: 3.0.3
 info:
   title: Customers service operations
   version: 0.1.0
+  license:
+    name: GPL-3.0-only
+    url: https://www.gnu.org/licenses/gpl-3.0.html
   description: >-
     The operational routes of the customers service: a liveness check, a
     readiness check and the versions it serves. The health and version routes

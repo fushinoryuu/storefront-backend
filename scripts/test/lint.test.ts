@@ -41,6 +41,16 @@ describe('lintSpecs', () => {
     expect(hasErrors(results)).toBe(true);
   });
 
+  it('reports a spec without a license through Redocly', async () => {
+    const dir = await fx.edited('services/demo/openapi.yaml', (text) =>
+      text.replace(/ {2}license:\n {4}name: .*\n {4}url: .*\n/, ''),
+    );
+    const results = await lintSpecs(dir);
+    const rules = results.flatMap(({ findings }) => findings.map((f) => f.rule));
+    expect(rules).toContain('info-license');
+    expect(hasErrors(results)).toBe(true);
+  });
+
   it('reports a duplicate operationId through Redocly', async () => {
     const dir = await fx.edited('services/demo/openapi.yaml', (text) =>
       text.replace('operationId: getThing', 'operationId: listThings'),
