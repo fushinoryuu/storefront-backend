@@ -57,10 +57,10 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 
 ### S.3 Customers draft
 
-- [ ] Every operation in the Phase 2 API table in `openapi.yaml`, under `/v1`. `openapi-v0.yaml` holds `getHealth`, `getVersion` and `getReadiness`.
-- [ ] `Customer`, `Address`, and their create and update shapes, the `status` enum, and optimistic concurrency (`If-Match` or a `version` field).
-- [ ] `listCustomers` leaves out deleted customers unless `status=deleted` is asked for. A deleted customer keeps its email, so creating a customer with that email returns 409.
-- [ ] Examples, documented status codes, and the API key requirement on every route except `GET /v0/health` and `GET /v0/version`.
+- [x] Every operation in the Phase 2 API table in `openapi.yaml`, under `/v1`. `openapi-v0.yaml` holds `getHealth`, `getVersion` and `getReadiness`.
+- [x] `Customer`, `Address`, and their create and update shapes, the `status` enum, and optimistic concurrency (a `version` field in the update body, 409 on a mismatch).
+- [x] `listCustomers` leaves out deleted customers unless `status=deleted` is asked for. A deleted customer keeps its email, so creating a customer with that email returns 409.
+- [x] Examples, documented status codes, and the API key requirement on every route except `GET /v0/health` and `GET /v0/version`.
 
 ### S.4 Shipping draft
 

@@ -1,7 +1,10 @@
 openapi: 3.0.3
 info:
   title: Shipping service operations
-  version: 0.1.0
+  version: 0.1.1
+  license:
+    name: GPL-3.0-only
+    url: https://www.gnu.org/licenses/gpl-3.0.html
   description: >-
     The operational routes of the shipping service: a liveness check and the versions it serves.
     Neither needs an API key. They are defined once in `specs/shared/paths` and are the same in

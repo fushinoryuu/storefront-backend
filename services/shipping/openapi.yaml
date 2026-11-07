@@ -1,7 +1,10 @@
 openapi: 3.0.3
 info:
   title: Shipping service
-  version: 0.1.0
+  version: 0.1.1
+  license:
+    name: GPL-3.0-only
+    url: https://www.gnu.org/licenses/gpl-3.0.html
   description: >-
     Shipments for placed orders. The service creates a shipment when an order is placed and moves it
     through a simulated carrier, so the API only reads shipments, plus one admin route that moves a

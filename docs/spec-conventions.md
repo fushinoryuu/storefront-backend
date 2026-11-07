@@ -20,7 +20,7 @@ How the OpenAPI specs are written. The specs are the source of truth for the API
 
 ## OpenAPI version
 
-`openapi: 3.0.3`, always. Nullable fields use `nullable: true`, never a type array. `oneOf` and `anyOf` are used only where the model needs them, and always with a `discriminator`.
+`openapi: 3.0.3`, always. Every spec has `info.license` with the name `GPL-3.0-only`, the license of this repository (OpenAPI 3.0 has no SPDX identifier field, so the name is the SPDX id). Nullable fields use `nullable: true`, never a type array. `oneOf` and `anyOf` are used only where the model needs them, and always with a `discriminator`.
 
 ## Versions and paths
 
@@ -63,18 +63,18 @@ npm run bundle:specs            # write specs/<service>-service-v<N>.yaml
 npm run bundle:specs -- --check # what CI runs: fails if a bundle is stale, missing or orphaned
 ```
 
-| Rule                              | What it enforces                                                                                                 |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `openapi-version`, `info-version` | `openapi: 3.0.3` and an `x.y.z` version                                                                          |
-| `no-servers`                      | No `servers` on the document, a path item or an operation                                                        |
-| `no-gateway-extensions`           | No `x-amazon-apigateway-*` anywhere                                                                              |
-| `version-prefix`                  | One `/v<N>` prefix per spec, agreeing with the `info.version` major                                              |
-| `operational-routes`              | Health and version routes only in `/v0`, and only they in `/v0`                                                  |
-| `source-name`                     | The file name promises the prefix its paths use                                                                  |
-| `operation-id`                    | camelCase, a verb plus a noun                                                                                    |
-| `one-tag`                         | Exactly one tag, and `operations` only on `/v0` routes                                                           |
-| `security`                        | `apiKey` as above, and `security: []` on health and version                                                      |
-| `examples`                        | An example on every body                                                                                         |
-| `problem-responses`               | `Problem` on every 4xx and 503                                                                                   |
-| `discriminator`                   | A warning for `oneOf` or `anyOf` without a discriminator                                                         |
-| Redocly rules                     | Valid OpenAPI structure, resolvable `$ref`s, unique `operationId`s, summaries, examples that match their schemas |
+| Rule                              | What it enforces                                                                                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `openapi-version`, `info-version` | `openapi: 3.0.3` and an `x.y.z` version                                                                                                                                                          |
+| `no-servers`                      | No `servers` on the document, a path item or an operation                                                                                                                                        |
+| `no-gateway-extensions`           | No `x-amazon-apigateway-*` anywhere                                                                                                                                                              |
+| `version-prefix`                  | One `/v<N>` prefix per spec, agreeing with the `info.version` major                                                                                                                              |
+| `operational-routes`              | Health and version routes only in `/v0`, and only they in `/v0`                                                                                                                                  |
+| `source-name`                     | The file name promises the prefix its paths use                                                                                                                                                  |
+| `operation-id`                    | camelCase, a verb plus a noun                                                                                                                                                                    |
+| `one-tag`                         | Exactly one tag, and `operations` only on `/v0` routes                                                                                                                                           |
+| `security`                        | `apiKey` as above, and `security: []` on health and version                                                                                                                                      |
+| `examples`                        | An example on every body                                                                                                                                                                         |
+| `problem-responses`               | `Problem` on every 4xx and 503                                                                                                                                                                   |
+| `discriminator`                   | A warning for `oneOf` or `anyOf` without a discriminator                                                                                                                                         |
+| Redocly rules                     | The `recommended` ruleset: valid OpenAPI structure, resolvable `$ref`s, unique `operationId`s, summaries, examples that match their schemas, a license. `lint.ts` lists the few rules turned off |

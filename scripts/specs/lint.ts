@@ -11,8 +11,9 @@ export type SpecConfig = Awaited<ReturnType<typeof createConfig>>;
  */
 export function createSpecConfig(): Promise<SpecConfig> {
   return createConfig({
-    extends: ['minimal'],
+    extends: ['recommended'],
     rules: {
+      'info-license': 'error',
       'no-empty-servers': 'off',
       'operation-4xx-response': 'off',
       'operation-operationId': 'error',
