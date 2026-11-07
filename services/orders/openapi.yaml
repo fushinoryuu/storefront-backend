@@ -1,0 +1,453 @@
+openapi: 3.0.3
+info:
+  title: Orders service
+  version: 0.1.0
+  license:
+    name: GPL-3.0-only
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+  description: >-
+    Products and the orders placed for them. A client names the products and the quantities, and the
+    service prices the order from its own catalog, so a client can never set a price. All money is
+    an integer in minor units (cents for USD), with the currency next to it.
+
+
+    This is a draft. It can change until the service is built and matches it.
+security:
+  - apiKey: []
+tags:
+  - name: orders
+    description: Place, read, list and cancel orders.
+  - name: products
+    description: The catalog that orders are priced from.
+paths:
+  /v1/products:
+    get:
+      operationId: listProducts
+      summary: List the products
+      description: >-
+        The catalog, in a fixed order. It is read-only. A page holds at most `limit` products.
+      tags: [products]
+      parameters:
+        - $ref: '../../specs/shared/components.yaml#/components/parameters/Cursor'
+        - $ref: '../../specs/shared/components.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: One page of products.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+              example:
+                items:
+                  - productId: prd_3a7f1c
+                    name: Desk lamp
+                    unitPrice: 2499
+                    currency: USD
+                  - productId: prd_9d2e4b
+                    name: Notebook
+                    unitPrice: 1299
+                    currency: USD
+                nextCursor: null
+        '400':
+          $ref: '../../specs/shared/components.yaml#/components/responses/BadRequest'
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '429':
+          $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+  /v1/orders:
+    post:
+      operationId: createOrder
+      summary: Place an order
+      description: >-
+        Places an order for a customer. The order starts as `PENDING`, with version 1. The service
+        looks the products up in its catalog and prices every line from it. The request cannot carry
+        a price, and a body with a field that is not listed (a `unitPrice`, for example) is rejected
+        with 400.
+
+
+        An order has 1 to 20 lines, and a product can be on only one line. All the products on an
+        order must have the same currency, and the order takes it. A request that breaks either
+        rule, or that names a product that is not in the catalog, answers 400, and `errors` lists
+        the line that failed (for example `items[1].productId`). Nothing is placed.
+
+
+        **Idempotency.** The `Idempotency-Key` header is required. Sending the same key with the
+        same body again does not place a second order: the answer is the first answer, with the
+        same order. The key is remembered for 24 hours. Sending the same key with a different body
+        answers 409.
+
+
+        The answer is 422 when the customer does not exist or is deleted, and 503 when the
+        customers service cannot be reached in time. In that case nothing was placed, and the same
+        request can be sent again with the same key.
+      tags: [orders]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrder'
+            example:
+              customerId: 3f6c2a1e-8b1d-4c52-9a53-0f4f6d2b7a10
+              items:
+                - productId: prd_3a7f1c
+                  quantity: 2
+                - productId: prd_9d2e4b
+                  quantity: 1
+      responses:
+        '201':
+          description: The order was placed.
+          headers:
+            Location:
+              description: The path of the new order.
+              schema:
+                type: string
+              example: /v1/orders/ord_5b8a2e1c
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                orderId: ord_5b8a2e1c
+                customerId: 3f6c2a1e-8b1d-4c52-9a53-0f4f6d2b7a10
+                status: PENDING
+                items:
+                  - productId: prd_3a7f1c
+                    quantity: 2
+                    unitPrice: 2499
+                  - productId: prd_9d2e4b
+                    quantity: 1
+                    unitPrice: 1299
+                currency: USD
+                total: 6297
+                version: 1
+                createdAt: '2026-11-02T17:48:58Z'
+                updatedAt: '2026-11-02T17:48:58Z'
+        '400':
+          $ref: '../../specs/shared/components.yaml#/components/responses/BadRequest'
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '409':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnknownCustomer'
+        '429':
+          $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
+    get:
+      operationId: listOrders
+      summary: List orders
+      description: >-
+        Newest first. A page holds at most `limit` orders.
+
+
+        A call with the `admin` key may leave out `customerId` and gets the orders of every
+        customer. A call with any other key must send `customerId`, and the answer is 400 without
+        it. A customer with no orders, or an unknown one, gets an empty list.
+      tags: [orders]
+      parameters:
+        - name: customerId
+          in: query
+          required: false
+          description: Only the orders of this customer. Required unless the key is the `admin` key.
+          schema:
+            type: string
+            format: uuid
+          example: 3f6c2a1e-8b1d-4c52-9a53-0f4f6d2b7a10
+        - name: status
+          in: query
+          required: false
+          description: Only orders in this status.
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+          example: PENDING
+        - $ref: '../../specs/shared/components.yaml#/components/parameters/Cursor'
+        - $ref: '../../specs/shared/components.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: One page of orders.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPage'
+              example:
+                items:
+                  - orderId: ord_5b8a2e1c
+                    customerId: 3f6c2a1e-8b1d-4c52-9a53-0f4f6d2b7a10
+                    status: PENDING
+                    items:
+                      - productId: prd_3a7f1c
+                        quantity: 2
+                        unitPrice: 2499
+                      - productId: prd_9d2e4b
+                        quantity: 1
+                        unitPrice: 1299
+                    currency: USD
+                    total: 6297
+                    version: 1
+                    createdAt: '2026-11-02T17:48:58Z'
+                    updatedAt: '2026-11-02T17:48:58Z'
+                nextCursor: null
+        '400':
+          $ref: '../../specs/shared/components.yaml#/components/responses/BadRequest'
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '429':
+          $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+  /v1/orders/{orderId}:
+    get:
+      operationId: getOrder
+      summary: Get an order
+      tags: [orders]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: The order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                orderId: ord_5b8a2e1c
+                customerId: 3f6c2a1e-8b1d-4c52-9a53-0f4f6d2b7a10
+                status: CONFIRMED
+                items:
+                  - productId: prd_3a7f1c
+                    quantity: 2
+                    unitPrice: 2499
+                  - productId: prd_9d2e4b
+                    quantity: 1
+                    unitPrice: 1299
+                currency: USD
+                total: 6297
+                version: 2
+                createdAt: '2026-11-02T17:48:58Z'
+                updatedAt: '2026-11-02T17:49:10Z'
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
+        '429':
+          $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+  /v1/orders/{orderId}/cancel:
+    post:
+      operationId: cancelOrder
+      summary: Cancel an order
+      description: >-
+        Moves the order to `CANCELLED`. An order can be cancelled while it is `PENDING` or
+        `CONFIRMED`. In any other status, including `CANCELLED`, nothing changes and the answer is
+        409. The answer is 409 as well when the order moved on, for example because a shipment event
+        arrived, at the moment of the cancel. Read the order again to see where it is.
+
+
+        The request has no body.
+      tags: [orders]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: The order, now `CANCELLED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                orderId: ord_5b8a2e1c
+                customerId: 3f6c2a1e-8b1d-4c52-9a53-0f4f6d2b7a10
+                status: CANCELLED
+                items:
+                  - productId: prd_3a7f1c
+                    quantity: 2
+                    unitPrice: 2499
+                  - productId: prd_9d2e4b
+                    quantity: 1
+                    unitPrice: 1299
+                currency: USD
+                total: 6297
+                version: 3
+                createdAt: '2026-11-02T17:48:58Z'
+                updatedAt: '2026-11-02T18:05:31Z'
+        '403':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
+        '409':
+          $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
+        '429':
+          $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+components:
+  securitySchemes:
+    apiKey:
+      $ref: '../../specs/shared/components.yaml#/components/securitySchemes/apiKey'
+  parameters:
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      description: The id of the order.
+      schema:
+        type: string
+      example: ord_5b8a2e1c
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: >-
+        Chosen by the caller, and new for every order it means to place. Send the same key again to
+        repeat a request safely, for example after a timeout.
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_-]{1,64}$'
+      example: 8f14e45f-ceea-467a-9575-7c1a2d6b3c9e
+  responses:
+    UnknownCustomer:
+      description: The customer does not exist, or it is deleted.
+      content:
+        application/json:
+          schema:
+            $ref: '../../specs/shared/components.yaml#/components/schemas/Problem'
+          example:
+            type: https://storefront.example/problems/unknown-customer
+            title: Unknown customer
+            status: 422
+            detail: There is no customer with this id.
+            correlationId: 6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f16
+  schemas:
+    OrderStatus:
+      type: string
+      description: >-
+        Where the order is. It moves forward through `PENDING`, `CONFIRMED`, `SHIPPED` and
+        `DELIVERED`, driven by what happens to its shipment, and a status never moves back. It can
+        become `CANCELLED` from `PENDING` or `CONFIRMED` only, and then it stays there.
+      enum: [PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED]
+    Product:
+      type: object
+      required: [productId, name, unitPrice, currency]
+      properties:
+        productId:
+          type: string
+          description: The id of the product.
+        name:
+          type: string
+        unitPrice:
+          type: integer
+          minimum: 0
+          description: The price of one unit, in minor units of the currency (cents for USD).
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: The currency, as a three-letter code (ISO 4217).
+    ProductPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        nextCursor:
+          $ref: '../../specs/shared/components.yaml#/components/schemas/NextCursor'
+    OrderItem:
+      type: object
+      description: One line of an order.
+      required: [productId, quantity, unitPrice]
+      properties:
+        productId:
+          type: string
+          description: The product on this line.
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: integer
+          minimum: 0
+          description: >-
+            The price of one unit when the order was placed, in minor units of the order's currency.
+            It does not change when the catalog does.
+    Order:
+      type: object
+      required: [orderId, customerId, status, items, currency, total, version, createdAt, updatedAt]
+      properties:
+        orderId:
+          type: string
+          description: The id of the order.
+        customerId:
+          type: string
+          format: uuid
+          description: The customer who placed the order.
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        items:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: The currency of every price on the order, as a three-letter code (ISO 4217).
+        total:
+          type: integer
+          minimum: 0
+          description: >-
+            The sum of `quantity` times `unitPrice` over the lines, in minor units of the currency.
+        version:
+          type: integer
+          minimum: 1
+          description: Starts at 1 and goes up by 1 with every change to the order.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the order last changed.
+    CreateOrder:
+      type: object
+      description: >-
+        The customer and the products wanted. There is no price here, because the service sets
+        it. Unknown fields are rejected.
+      required: [customerId, items]
+      additionalProperties: false
+      properties:
+        customerId:
+          type: string
+          format: uuid
+          description: The customer placing the order.
+        items:
+          type: array
+          description: The lines of the order. A product can be on only one line.
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/CreateOrderItem'
+    CreateOrderItem:
+      type: object
+      description: Unknown fields are rejected.
+      required: [productId, quantity]
+      additionalProperties: false
+      properties:
+        productId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: A product from the catalog. An unknown product is a 400.
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 100
+    OrderPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        nextCursor:
+          $ref: '../../specs/shared/components.yaml#/components/schemas/NextCursor'

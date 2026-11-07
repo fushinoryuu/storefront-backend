@@ -106,7 +106,7 @@ The orders service calls the customers API to validate a customer when an order 
 
 - [x] Spec conventions, shared components, and the spec-first decision record
 - [x] Lint and bundle tooling
-- [ ] Draft v0.1.0 specs for customers, shipping and orders
+- [x] Draft v0.1.0 specs for customers, shipping and orders
 - [ ] Hand-off draft and a check with the library project
 
 ### Phase 1: Shared platform
