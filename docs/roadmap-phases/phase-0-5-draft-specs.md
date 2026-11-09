@@ -79,9 +79,9 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 
 - [x] Start `docs/spec-handoff.md`: where the specs live and how they are named, that they are drafts, how to bump the version and who announces a change, how to report a spec problem (a GitHub issue in this repo), how to run a mock server from a spec until real endpoints exist, and what is not available yet (base URLs, API keys). Add the feature flag note: flags are plain booleans, the backend exposes no flag state, and the library reads them from LaunchDarkly with a personal token that has the built-in Reader role.
 - [x] Write `docs/spec-change-notes.md`: the exact spec edits for the planned v1.1.0 and v2.0.0 changes (see Phase 5), so the library demo can be rehearsed.
-- [ ] Generate typed clients from the drafts in the library project (it uses hey-api `openapi-ts`), and record any spec problems it finds. Fix the specs.
+- [x] Generate typed clients from the drafts in the library project (it uses hey-api `openapi-ts`), and record any spec problems it finds. Fix the specs.
   - [x] A check on this side with the generator version the library pins (hey-api `openapi-ts` 0.99.0, the `@hey-api/typescript`, `@hey-api/sdk` and `@hey-api/client-fetch` plugins): all six bundles generate and the output typechecks. The edits in `docs/spec-change-notes.md` were applied to a scratch copy, and the result lints, bundles, generates and typechecks as well. It found no spec problem.
-  - [ ] The library project's own run against the drafts on `main`, and a fix for anything it finds.
+  - [x] The library project's own run against the drafts on `main` (the same generator version and plugins, all six bundles): every bundle generates with no warning and the output typechecks. It found no spec problem, so there was nothing to fix.
 
 ## Acceptance criteria
 
