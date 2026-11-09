@@ -1,13 +1,18 @@
 openapi: 3.0.3
 info:
   title: Customers service
-  version: 0.1.0
+  version: 0.2.0
   license:
     name: GPL-3.0-only
     url: https://www.gnu.org/licenses/gpl-3.0.html
   description: >-
     Customer profiles and their addresses. Emails are unique, a customer is never removed (deleting
     one only marks it `deleted`), and a customer can have any number of addresses.
+
+
+    Every route reads or writes the database, which pauses when idle. The first call after an idle
+    period can answer 503 with a `Retry-After` header while the database resumes. Wait that many
+    seconds and send the request again.
 
 
     This is a draft. It can change until the service is built and matches it.
@@ -73,6 +78,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     get:
       operationId: listCustomers
       summary: List customers
@@ -128,6 +135,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
   /v1/customers/{customerId}:
     parameters:
       - $ref: '#/components/parameters/CustomerId'
@@ -159,6 +168,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     patch:
       operationId: updateCustomer
       summary: Update a customer
@@ -214,6 +225,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     delete:
       operationId: deleteCustomer
       summary: Delete a customer
@@ -235,6 +248,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
   /v1/customers/{customerId}/addresses:
     parameters:
       - $ref: '#/components/parameters/CustomerId'
@@ -295,6 +310,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     get:
       operationId: listAddresses
       summary: List the addresses of a customer
@@ -342,6 +359,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
   /v1/customers/{customerId}/addresses/{addressId}:
     parameters:
       - $ref: '#/components/parameters/CustomerId'
@@ -398,6 +417,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     delete:
       operationId: deleteAddress
       summary: Delete an address
@@ -418,6 +439,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '503':
+          $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
 components:
   securitySchemes:
     apiKey:
