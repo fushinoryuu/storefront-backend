@@ -55,7 +55,7 @@ Then call `http://127.0.0.1:4010/v1/products`. One mock serves one spec, so run 
 
 ## Reporting a spec problem
 
-Open an issue in this repository on GitHub. Say which file and `info.version` you used, which `operationId` or schema is affected, what the generator or the mock did, and what you expected. Spec problems are fixed in the source spec here, never in a copy, and the fix comes with a new `info.version`.
+Raise a bug ticket in the Jira project BEP of this project. Say which file and `info.version` you used, which `operationId` or schema is affected, what the generator or the mock did, and what you expected. Spec problems are fixed in the source spec here, never in a copy, and the fix comes with a new `info.version`.
 
 ## Feature flags
 
