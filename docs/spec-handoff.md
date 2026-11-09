@@ -45,7 +45,7 @@ Then call `http://127.0.0.1:4010/v1/products`. One mock serves one spec, so run 
 - The mock answers with the examples in the spec, which is why every body has one.
 - It enforces the `apiKey` scheme. Send an `x-api-key` header with any value on every route except `GET /v0/health` and `GET /v0/version`, or the mock answers 401.
 - To get a documented error, send `Prefer: code=409` (any status the route documents). The mock answers with that response's example.
-- The mock validates requests. A request that breaks the spec gets a 422 when the route documents one, and a 400 when it does not. On `createOrder` the route documents a 422 for an unknown customer, so the mock answers an invalid request there with the unknown customer example. The real service answers a request that breaks the spec with 400.
+- The mock validates requests. A request that breaks the spec gets the route's 422 response when it documents one, else its 400 response, else a 422 that Prism makes up. On `createOrder` the route documents a 422 for an unknown customer, so the mock answers an invalid request there with the unknown customer example. The real service answers a request that breaks the spec with 400.
 
 ## What is not available yet
 
