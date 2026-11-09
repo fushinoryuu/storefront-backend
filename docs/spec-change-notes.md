@@ -23,22 +23,22 @@ An optional `preferredLanguage` field.
 
 1. Add a schema under `components.schemas`:
 
-    ```yaml
-    LanguageTag:
-        type: string
-        description: >-
-            A language tag such as `en` or `pt-BR`: a two or three letter language in lowercase, and
-            optionally a two-letter region in capitals.
-        pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
-        maxLength: 10
-    ```
+   ```yaml
+   LanguageTag:
+     type: string
+     description: >-
+       A language tag such as `en` or `pt-BR`: a two or three letter language in lowercase, and
+       optionally a two-letter region in capitals.
+     pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
+     maxLength: 10
+   ```
 
 2. Add this property to `Customer`, `CreateCustomer` and `UpdateCustomer`, and leave it out of every `required` list:
 
-    ```yaml
-    preferredLanguage:
-        $ref: '#/components/schemas/LanguageTag'
-    ```
+   ```yaml
+   preferredLanguage:
+     $ref: '#/components/schemas/LanguageTag'
+   ```
 
 3. Add `preferredLanguage: en` to the `createCustomer` request example and to every `Customer` example in a response (`createCustomer`, `listCustomers`, `getCustomer`, `updateCustomer`), so the mock servers show it. Examples that leave it out stay valid.
 
@@ -48,72 +48,72 @@ A status history route and an optional `notes` field.
 
 1. Add the route under `paths`, after `/v1/orders/{orderId}`:
 
-    ```yaml
-    /v1/orders/{orderId}/timeline:
-        get:
-            operationId: getOrderTimeline
-            summary: Get the status history of an order
-            description: >-
-                The statuses the order has been in, oldest first. The last entry is the current status.
-            tags: [orders]
-            parameters:
-                - $ref: '#/components/parameters/OrderId'
-            responses:
-                '200':
-                    description: The status history.
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/OrderTimeline'
-                            example:
-                                orderId: ord_5b8a2e1c
-                                entries:
-                                    - status: PENDING
-                                      occurredAt: '2026-11-02T17:48:58Z'
-                                    - status: CONFIRMED
-                                      occurredAt: '2026-11-02T17:49:10Z'
-                '403':
-                    $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
-                '404':
-                    $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
-                '429':
-                    $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
-    ```
+   ```yaml
+   /v1/orders/{orderId}/timeline:
+     get:
+       operationId: getOrderTimeline
+       summary: Get the status history of an order
+       description: >-
+         The statuses the order has been in, oldest first. The last entry is the current status.
+       tags: [orders]
+       parameters:
+         - $ref: '#/components/parameters/OrderId'
+       responses:
+         '200':
+           description: The status history.
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/OrderTimeline'
+               example:
+                 orderId: ord_5b8a2e1c
+                 entries:
+                   - status: PENDING
+                     occurredAt: '2026-11-02T17:48:58Z'
+                   - status: CONFIRMED
+                     occurredAt: '2026-11-02T17:49:10Z'
+         '403':
+           $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
+         '404':
+           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
+         '429':
+           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+   ```
 
 2. Add two schemas under `components.schemas`:
 
-    ```yaml
-    OrderTimeline:
-        type: object
-        required: [orderId, entries]
-        properties:
-            orderId:
-                type: string
-            entries:
-                type: array
-                items:
-                    $ref: '#/components/schemas/OrderTimelineEntry'
-    OrderTimelineEntry:
-        type: object
-        required: [status, occurredAt]
-        properties:
-            status:
-                $ref: '#/components/schemas/OrderStatus'
-            occurredAt:
-                type: string
-                format: date-time
-                description: When the order entered this status.
-    ```
+   ```yaml
+   OrderTimeline:
+     type: object
+     required: [orderId, entries]
+     properties:
+       orderId:
+         type: string
+       entries:
+         type: array
+         items:
+           $ref: '#/components/schemas/OrderTimelineEntry'
+   OrderTimelineEntry:
+     type: object
+     required: [status, occurredAt]
+     properties:
+       status:
+         $ref: '#/components/schemas/OrderStatus'
+       occurredAt:
+         type: string
+         format: date-time
+         description: When the order entered this status.
+   ```
 
 3. Add this property to `CreateOrder` and to `Order`, and leave it out of every `required` list:
 
-    ```yaml
-    notes:
-        type: string
-        minLength: 1
-        maxLength: 500
-        description: A note from the customer. Free text.
-    ```
+   ```yaml
+   notes:
+     type: string
+     minLength: 1
+     maxLength: 500
+     description: A note from the customer. Free text.
+   ```
 
 4. Add `notes: Leave with the neighbor.` to the `createOrder` request example and to the `201` example.
 5. In the `createOrder` description, under **Idempotency**, add the sentence: "`notes` is part of the body, so the same key with a different note answers 409."
@@ -124,17 +124,17 @@ An optional `carrier` filter on `listShipments`.
 
 1. Add this to the `parameters` of `listShipments`, after `status`:
 
-    ```yaml
-    - name: carrier
-      in: query
-      required: false
-      description: >-
-          Only shipments with this carrier, compared exactly. A shipment that has no carrier yet never
-          matches.
-      schema:
-          type: string
-      example: Fakeship
-    ```
+   ```yaml
+   - name: carrier
+     in: query
+     required: false
+     description: >-
+       Only shipments with this carrier, compared exactly. A shipment that has no carrier yet never
+       matches.
+     schema:
+       type: string
+     example: Fakeship
+   ```
 
 ## v2.0.0: breaking, served at `/v2` next to `/v1`
 
@@ -157,13 +157,13 @@ Nothing changes in the `/v0` specs. `GET /v0/version` lists the new prefix in `s
 
 1. In `CreateOrder`, add the property and require it. The `required` list becomes `[customerId, shippingAddressId, items]`:
 
-    ```yaml
-    shippingAddressId:
-        type: string
-        format: uuid
-        description: >-
-            An address of the customer. It is where the order ships to.
-    ```
+   ```yaml
+   shippingAddressId:
+     type: string
+     format: uuid
+     description: >-
+       An address of the customer. It is where the order ships to.
+   ```
 
 2. In `Order`, add the same property with the description "The address the order ships to." and add it to `required`: `[orderId, customerId, shippingAddressId, status, items, currency, total, version, createdAt, updatedAt]`.
 3. Add `shippingAddressId: a41d9e07-52c3-4f0b-8f5e-6b1c0d9e2f33` to the `createOrder` request example and to every `Order` example in a response.

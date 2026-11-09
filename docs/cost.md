@@ -42,13 +42,13 @@ The migration runner needs to reach Secrets Manager from an isolated VPC. One in
 These are known ways to spend less. None is built.
 
 - **Just-in-time network egress.** Create a NAT gateway (or the endpoint) only for the migration step of a deploy, then destroy it. A NAT billed per run would cost about $1 or $2 a month instead of $7.30. It is not adopted because:
-    - CloudFormation cannot create a resource, run a trigger that depends on it and delete the resource in one deploy. It needs a separate egress stack that the pipeline deploys before the services and destroys after, so it only works cleanly from the pipeline.
-    - Subnets need a route to the NAT, and removing it means changing the route again.
-    - A failed teardown leaves a NAT running at about $36 a month, and the cleanup job has one more thing to find.
-    - Every `prod` deploy pays the extra minutes.
-    - The runner has general internet access while the NAT exists. The endpoint reaches Secrets Manager only.
+  - CloudFormation cannot create a resource, run a trigger that depends on it and delete the resource in one deploy. It needs a separate egress stack that the pipeline deploys before the services and destroys after, so it only works cleanly from the pipeline.
+  - Subnets need a route to the NAT, and removing it means changing the route again.
+  - A failed teardown leaves a NAT running at about $36 a month, and the cleanup job has one more thing to find.
+  - Every `prod` deploy pays the extra minutes.
+  - The runner has general internet access while the NAT exists. The endpoint reaches Secrets Manager only.
 
-    Revisit it in the Phase 6 cost review, with measured numbers and a working pipeline. Adopting it needs a new decision record that supersedes decision 0006.
+  Revisit it in the Phase 6 cost review, with measured numbers and a working pipeline. Adopting it needs a new decision record that supersedes decision 0006.
 
 - **A shorter auto-pause delay.** The delay is one hour (decision 0007). The AWS default is 300 seconds. A shorter delay cuts the idle hour after each run, at the cost of more resumes (about 15 seconds each) for anyone testing by hand.
 - **Fewer secrets.** Four database users mean four secrets at $0.40 a month. That is cheap next to the safety it buys, so this is not worth changing.

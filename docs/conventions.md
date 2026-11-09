@@ -33,9 +33,9 @@ Every error response from every service has the shape of the `Problem` schema in
 - Work happens on a branch from `main`. `main` changes only through a pull request.
 - A branch name starts with the Jira ticket key, then a short lowercase description: `BEP-123-add-address-api`.
 - Pipelines derive the pull request's database schema from the key at the start of the branch name:
-    - lowercase, with the hyphen replaced by an underscore: `BEP-123` becomes `bep_123`;
-    - at most 63 bytes, the PostgreSQL limit for an identifier;
-    - the `main` branch uses the fixed schema `main`.
+  - lowercase, with the hyphen replaced by an underscore: `BEP-123` becomes `bep_123`;
+  - at most 63 bytes, the PostgreSQL limit for an identifier;
+  - the `main` branch uses the fixed schema `main`.
 - A derived name always ends in an underscore and digits, so it can never equal `main`. A pipeline fails when a branch has no key, or the name is too long. It must not shorten the name, because two branches could then end up sharing a schema.
 
 ## Commits

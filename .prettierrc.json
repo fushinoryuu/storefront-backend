@@ -8,7 +8,7 @@
   "semi": true,
   "overrides": [
     {
-      "files": ["*.yml", "*.yaml", "*.json"],
+      "files": ["*.yml", "*.yaml", "*.json", "*.md"],
       "options": {
         "tabWidth": 2
       }
