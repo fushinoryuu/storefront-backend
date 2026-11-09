@@ -7,7 +7,7 @@ Guidance for Claude Code in this repo. The rules themselves are in `docs/`; this
 - `docs/ROADMAP.md` for the plan and `docs/roadmap-phases/` for each phase.
 - `docs/conventions.md` for naming, tags, events, errors, branches, commits, pull requests and decision records.
 - `docs/spec-conventions.md` for the OpenAPI specs.
-- `docs/decisions/` for why things are the way they are. Do not contradict an accepted record. To change a decision, write a new record that supersedes it.
+- `docs/decisions/` for why things are the way they are. Do not contradict an accepted record. Amend the record for a small change, and write a new record that supersedes it only for a major rework (see `docs/conventions.md`).
 
 ## How to work
 

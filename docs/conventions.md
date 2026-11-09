@@ -66,4 +66,5 @@ npm run synth
 - `NNNN` is a four-digit number, the next free one. Numbers are never reused or renumbered. Copy [decisions/0000-template.md](decisions/0000-template.md) to start one.
 - A record has Context, Options, Decision and Consequences, and fits on about one page.
 - The `Status:` line is `proposed`, `accepted on <date>` or `superseded by <number>`. It may end with a short note, for example `accepted on 2026-11-02. To be revisited after Phase 5.`
-- An accepted record is not rewritten. To change a decision, write a new record that supersedes it and update only the old record's `Status:` line.
+- A small change to an accepted record is made in the record itself. Edit the text that changed, and add `Amended on <date>: <what changed>` to the `Status:` line. A change is small when the decision stays the same: a correction, a clarification, a detail that moved, or a consequence that was added or reworded.
+- A major rework needs a new record that supersedes the old one, and only the old record's `Status:` line is updated. A change is major when it reverses the decision, picks a different option, or removes what the Consequences rest on. Do not write a new record for a small change.
