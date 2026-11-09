@@ -68,18 +68,18 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 
 - [x] A `stages.ts` file holds a typed config per stage: stack name prefix, removal policy, log retention, Aurora capacity settings, simulated carrier timings, alarm recipients, deletion protection.
 - [ ] `dev`: where pull request runs deploy, test and tear down. Everything is destroyable (`RemovalPolicy.DESTROY`, no deletion protection) with short log retention. It has no database stack of its own: it uses the Aurora cluster owned by `prod`, with one schema per pull request.
-  - [x] `stages.ts` sets the `dev` values: `DESTROY`, no deletion protection, one week of log retention, `Database` marked `external` and `databaseStage` set to `prod`.
-  - [ ] The per-run stacks that `dev` deploys (Phases 1 to 4), and the schema per pull request in the shared cluster.
+    - [x] `stages.ts` sets the `dev` values: `DESTROY`, no deletion protection, one week of log retention, `Database` marked `external` and `databaseStage` set to `prod`.
+    - [ ] The per-run stacks that `dev` deploys (Phases 1 to 4), and the schema per pull request in the shared cluster.
 - [ ] `prod`: a production-like stage deployed from `main` and kept up at all times, so there is always something to test against. Every stack is persistent, with `RemovalPolicy.RETAIN`, deletion protection, point-in-time recovery on DynamoDB and longer log retention. It owns the single Aurora cluster (minimum capacity 0, so it can pause, see ADR 0007) in a database stack with CloudFormation termination protection on, so `cdk destroy --all` cannot remove it by accident. The cluster holds the `main` schema and the PR schemas.
-  - [x] `stages.ts` sets the `prod` values: `RETAIN`, deletion protection, one month of log retention, Aurora capacity 0 to 4 ACU, and every stack marked `persistent`.
-  - [ ] The database stack with the Aurora cluster and CloudFormation termination protection.
-  - [ ] Point-in-time recovery on the DynamoDB table, with the orders stack.
+    - [x] `stages.ts` sets the `prod` values: `RETAIN`, deletion protection, one month of log retention, Aurora capacity 0 to 4 ACU, and every stack marked `persistent`.
+    - [ ] The database stack with the Aurora cluster and CloudFormation termination protection.
+    - [ ] Point-in-time recovery on the DynamoDB table, with the orders stack.
 - [ ] Both stages in the same account and region as separate stacks named `Storefront-<stage>-<Service>`. The one database stack is `Storefront-prod-Database`, and `dev` reads its connection details.
-  - [x] Both stages share the one member account and region (`docs/aws-setup.md`), and `infra/lib/naming.ts` builds the stack names, including `Storefront-prod-Database`. The `Platform` stack already uses it.
-  - [ ] The database stack, and `dev` reading its connection details.
+    - [x] Both stages share the one member account and region (`docs/aws-setup.md`), and `infra/lib/naming.ts` builds the stack names, including `Storefront-prod-Database`. The `Platform` stack already uses it.
+    - [ ] The database stack, and `dev` reading its connection details.
 - [ ] Mark each stack in `stages.ts` as persistent, per-run or external (owned by another stage). In `dev` every stack except the database is per-run, and in `prod` every stack is persistent. A teardown script lists the per-run stacks explicitly instead of destroying everything.
-  - [x] `stages.ts` marks every stack as `persistent`, `per-run` or `external`: in `dev` every stack except `Database` is `per-run`, and in `prod` every stack is `persistent`.
-  - [ ] The teardown script that lists the per-run stacks explicitly (Phase 6).
+    - [x] `stages.ts` marks every stack as `persistent`, `per-run` or `external`: in `dev` every stack except `Database` is `per-run`, and in `prod` every stack is `persistent`.
+    - [ ] The teardown script that lists the per-run stacks explicitly (Phase 6).
 
 ### 4. Conventions
 

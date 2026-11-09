@@ -473,8 +473,7 @@ components:
       enum: [active, suspended, deleted]
     Customer:
       type: object
-      required:
-        [customerId, email, firstName, lastName, phone, status, version, createdAt, updatedAt]
+      required: [customerId, email, firstName, lastName, phone, status, version, createdAt, updatedAt]
       properties:
         customerId:
           type: string
@@ -577,8 +576,7 @@ components:
       enum: [billing, shipping]
     Address:
       type: object
-      required:
-        [addressId, customerId, type, line1, line2, city, region, postalCode, country, isDefault]
+      required: [addressId, customerId, type, line1, line2, city, region, postalCode, country, isDefault]
       properties:
         addressId:
           type: string

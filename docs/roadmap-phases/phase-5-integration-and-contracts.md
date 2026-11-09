@@ -82,13 +82,13 @@ Check that what is deployed matches what the spec promises.
 These feed the library demo (non-breaking then breaking). The exact spec edits are already in `docs/spec-change-notes.md` (written in Phase 0.5). This phase adds the implementation change each one needs and the expected effect on a generated client.
 
 - [ ] **v1.1.0, non-breaking, in the `/v1` specs:**
-  - customers: add an optional `preferredLanguage` field.
-  - orders: add `GET /v1/orders/{orderId}/timeline` (status history) and an optional `notes` field on order creation.
-  - shipping: add an optional `carrier` filter on `GET /v1/shipments`.
+    - customers: add an optional `preferredLanguage` field.
+    - orders: add `GET /v1/orders/{orderId}/timeline` (status history) and an optional `notes` field on order creation.
+    - shipping: add an optional `carrier` filter on `GET /v1/shipments`.
 - [ ] **v2.0.0, breaking, a real `/v2` served next to `/v1`** by the same API, with its own spec (`openapi-v2.yaml`) and bundle (`specs/<service>-service-v2.yaml`), and listed in `specVersions`:
-  - orders: `POST /v2/orders` requires `shippingAddressId` (a new required request field).
-  - shipping: the status value `PICKED` is renamed `PACKED` (an enum change that breaks clients that switch on it). The data is stored once, and the `/v1` handlers map the new value back to `PICKED`.
-  - The `/v1` handlers are mapped onto the same data, so v1 clients keep working. Optionally, `/v1` responses carry `Deprecation` and `Sunset` headers.
+    - orders: `POST /v2/orders` requires `shippingAddressId` (a new required request field).
+    - shipping: the status value `PICKED` is renamed `PACKED` (an enum change that breaks clients that switch on it). The data is stored once, and the `/v1` handlers map the new value back to `PICKED`.
+    - The `/v1` handlers are mapped onto the same data, so v1 clients keep working. Optionally, `/v1` responses carry `Deprecation` and `Sunset` headers.
 - [ ] For each change, list which end-to-end or library example tests should break, so the demo shows exactly what a typed client catches at compile time.
 
 ## Acceptance criteria

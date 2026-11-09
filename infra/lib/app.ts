@@ -8,8 +8,8 @@ import { PlatformStack } from './stacks/platform-stack';
  * Stacks are added here as they are written.
  */
 export function createApp(props?: AppProps): App {
-  const app = new App(props);
-  const config = getStageConfig(app.node.tryGetContext('stage'));
-  new PlatformStack(app, config);
-  return app;
+    const app = new App(props);
+    const config = getStageConfig(app.node.tryGetContext('stage'));
+    new PlatformStack(app, config);
+    return app;
 }

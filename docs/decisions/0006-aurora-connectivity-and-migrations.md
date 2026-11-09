@@ -25,14 +25,14 @@ The customers service uses one Aurora PostgreSQL Serverless v2 cluster (ADR 0007
 - **Migrations:** Flyway in a container Lambda in the isolated VPC, in each customers stack. A CDK `Trigger` runs it after the cluster is ready, and an error fails the deploy. It has two actions, `migrate` and `clean`. The stack has one Secrets Manager interface endpoint in one availability zone, for the runner.
 - **Database users.** The Database stack creates four through the Data API, using the cluster's master secret, which no other stack can read. Each has its own secret.
 
-  | User            | Can do                                               | Used by          |
-  | --------------- | ---------------------------------------------------- | ---------------- |
-  | `main_migrator` | Owns `main`. No rights on pull request schemas       | `prod` runner    |
-  | `pr_migrator`   | Creates schemas and owns them. No rights on `main`   | `dev` runner     |
-  | `main_app`      | Reads and writes tables in `main` only               | `prod` functions |
-  | `pr_app`        | Reads and writes tables in pull request schemas only | `dev` functions  |
+    | User            | Can do                                               | Used by          |
+    | --------------- | ---------------------------------------------------- | ---------------- |
+    | `main_migrator` | Owns `main`. No rights on pull request schemas       | `prod` runner    |
+    | `pr_migrator`   | Creates schemas and owns them. No rights on `main`   | `dev` runner     |
+    | `main_app`      | Reads and writes tables in `main` only               | `prod` functions |
+    | `pr_app`        | Reads and writes tables in pull request schemas only | `dev` functions  |
 
-  `dev` stacks are only given the two `pr_` secrets. The boundary that protects `main` is PostgreSQL ownership and grants, so even a runner that is told to clean `main` cannot do it. The runner also refuses `main` and any name outside the pattern.
+    `dev` stacks are only given the two `pr_` secrets. The boundary that protects `main` is PostgreSQL ownership and grants, so even a runner that is told to clean `main` cannot do it. The runner also refuses `main` and any name outside the pattern.
 
 - **Schemas.** The Database stack creates `main`, owned by `main_migrator`. For a pull request, Flyway creates the schema as `pr_migrator` (`createSchemas`, on by default), and an `afterMigrate` callback grants the app user usage and table rights on it. The callback is safe to run again.
 - **Clean.** Flyway disables `clean` by default (`cleanDisabled`). Only the `dev` runner enables it. It runs after the tests and before the stacks are destroyed. Flyway's documentation says that "if Flyway automatically created them, then the schemas themselves will be dropped when cleaning", so a pull request schema is gone afterwards. The runner checks that, and drops the schema if it is still there.

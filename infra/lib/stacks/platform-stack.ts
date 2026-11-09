@@ -9,8 +9,8 @@ import { stackName } from '../naming';
  * ticket fills it with the cross-service resources.
  */
 export class PlatformStack extends Stack {
-  constructor(scope: Construct, config: StageConfig) {
-    super(scope, 'Platform', { stackName: stackName(config, 'Platform') });
-    applyStandardTags(this, config, 'Platform');
-  }
+    constructor(scope: Construct, config: StageConfig) {
+        super(scope, 'Platform', { stackName: stackName(config, 'Platform') });
+        applyStandardTags(this, config, 'Platform');
+    }
 }
