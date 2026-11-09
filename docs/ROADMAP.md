@@ -178,6 +178,6 @@ The library project needs from this one:
 - The LaunchDarkly project, environment keys and flag keys, but not flag state. The backend exposes no flag state, so the library reads flags from LaunchDarkly itself with a personal API token that has the built-in Reader role.
 - The planned v1.1.0 (non-breaking) spec change and the real `/v2` (breaking changes) served next to `/v1`, so the library demo can be rehearsed. `docs/spec-change-notes.md` has the exact edits.
 
-The library repository exists. It generates its clients with hey-api `openapi-ts`, names each spec's version after the bundle file, and raises spec problems as GitHub issues in this repository. The library client check in Phase 0.5 can run as soon as the drafts exist. This repo's integration tests will use the library's published package, as a dev dependency, once it is ready.
+The library repository exists. It generates its clients with hey-api `openapi-ts`, names each spec's version after the bundle file, and raises spec problems as bug tickets in this project's Jira project (BEP). The library client check in Phase 0.5 can run as soon as the drafts exist. This repo's integration tests will use the library's published package, as a dev dependency, once it is ready.
 
 The library roadmap's Phase 1 describes one demo API with an optional second service. With three services available here, you can update that doc to use all three as the multi-service example.
