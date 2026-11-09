@@ -1,6 +1,6 @@
 # 0001: One repository with a single package
 
-Status: accepted on 2026-11-03.
+Status: accepted on 2026-11-03. Amended on 2026-11-09: this repo's integration tests use the library as a dev dependency (last bullet of the decision).
 
 ## Context
 
@@ -27,7 +27,7 @@ One repo with a single package. The layout is:
 
 - One root `tsconfig.json` in strict mode, with no project references. Node.js is pinned in `.nvmrc` and `engines`, and the CDK CLI is a dev dependency, so everyone runs the same versions.
 - A service imports from `packages/` and never from another service. Services talk to each other through their APIs and events.
-- The library lives in its own repository. The contract between the two repos is the bundled spec files, not shared code.
+- The library lives in its own repository. The contract between the two repos is the bundled spec files, and no deployed code depends on the library. The one code dependency is in the other direction: the integration tests in this repo use the library as a dev dependency, installed from its published package, to call the services with typed clients (Phase 5).
 
 ## Consequences
 
