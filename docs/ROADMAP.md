@@ -108,6 +108,8 @@ The orders service calls the customers API to validate a customer when an order 
 - [x] Lint and bundle tooling
 - [x] Draft v0.1.0 specs for customers, shipping and orders
 - [ ] Hand-off draft and a check with the library project
+  - [x] Hand-off draft (`docs/spec-handoff.md`) and the spec change notes (`docs/spec-change-notes.md`)
+  - [ ] The library project generates clients from the drafts, and what it finds is fixed
 
 ### Phase 1: Shared platform
 
