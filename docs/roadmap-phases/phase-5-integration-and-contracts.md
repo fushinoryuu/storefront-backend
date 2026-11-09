@@ -28,7 +28,8 @@ Each service is tested on its own. This phase proves they work together, proves 
 ### 1. Test harness for deployed environments
 
 - [ ] A small helper that reads base URLs from SSM and the API keys from Secrets Manager (or a local untracked file produced by the key retrieval script) for a chosen stage. Per-run stacks are destroyed after tests, so URLs and keys change on every deploy and nothing should cache them between runs.
-- [ ] Plain `fetch` calls in this repo's own end-to-end tests. The library project can later replace them with generated clients, but this project should not depend on it.
+- [ ] The end-to-end and integration tests live in this repo and are meant to use the typed clients that the library project (`spec-driven-test-client`) generates, installed from its published package. The library is not ready to use yet, so until it has a usable published version these tests call the API with plain `fetch`.
+- [ ] Move the end-to-end and integration tests from `fetch` to the library's generated clients once the library publishes a usable version. Check the version with the library project first, and keep the tests passing at every step of the move.
 - [ ] A warm-up step that calls the customers `GET /v0/health/ready` endpoint with the `tests` key and a generous timeout, before the first test, so an Aurora resume does not look like a failure.
 - [ ] Polling helper for eventual consistency (poll a condition with a timeout and interval, never a fixed sleep).
 - [ ] Every test creates uniquely named data and removes what it created, where a delete operation exists. For data with no delete (orders, shipments), tag it with a run id and rely on a reset script and TTLs.
