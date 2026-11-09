@@ -5,7 +5,7 @@ How the AWS account is set up for this project, and how to repeat it. Account id
 ## Account and region
 
 - The project runs in its own AWS account, a member account of an AWS Organization. The management account holds only Organizations, IAM Identity Center and billing. No stack is deployed there.
-- Both stages (`dev` and `prod`) live in the member account, in one region: `us-west-2` (Oregon). See [decision 0002](decisions/0002-stack-boundaries-and-stages.md). Moving a stage into an account of its own later means a new bootstrap in that account and a new entry in `infra/lib/config/stages.ts`.
+- Both stages (`dev` and `prod`) live in the member account, in one region: `us-west-2` (Oregon). See [decision 0002](decisions/0002-stack-boundaries-and-stages.md).
 - The root user of each account is for setup and billing only, with MFA on. Do not create access keys for it, and do not use it for deployments.
 
 ## Local credentials

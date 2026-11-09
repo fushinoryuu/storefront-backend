@@ -33,9 +33,9 @@ The orders service calls the customers API to validate a customer when an order 
 ## Decisions already taken
 
 - **Infrastructure:** CDK in TypeScript, one CDK app, one stack per service plus a platform stack and one persistent database stack, deployed per stage. `dev` is where pull request runs deploy, test and tear down. `prod` is a production-like stage deployed from `main` that stays up for ad hoc testing, and it owns the database stack that `dev` shares.
-- **Test runs:** deploy to `dev`, run the tests (including the library project's), then destroy every `dev` stack. The `prod` stage is never destroyed by a test run. It owns the one Aurora cluster, which `dev` shares: creating it takes 10 to 15 minutes, and while paused it costs storage only. Termination protection keeps it from being destroyed by accident. Each pull request run uses its own database schema in that cluster, named from the Jira ticket key in the branch name and dropped after the run with Flyway clean. `prod` uses the `main` schema, which is never dropped, and a PR run's database user cannot touch it. Runs are serialized with a concurrency limit so two branches never collide.
+- **Test runs:** deploy to `dev`, run the tests, then destroy every `dev` stack. The `prod` stage is never destroyed by a test run. It owns the one Aurora cluster, which `dev` shares: creating it takes 10 to 15 minutes, and while paused it costs storage only. Termination protection keeps it from being destroyed by accident. Each pull request run uses its own database schema in that cluster, named from the Jira ticket key in the branch name and dropped after the run with Flyway clean. `prod` uses the `main` schema, which is never dropped, and a PR run's database user cannot touch it. Runs are serialized with a concurrency limit so two branches never collide.
 - **Runtime:** Lambda on Node.js, TypeScript, bundled with esbuild through CDK's `NodejsFunction`. Use a Lambda Node.js runtime that is current when you build this.
-- **Testing:** vitest, matching the library project.
+- **Testing:** vitest, matching the library project. The integration tests live in this repo and will use the typed clients that the library generates, once the library is ready to be used. Until then they call the API with plain `fetch`, and Phase 5 moves them over.
 - **Account and region:** a personal AWS account in `us-west-2`, with a dedicated profile so experiments stay isolated.
 - **Data stores:** Aurora PostgreSQL Serverless v2 with scale to zero for customers, DynamoDB for orders and shipping. Cost is the priority, and Aurora is the cheapest relational option that keeps foreign keys, constraints and triggers. Aurora DSQL was considered and ruled out because it gives up foreign keys, triggers and the Data API.
 - **Database migrations:** Flyway. Because Flyway connects over JDBC and the database sits in an isolated VPC with no NAT, it runs in a container Lambda inside the VPC, invoked on deploy, with one Secrets Manager interface endpoint for the credentials (about $7 a month while deployed, see `docs/cost.md`). A NAT gateway would be about $33 a month. The app functions still use the Data API from outside the VPC.
@@ -107,7 +107,9 @@ The orders service calls the customers API to validate a customer when an order 
 - [x] Spec conventions, shared components, and the spec-first decision record
 - [x] Lint and bundle tooling
 - [x] Draft v0.1.0 specs for customers, shipping and orders
-- [ ] Hand-off draft and a check with the library project
+- [x] Hand-off draft and a check with the library project
+  - [x] Hand-off draft (`docs/spec-handoff.md`) and the spec change notes (`docs/spec-change-notes.md`)
+  - [x] The library project generates clients from the drafts, and what it finds is fixed
 
 ### Phase 1: Shared platform
 
@@ -176,6 +178,6 @@ The library project needs from this one:
 - The LaunchDarkly project, environment keys and flag keys, but not flag state. The backend exposes no flag state, so the library reads flags from LaunchDarkly itself with a personal API token that has the built-in Reader role.
 - The planned v1.1.0 (non-breaking) spec change and the real `/v2` (breaking changes) served next to `/v1`, so the library demo can be rehearsed. `docs/spec-change-notes.md` has the exact edits.
 
-The library repository exists. It generates its clients with hey-api `openapi-ts`, names each spec's version after the bundle file, and raises spec problems as GitHub issues in this repository. The library client check in Phase 0.5 can run as soon as the drafts exist. How the cross-repository test workflow in Phase 6 connects the two repositories is still undecided.
+The library repository exists. It generates its clients with hey-api `openapi-ts`, names each spec's version after the bundle file, and raises spec problems as GitHub issues in this repository. The library client check in Phase 0.5 can run as soon as the drafts exist. This repo's integration tests will use the library's published package, as a dev dependency, once it is ready.
 
 The library roadmap's Phase 1 describes one demo API with an optional second service. With three services available here, you can update that doc to use all three as the multi-service example.
