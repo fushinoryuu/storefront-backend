@@ -45,13 +45,13 @@ Write the OpenAPI specs for all three services before any of them is built. The 
 - [x] Shared error schema named `Problem` (`type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]`). It is not called `Error`, which collides with the JavaScript global in generated TypeScript.
 - [x] `apiKey` security scheme using the `x-api-key` header.
 - [x] Cursor pagination: the `cursor` and `limit` query parameters, and a page envelope with a nullable `nextCursor`.
-- [x] Common responses: 400, 403, 404, 409, 429, 503, all using `Problem`. The 503 documents a `Retry-After` header in seconds.
+- [x] Common responses: 400, 403, 404, 409, 429, 500, 503, all using `Problem`. The 503 documents a `Retry-After` header in seconds.
 - [x] Shared path items for `GET /v0/health` and `GET /v0/version`. The version response reports the build id, the stage and `specVersions`, an object keyed by prefix whose keys equal the bundle file suffixes (`v0`, `v1`, `v2`).
 - [x] Naming rules for `operationId` (verb plus noun, camelCase) and tags (one per endpoint group, plus the shared `operations` tag for the `/v0` routes).
 
 ### S.2 Lint and bundle tooling
 
-- [x] Redocly for the structural lint, example validation and bundling, plus project rules (TypeScript checks over the bundled document) that enforce `operationId`, one tag per operation, examples on every body, `Problem` on every 4xx and 503, the version prefix, and that health and version routes appear only in `/v0` specs. The rules are listed in `docs/spec-conventions.md`.
+- [x] Redocly for the structural lint, example validation and bundling, plus project rules (TypeScript checks over the bundled document) that enforce `operationId`, one tag per operation, examples on every body, `Problem` on every 4xx, 500 and 503, the version prefix, and that health and version routes appear only in `/v0` specs. The rules are listed in `docs/spec-conventions.md`.
 - [x] A script that bundles every spec a service has (`openapi.yaml`, `openapi-v0.yaml`, and later `openapi-v2.yaml`) with its references to the shared files into a standalone file `specs/<service>-service-v<N>.yaml`. A check mode fails when a bundle is stale.
 - [x] Run both locally and in the Phase 0 CI.
 

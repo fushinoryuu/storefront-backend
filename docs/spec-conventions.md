@@ -50,7 +50,7 @@ How the OpenAPI specs are written. The specs are the source of truth for the API
 
 ## Examples
 
-Every request body and every response that has a body has an example, including the 4xx and 503 ones. The library's mock servers serve them. Redocly checks that each example matches its schema.
+Every request body and every response that has a body has an example, including the 4xx, 500 and 503 ones. The library's mock servers serve them. Redocly checks that each example matches its schema.
 
 ## Pagination
 
