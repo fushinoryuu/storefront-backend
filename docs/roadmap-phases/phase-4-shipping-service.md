@@ -16,7 +16,7 @@ The shipping service has almost no request-driven behavior. It reacts to orders,
 | Stack                    | `infra/lib/stacks/shipping-stack.ts`                                             |
 | Service code             | `services/shipping/src/`                                                         |
 | State machine definition | `services/shipping/workflow/` or in the stack                                    |
-| Event contracts          | `packages/events/src/shipping/`                                                  |
+| Event contracts          | `packages/events/src/schemas.ts`                                                 |
 | OpenAPI spec             | `services/shipping/openapi.yaml` (draft from Phase 0.5, released as v1.0.0 here) |
 | Operational spec         | `services/shipping/openapi-v0.yaml` (health and version, stays `0.x`)            |
 | Tests                    | `services/shipping/test/`                                                        |
