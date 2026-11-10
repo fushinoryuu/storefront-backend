@@ -1,1 +1,3 @@
-export const name = 'shared';
+export * from './correlation';
+export * from './errors';
+export * from './logger';
