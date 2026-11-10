@@ -16,6 +16,7 @@ const specResponses: [string, ProblemKind][] = [
     ['Forbidden', problemKinds.forbidden],
     ['NotFound', problemKinds.notFound],
     ['Conflict', problemKinds.conflict],
+    ['InternalError', problemKinds.internalError],
     ['ServiceUnavailable', problemKinds.serviceUnavailable]
 ];
 
@@ -45,9 +46,9 @@ describe('mapping a domain error to a problem', () => {
         expect(example).toMatchObject({ type: `${problemTypeBase}/${kind.slug}`, title: kind.title, status: kind.status });
     });
 
-    it('has a shared spec response for every kind except the 500, which the specs do not document yet', () => {
+    it('has a shared spec response for every kind', () => {
         const withoutResponse = Object.values(problemKinds).filter((kind) => !specResponses.some(([, shown]) => shown === kind));
-        expect(withoutResponse).toEqual([problemKinds.internalError]);
+        expect(withoutResponse).toEqual([]);
     });
 
     it('puts the detail in, and leaves it out when there is none', () => {
