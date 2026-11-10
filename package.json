@@ -23,6 +23,7 @@
     "@eslint/js": "^10.0.1",
     "@redocly/openapi-core": "^2.72.1",
     "@types/node": "^24.19.2",
+    "ajv": "^8.20.0",
     "aws-cdk": "2.1146.1",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
@@ -33,6 +34,7 @@
     "vitest": "^5.0.5"
   },
   "dependencies": {
+    "@aws-lambda-powertools/logger": "2.36.0",
     "aws-cdk-lib": "2.275.0",
     "constructs": "10.8.1",
     "zod": "^4.6.7"
