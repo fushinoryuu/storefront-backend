@@ -204,7 +204,7 @@ function checkExamples(doc: Json, op: Json, where: string, out: Finding[]): void
 function checkProblems(doc: Json, op: Json, where: string, out: Finding[]): void {
     const responses = isObject(op['responses']) ? op['responses'] : {};
     for (const [code, response] of Object.entries(responses)) {
-        if (!/^4(?:\d\d|XX)$/.test(code) && code !== '503') continue;
+        if (!/^4(?:\d\d|XX)$/.test(code) && code !== '500' && code !== '503') continue;
         const content = resolve(doc, response)?.['content'];
         const schema = isObject(content) ? content['application/json'] : undefined;
         const ref = isObject(schema) && isObject(schema['schema']) ? schema['schema']['$ref'] : undefined;

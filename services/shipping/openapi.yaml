@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Shipping service
-  version: 0.1.1
+  version: 0.2.0
   license:
     name: GPL-3.0-only
     url: https://www.gnu.org/licenses/gpl-3.0.html
@@ -66,6 +66,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
   /v1/shipments/{shipmentId}:
     get:
       operationId: getShipment
@@ -94,6 +96,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
   /v1/shipments/{shipmentId}/simulate/advance:
     post:
       operationId: advanceShipment
@@ -140,6 +144,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
 components:
   securitySchemes:
     apiKey:

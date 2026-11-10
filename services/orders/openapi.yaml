@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Orders service
-  version: 0.1.0
+  version: 0.2.0
   license:
     name: GPL-3.0-only
     url: https://www.gnu.org/licenses/gpl-3.0.html
@@ -54,6 +54,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
   /v1/orders:
     post:
       operationId: createOrder
@@ -135,6 +137,8 @@ paths:
           $ref: '#/components/responses/UnknownCustomer'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     get:
@@ -197,6 +201,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
   /v1/orders/{orderId}:
     get:
       operationId: getOrder
@@ -233,6 +239,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
   /v1/orders/{orderId}/cancel:
     post:
       operationId: cancelOrder
@@ -279,6 +287,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
 components:
   securitySchemes:
     apiKey:

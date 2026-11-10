@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Customers service
-  version: 0.2.0
+  version: 0.3.0
   license:
     name: GPL-3.0-only
     url: https://www.gnu.org/licenses/gpl-3.0.html
@@ -78,6 +78,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     get:
@@ -135,6 +137,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Forbidden'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
   /v1/customers/{customerId}:
@@ -168,6 +172,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     patch:
@@ -225,6 +231,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/Conflict'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     delete:
@@ -248,6 +256,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
   /v1/customers/{customerId}/addresses:
@@ -310,6 +320,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     get:
@@ -359,6 +371,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
   /v1/customers/{customerId}/addresses/{addressId}:
@@ -417,6 +431,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
     delete:
@@ -439,6 +455,8 @@ paths:
           $ref: '../../specs/shared/components.yaml#/components/responses/NotFound'
         '429':
           $ref: '../../specs/shared/components.yaml#/components/responses/TooManyRequests'
+        '500':
+          $ref: '../../specs/shared/components.yaml#/components/responses/InternalError'
         '503':
           $ref: '../../specs/shared/components.yaml#/components/responses/ServiceUnavailable'
 components:

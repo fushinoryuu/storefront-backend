@@ -20,7 +20,7 @@ The specs you consume are the bundled files in [specs/](../specs/) on `main`. Ea
 - `v1` and later hold the business routes. `v0` is the operational spec: `GET /v0/health`, `GET /v0/version` and, for customers only, `GET /v0/health/ready`. Their `operationId`s are `getHealth`, `getVersion` and `getReadiness`, under the tag `operations`. A `v1` or `v2` spec has none of them. `v0` means operational, not pre-release.
 - A new major is served next to the old one (`/v2` beside `/v1`), and each major is its own file, so a consumer sees every version as one more segment of the same service.
 - The files in `services/<service>/` are the sources. Do not consume or edit them: they reference `specs/shared/`. Never edit a bundle either, because the next bundle run overwrites it. Spec changes are made in the source, and CI fails when a bundle is stale.
-- Every spec has the shared `Problem` error schema on its 4xx and 503 responses, the `apiKey` security scheme (the `x-api-key` header), an example on every body, `nullable: true` for nullable fields, no `servers` entry and no API Gateway extensions. The rules are in [spec-conventions.md](spec-conventions.md).
+- Every spec has the shared `Problem` error schema on its 4xx, 500 and 503 responses, the `apiKey` security scheme (the `x-api-key` header), an example on every body, `nullable: true` for nullable fields, no `servers` entry and no API Gateway extensions. The rules are in [spec-conventions.md](spec-conventions.md).
 
 Pull the files from a git ref of this repository, and record the commit and each `info.version` next to your copy. Published build artifacts come later, with the stage manifest (below).
 

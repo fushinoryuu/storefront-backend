@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Orders service operations
-  version: 0.1.0
+  version: 0.2.0
   license:
     name: GPL-3.0-only
     url: https://www.gnu.org/licenses/gpl-3.0.html

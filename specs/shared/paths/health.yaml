@@ -21,5 +21,7 @@ get:
                 enum: [ok]
           example:
             status: ok
+    '500':
+      $ref: '../components.yaml#/components/responses/InternalError'
     '503':
       $ref: '../components.yaml#/components/responses/ServiceUnavailable'

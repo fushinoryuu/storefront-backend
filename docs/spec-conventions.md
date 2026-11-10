@@ -45,11 +45,12 @@ How the OpenAPI specs are written. The specs are the source of truth for the API
 ## Errors
 
 - The shared error schema is `Problem` (`type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]`). It is not called `Error`, which collides with the JavaScript global in generated TypeScript.
-- Every 4xx response and every 503 response is `application/json` with the `Problem` schema. A 503 documents its `Retry-After` header, in seconds.
+- Every 4xx, 500 and 503 response is `application/json` with the `Problem` schema. A 503 documents its `Retry-After` header, in seconds.
+- Every operation documents the shared `InternalError` response (500), because any handler can fail in a way its caller could not avoid. The 500 has no `detail`.
 
 ## Examples
 
-Every request body and every response that has a body has an example, including the 4xx and 503 ones. The library's mock servers serve them. Redocly checks that each example matches its schema.
+Every request body and every response that has a body has an example, including the 4xx, 500 and 503 ones. The library's mock servers serve them. Redocly checks that each example matches its schema.
 
 ## Pagination
 
@@ -75,6 +76,6 @@ npm run bundle:specs -- --check # what CI runs: fails if a bundle is stale, miss
 | `one-tag`                         | Exactly one tag, and `operations` only on `/v0` routes                                                                                                                                           |
 | `security`                        | `apiKey` as above, and `security: []` on health and version                                                                                                                                      |
 | `examples`                        | An example on every body                                                                                                                                                                         |
-| `problem-responses`               | `Problem` on every 4xx and 503                                                                                                                                                                   |
+| `problem-responses`               | `Problem` on every 4xx, 500 and 503                                                                                                                                                              |
 | `discriminator`                   | A warning for `oneOf` or `anyOf` without a discriminator                                                                                                                                         |
 | Redocly rules                     | The `recommended` ruleset: valid OpenAPI structure, resolvable `$ref`s, unique `operationId`s, summaries, examples that match their schemas, a license. `lint.ts` lists the few rules turned off |

@@ -81,6 +81,7 @@ const broken: [string, 'v0' | 'v1' | 'v2', (doc: Doc) => void, string][] = [
     ],
     ['a 4xx response without a body', 'v1', (d) => (d['paths']['/v1/things'].get.responses['4XX'] = { description: 'Bad' }), 'problem-responses'],
     ['a 503 response without the Problem schema', 'v0', (d) => (d['paths']['/v0/version'].get.responses['503'] = { description: 'Down' }), 'problem-responses'],
+    ['a 500 response without the Problem schema', 'v0', (d) => (d['paths']['/v0/version'].get.responses['500'] = { description: 'Broken' }), 'problem-responses'],
     ['an open health route that still needs a key', 'v0', (d) => delete d['paths']['/v0/health'].get.security, 'security'],
     ['a business route that is open', 'v1', (d) => (d['paths']['/v1/things'].get.security = []), 'security'],
     ['a business route with another security scheme', 'v1', (d) => (d['paths']['/v1/things'].get.security = [{ other: [] }]), 'security'],
