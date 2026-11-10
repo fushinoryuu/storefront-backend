@@ -48,7 +48,7 @@ export const ShipmentCancelledDataSchema = z.object({
     orderId
 });
 
-// What the registry in registry.ts needs to know about each event.
+// The payload schema of each event by type. envelope.ts builds the event types, the envelope schemas and the registry from this map.
 export const eventDataSchemas = {
     OrderPlaced: OrderPlacedDataSchema,
     OrderCancelled: OrderCancelledDataSchema,
