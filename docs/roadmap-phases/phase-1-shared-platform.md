@@ -74,9 +74,12 @@ Wraps a REST API.
 
 ### `packages/shared`
 
-- [ ] **Logger:** structured JSON, with correlation id, service, stage, and request id on every line. Powertools for AWS Lambda, wrapped in this package (decision 0010).
+- [x] **Logger:** structured JSON, with correlation id, service, stage, and request id on every line. Powertools for AWS Lambda, wrapped in this package (decision 0010).
 - [ ] **Correlation id:** read from `x-correlation-id` on requests (generate if absent), propagate it to downstream HTTP calls and into event envelopes, return it on responses.
-- [ ] **Error model:** one JSON error shape for every service (for example `type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]` for field validation). Map domain errors to HTTP status codes in one place. The shared error schema is `Problem`, owned by the OpenAPI shared components (Phase 0.5), and this implementation must match it.
+  - [x] Read from the request or generate, and return it on responses (`getCorrelationId`, `correlationHeaders`).
+  - [x] Into event envelopes: `buildEvent` takes it as `correlationId`.
+  - [ ] Downstream HTTP calls: `correlationHeaders` builds the header, and the HTTP client (the shared integrations ticket) attaches it.
+- [x] **Error model:** one JSON error shape for every service (for example `type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]` for field validation). Map domain errors to HTTP status codes in one place. The shared error schema is `Problem`, owned by the OpenAPI shared components (Phase 0.5), and this implementation must match it.
 - [ ] **Validation:** a small wrapper that validates input against schemas taken from the OpenAPI spec (as decided in record 0004) and returns the shared error shape.
 - [ ] **Idempotency helper:** conditional-write based dedupe keyed by event id or idempotency key, with TTL.
 - [ ] **HTTP client** for service-to-service calls: timeout, correlation id propagation, attaching the `services` API key (read from Secrets Manager once per execution environment), no automatic retry on non-idempotent methods.
