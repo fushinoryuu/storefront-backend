@@ -2,9 +2,22 @@ import { readFileSync } from 'node:fs';
 import { parseYaml } from '@redocly/openapi-core';
 import { Ajv } from 'ajv';
 import { describe, expect, it } from 'vitest';
-import { ConflictError, DomainError, ForbiddenError, NotFoundError, ServiceUnavailableError, ValidationError, problemKinds, problemResponse, problemTypeBase, toProblem } from '../src/index';
+import { ConflictError, DomainError, ForbiddenError, NotFoundError, ServiceUnavailableError, ValidationError, problemKinds, problemResponse, problemTypeBase, toProblem, type ProblemKind } from '../src/index';
 
 const correlationId = '6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f10';
+
+const components = parseYaml(readFileSync(new URL('../../../specs/shared/components.yaml', import.meta.url), 'utf8')) as {
+    components: { responses: Record<string, { content: { 'application/json': { example: { type: string; title: string; status: number } } } }> };
+};
+
+// The shared responses of components.yaml, and the kind of problem each one shows.
+const specResponses: [string, ProblemKind][] = [
+    ['BadRequest', problemKinds.invalidRequest],
+    ['Forbidden', problemKinds.forbidden],
+    ['NotFound', problemKinds.notFound],
+    ['Conflict', problemKinds.conflict],
+    ['ServiceUnavailable', problemKinds.serviceUnavailable]
+];
 
 // The kinds a service can throw, with the status and the problem type the specs document for them.
 const documented: [string, DomainError, number, string][] = [
@@ -26,16 +39,15 @@ describe('mapping a domain error to a problem', () => {
         expect(problemResponse(error, correlationId).statusCode).toBe(status);
     });
 
-    it('knows the same statuses the shared spec responses show', () => {
-        const kinds = Object.values(problemKinds).map((kind) => [kind.slug, kind.status]);
-        expect(kinds).toEqual([
-            ['invalid-request', 400],
-            ['forbidden', 403],
-            ['not-found', 404],
-            ['conflict', 409],
-            ['service-unavailable', 503],
-            ['internal-error', 500]
-        ]);
+    it.each(specResponses)('gives the type, title and status that the %s response of the shared spec shows', (name, kind) => {
+        const example = components.components.responses[name]?.content['application/json'].example;
+        expect(example, `${name} has no example in specs/shared/components.yaml`).toBeDefined();
+        expect(example).toMatchObject({ type: `${problemTypeBase}/${kind.slug}`, title: kind.title, status: kind.status });
+    });
+
+    it('has a shared spec response for every kind except the 500, which the specs do not document yet', () => {
+        const withoutResponse = Object.values(problemKinds).filter((kind) => !specResponses.some(([, shown]) => shown === kind));
+        expect(withoutResponse).toEqual([problemKinds.internalError]);
     });
 
     it('puts the detail in, and leaves it out when there is none', () => {
@@ -89,7 +101,6 @@ describe('the error response', () => {
 });
 
 describe('the Problem schema in specs/shared/components.yaml', () => {
-    const components = parseYaml(readFileSync(new URL('../../../specs/shared/components.yaml', import.meta.url), 'utf8'));
     // The spec uses OpenAPI keywords (`example`) that JSON Schema does not know, so strict mode is off.
     const ajv = new Ajv({ strict: false, allErrors: true });
     ajv.addSchema(components as object, 'components');
