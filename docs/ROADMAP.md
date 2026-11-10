@@ -76,7 +76,8 @@ The orders service calls the customers API to validate a customer when an order 
 - The AWS PrivateLink pricing example for US East uses $0.01 per hour for each interface endpoint in each availability zone (about $7 a month) and $0.01 per GB processed. The AWS Aurora pricing page gives $0.12 per ACU-hour for Aurora Serverless v2 Standard in US East (N. Virginia) as an example.
 - The `us-west-2` rates, from AWS's public price list files (read on 2026-11-06): an interface endpoint is $0.01 per hour and $0.01 per GB, a public IPv4 address is $0.005 per hour, Aurora PostgreSQL Serverless v2 (Standard) is $0.12 per ACU-hour, Aurora storage is $0.10 per GB-month, the Data API is $0.35 per million requests at the first tier, and a Secrets Manager secret is $0.40 a month. EventBridge Pipes is $0.40 per million requests after filtering, but its pricing page does not name a region. `docs/cost.md` has the detail.
 - Checked against the account on 2026-11-06: every Aurora PostgreSQL engine version in `us-west-2` (13.23 to 18.6) reports a minimum capacity of 0, and Pipes answers in the region (`docs/aws-setup.md`).
-- Still to confirm: the Oregon rate of a NAT gateway (the figure is from the US East page), and which Node.js versions Powertools supports. The Phase 1 ticket that installs Powertools should check the Node.js versions.
+- Checked on 2026-11-10: Powertools for AWS Lambda (TypeScript) 2.36.0 runs its unit tests on Node.js 22 and 24 (decision 0010).
+- Still to confirm: the Oregon rate of a NAT gateway (the figure is from the US East page).
 
 ## Phases
 

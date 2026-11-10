@@ -1,6 +1,6 @@
 # 0010: Observability toolkit
 
-Status: accepted on 2026-11-04. One check is left for when the package is installed (see Consequences).
+Status: accepted on 2026-11-04. Amended on 2026-11-10: the Node.js check is done, and the pinned Logger supports the runtime (see Consequences).
 
 ## Context
 
@@ -24,5 +24,5 @@ Use Powertools for the Logger, the Tracer and Metrics, installed as npm packages
 - Logs, traces and metrics look the same in every service, and the wrapper is the one place to change.
 - The library adds to the bundle of every function. Measure the bundle size and cold start when the first function is deployed (the throwaway service in Phase 1).
 - Custom metrics are billed. Keep the list short: orders placed, orders cancelled, shipments created, transitions and end-to-end lag.
-- **Unresolved:** I could not confirm which Node.js versions Powertools supports from its documentation page. The Phase 1 ticket that installs it must check them against the Lambda runtime before pinning.
+- Node.js support, checked on 2026-11-10 when the Logger was installed: its `package.json` has no `engines` field, so the support is read from the project. The Powertools repository runs the unit tests of every package on Node.js 22 and 24 (`reusable-run-linting-check-and-unit-tests.yml`), its README badge lists 22 and 24, and its root `package.json` requires `>=22`. This repository runs Node.js 24 (`.nvmrc`), which Lambda offers as `nodejs24.x` until 30 April 2028. `@aws-lambda-powertools/logger` is pinned to 2.36.0 (an exact version, not a range). Check again when the Lambda runtime moves to a newer Node.js.
 - Source: [Powertools for AWS Lambda (TypeScript)](https://docs.aws.amazon.com/powertools/typescript/latest/).
