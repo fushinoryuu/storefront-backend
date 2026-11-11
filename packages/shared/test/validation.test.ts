@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { zCreateOrderBody, zCreateOrderHeaders, zListOrdersQuery } from '../../../generated/orders-service-v1/zod.gen';
 import { zCreateCustomer } from '../../../generated/customers-service-v1/zod.gen';
 import { ValidationError, fieldPath, parseJsonBody, toProblem, validate, validateParameters } from '../src/index';
@@ -78,6 +79,14 @@ describe('validateParameters', () => {
     it('reports a value that is out of range or not a number', () => {
         expect(thrown(() => validateParameters(zListOrdersQuery, { limit: '500' })).errors.map((e) => e.field)).toEqual(['limit']);
         expect(thrown(() => validateParameters(zListOrdersQuery, { limit: 'many' })).errors.map((e) => e.field)).toEqual(['limit']);
+    });
+
+    it('turns true and false into booleans, also under optional and default, and leaves other text for the schema to report', () => {
+        const schema = z.object({ includeDeleted: z.boolean(), dryRun: z.boolean().optional(), notify: z.boolean().default(false) });
+
+        expect(validateParameters(schema, { includeDeleted: 'true', dryRun: 'false', notify: 'true' })).toEqual({ includeDeleted: true, dryRun: false, notify: true });
+        expect(validateParameters(schema, { includeDeleted: 'false' })).toEqual({ includeDeleted: false, notify: false });
+        expect(thrown(() => validateParameters(schema, { includeDeleted: 'yes', dryRun: 'TRUE' })).errors.map((e) => e.field)).toEqual(['includeDeleted', 'dryRun']);
     });
 
     it('reads only the names in the schema', () => {

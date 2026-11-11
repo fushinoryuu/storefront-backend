@@ -95,7 +95,7 @@ if (status === 404) throw new DomainError(unknownCustomer, 'There is no customer
 
 - Every call carries `x-correlation-id` and the `services` key in `x-api-key`. A header the caller passes cannot replace either.
 - The secret is read from Secrets Manager once per execution environment. Calls that start while the read is running share it, and a failed read is tried again by the next call.
-- An answer below 500 is returned, 404 and 409 included, because the caller decides what they mean. A timeout, a network failure and any 5xx are thrown as a `ServiceUnavailableError`, which `problemResponse` answers as a 503 (with the `Retry-After` of the other service when it sent one).
+- An answer below 500 is returned, 404 and 409 included, because the caller decides what they mean. A timeout (it also covers reading the body), a network failure, a body that breaks off after the headers and any 5xx are thrown as a `ServiceUnavailableError`, which `problemResponse` answers as a 503 (with the `Retry-After` of the other service when it sent one).
 - There is no retry unless `retries` is set, and then only for GET, HEAD, OPTIONS, PUT and DELETE, and only after a timeout, a network failure or a 502, 503 or 504. A POST or a PATCH is attempted once. Retries follow each other at once, without a pause.
 
 ## Tests that need DynamoDB Local

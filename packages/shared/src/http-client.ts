@@ -96,9 +96,9 @@ export function createHttpClient({ service, baseUrl, timeoutMs, getApiKey, retri
 
     async function attempt(request: HttpRequest, apiKey: string): Promise<HttpResult | Failure> {
         const { method = 'GET', path, correlationId, body, headers } = request;
-        let response: Response;
+        // The timeout also runs while the body is read, so the request and the reading of the body are one step: a body that breaks off or runs late is a failure to get an answer, the same as a connection that fails.
         try {
-            response = await send(`${root}${path}`, {
+            const response = await send(`${root}${path}`, {
                 method,
                 headers: {
                     accept: 'application/json',
@@ -110,16 +110,16 @@ export function createHttpClient({ service, baseUrl, timeoutMs, getApiKey, retri
                 ...(body !== undefined && { body: JSON.stringify(body) }),
                 signal: AbortSignal.timeout(timeoutMs)
             });
+            if (response.status >= 500) {
+                await response.body?.cancel().catch(() => undefined);
+                const cause = new Error(`The ${service} service answered ${response.status}.`);
+                return { error: new ServiceUnavailableError(`The ${service} service is not available.`, retryAfter(response.headers), { cause }), retryable: [502, 503, 504].includes(response.status) };
+            }
+            return { status: response.status, headers: response.headers, body: parseBody(await response.text()) };
         } catch (cause) {
             const timedOut = cause instanceof Error && cause.name === 'TimeoutError';
             return { error: new ServiceUnavailableError(`The ${service} service ${timedOut ? 'did not answer in time' : 'could not be reached'}.`, undefined, { cause }), retryable: true };
         }
-        if (response.status >= 500) {
-            await response.body?.cancel();
-            const cause = new Error(`The ${service} service answered ${response.status}.`);
-            return { error: new ServiceUnavailableError(`The ${service} service is not available.`, retryAfter(response.headers), { cause }), retryable: [502, 503, 504].includes(response.status) };
-        }
-        return { status: response.status, headers: response.headers, body: parseBody(await response.text()) };
     }
 
     return {
