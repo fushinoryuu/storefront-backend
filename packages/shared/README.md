@@ -1,6 +1,6 @@
 # shared
 
-Code that every service uses, so they log, trace a request and report errors the same way. Services import this package and never Powertools itself (decision [0010](../../docs/decisions/0010-observability-toolkit.md)). It also holds the validation wrapper, the idempotency helper and the HTTP client. The feature flag client is added by a later ticket.
+Code that every service uses, so they log, trace a request and report errors the same way. Services import this package and never Powertools itself (decision [0010](../../docs/decisions/0010-observability-toolkit.md)). It also holds the validation wrapper, the idempotency helper, the HTTP client and the feature flag client.
 
 ## A handler, start to finish
 
@@ -97,6 +97,22 @@ if (status === 404) throw new DomainError(unknownCustomer, 'There is no customer
 - The secret is read from Secrets Manager once per execution environment. Calls that start while the read is running share it, and a failed read is tried again by the next call.
 - An answer below 500 is returned, 404 and 409 included, because the caller decides what they mean. A timeout (it also covers reading the body), a network failure, a body that breaks off after the headers and any 5xx are thrown as a `ServiceUnavailableError`, which `problemResponse` answers as a 503 (with the `Retry-After` of the other service when it sent one).
 - There is no retry unless `retries` is set, and then only for GET, HEAD, OPTIONS, PUT and DELETE, and only after a timeout, a network failure or a 502, 503 or 504. A POST or a PATCH is attempted once. Retries follow each other at once, without a pause.
+
+## Feature flags
+
+Flags are in LaunchDarkly, and the code never depends on it being reachable (decision [0011](../../docs/decisions/0011-feature-flags.md)). `flags` in `src/flags.ts` lists every flag the code knows: its LaunchDarkly key, its default and a description. A flag is on or off and nothing more. To add one, add it there and create it in both LaunchDarkly environments.
+
+```ts
+const getSdkKey = createSecretProvider({ secretId: process.env.LAUNCHDARKLY_SDK_KEY_SECRET! }); // once per execution environment
+const flagClient = createFlagClient({ service: 'shipping', getSdkKey, timeoutMs: 1000, onFallback: ({ flag, reason }) => logger.warn('using the default of a flag', { flag, reason }) });
+
+if (!(await flagClient.isEnabled('shipment-simulation'))) return notFound(); // a key that is not in `flags` does not compile
+```
+
+- `isEnabled` gives the value of the flag, or its default when the SDK key cannot be read, the SDK is not ready within `timeoutMs`, it gave up (an invalid key), or the evaluation failed. It does not reject for a key in the registry. `onFallback` is told why, so log it: otherwise a broken key looks like a flag that is off.
+- The SDK starts on the first call and is reused after that. An SDK that was not ready in time keeps connecting, and a later call uses it once it is. While LaunchDarkly cannot be reached, every call can wait up to `timeoutMs`.
+- The SDK key is never logged. A new key is used only by execution environments that start after the change.
+- Tests use the SDK's test data source and never reach LaunchDarkly: pass `sdkOptions: { updateProcessor: new TestData().getFactory() }` (see `test/flags.test.ts`).
 
 ## Tests that need DynamoDB Local
 

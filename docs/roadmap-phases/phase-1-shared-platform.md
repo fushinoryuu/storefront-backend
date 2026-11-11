@@ -83,7 +83,7 @@ Wraps a REST API.
 - [x] **Validation:** a small wrapper that validates input against schemas taken from the OpenAPI spec (as decided in record 0004) and returns the shared error shape.
 - [x] **Idempotency helper:** conditional-write based dedupe keyed by event id or idempotency key, with TTL.
 - [x] **HTTP client** for service-to-service calls: timeout, correlation id propagation, attaching the `services` API key (read from Secrets Manager once per execution environment), no automatic retry on non-idempotent methods.
-- [ ] **Feature flag client:** the LaunchDarkly server SDK, created once per execution environment at module level and never inside a handler, because a client created per invocation opens many unnecessary connections. A typed registry lists the flags the code knows (key, default, description), so an unknown key fails typecheck. Flags are plain booleans with no targeting rules. If LaunchDarkly is unreachable, or the account has gone read-only, every flag evaluates to its default in code. Unit tests use the SDK's test data source and never reach LaunchDarkly.
+- [x] **Feature flag client:** the LaunchDarkly server SDK, created once per execution environment at module level and never inside a handler, because a client created per invocation opens many unnecessary connections. A typed registry lists the flags the code knows (key, default, description), so an unknown key fails typecheck. Flags are plain booleans with no targeting rules. If LaunchDarkly is unreachable, or the account has gone read-only, every flag evaluates to its default in code. Unit tests use the SDK's test data source and never reach LaunchDarkly.
 
 ### `packages/events`
 
@@ -98,7 +98,9 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 - [ ] **LaunchDarkly setup (manual):** an account, one project, and two environments: `dev`, shared by every pull request run, and `prod`. The SDK key of each environment is created in LaunchDarkly and stored outside the per-run stacks. Also create a personal API token with the built-in Reader role for the library project. The Developer plan has limits (at the time of writing: one project, three environments and five service connections a month), so check them again when signing up.
 - [ ] **Decision record** covering why LaunchDarkly was chosen over AppConfig, the plan limits, the environment mapping, where the SDK keys are stored, the fallback to in-code defaults, and the decision that the backend exposes no flag state. How the free plan counts Lambda instances against its service connections is not documented, so deploy to `dev` with the client and read LaunchDarkly's usage page. If the count is too high, fall back to polling mode or fewer services reading flags directly.
-- [ ] Flag convention: a flag is on or off, nothing more, so its state is the environment's `on` value, which is what the library can read through the REST API.
+  - [x] Done: the record is written (decision 0011). It covers the plan limits, the environment mapping, where the SDK keys live and the fallback to defaults. LaunchDarkly does document how Lambda counts against service connections: by connection time.
+  - [ ] Remaining: deploy the client to `dev` with the hello service, read the service connections usage page by app id, and record the number in decision 0011.
+- [x] Flag convention: a flag is on or off, nothing more, so its state is the environment's `on` value, which is what the library can read through the REST API.
 
 ## Quality gates
 
@@ -107,8 +109,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 - [ ] cdk-nag runs in the test suite and fails on unsuppressed findings.
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
 - [ ] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, the HTTP client's key handling and timeout behavior, and the flag client's defaults.
-  - [x] Done: the error mapping, the idempotency helper (against DynamoDB Local in CI), and the HTTP client's key handling, timeout and retry rules.
-  - [ ] Remaining: the envelope validation (with the events boxes above) and the flag client's defaults.
+  - [x] Done: the error mapping, the idempotency helper (against DynamoDB Local in CI), the HTTP client's key handling, timeout and retry rules, and the flag client's defaults.
+  - [ ] Remaining: the envelope validation (with the events boxes above).
 - [ ] A template test that `ServiceApi` can serve `/v1` and `/v2` routes side by side under one API.
 
 ## Tasks summary
