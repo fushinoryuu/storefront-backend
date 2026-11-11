@@ -154,3 +154,6 @@ vite.config.ts.timestamp-*
 
 # CDK synthesized output
 cdk.out
+
+# Zod schemas generated from the bundled specs (npm run generate:schemas)
+/generated

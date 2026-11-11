@@ -75,14 +75,14 @@ Wraps a REST API.
 ### `packages/shared`
 
 - [x] **Logger:** structured JSON, with correlation id, service, stage, and request id on every line. Powertools for AWS Lambda, wrapped in this package (decision 0010).
-- [ ] **Correlation id:** read from `x-correlation-id` on requests (generate if absent), propagate it to downstream HTTP calls and into event envelopes, return it on responses.
+- [x] **Correlation id:** read from `x-correlation-id` on requests (generate if absent), propagate it to downstream HTTP calls and into event envelopes, return it on responses.
   - [x] Read from the request or generate, and return it on responses (`getCorrelationId`, `correlationHeaders`).
   - [x] Into event envelopes: `buildEvent` takes it as `correlationId`.
-  - [ ] Downstream HTTP calls: `correlationHeaders` builds the header, and the HTTP client (the shared integrations ticket) attaches it.
+  - [x] Downstream HTTP calls: `correlationHeaders` builds the header, and the HTTP client attaches it to every request.
 - [x] **Error model:** one JSON error shape for every service (for example `type`, `title`, `status`, `detail`, `correlationId`, optional `errors[]` for field validation). Map domain errors to HTTP status codes in one place. The shared error schema is `Problem`, owned by the OpenAPI shared components (Phase 0.5), and this implementation must match it.
-- [ ] **Validation:** a small wrapper that validates input against schemas taken from the OpenAPI spec (as decided in record 0004) and returns the shared error shape.
-- [ ] **Idempotency helper:** conditional-write based dedupe keyed by event id or idempotency key, with TTL.
-- [ ] **HTTP client** for service-to-service calls: timeout, correlation id propagation, attaching the `services` API key (read from Secrets Manager once per execution environment), no automatic retry on non-idempotent methods.
+- [x] **Validation:** a small wrapper that validates input against schemas taken from the OpenAPI spec (as decided in record 0004) and returns the shared error shape.
+- [x] **Idempotency helper:** conditional-write based dedupe keyed by event id or idempotency key, with TTL.
+- [x] **HTTP client** for service-to-service calls: timeout, correlation id propagation, attaching the `services` API key (read from Secrets Manager once per execution environment), no automatic retry on non-idempotent methods.
 - [ ] **Feature flag client:** the LaunchDarkly server SDK, created once per execution environment at module level and never inside a handler, because a client created per invocation opens many unnecessary connections. A typed registry lists the flags the code knows (key, default, description), so an unknown key fails typecheck. Flags are plain booleans with no targeting rules. If LaunchDarkly is unreachable, or the account has gone read-only, every flag evaluates to its default in code. Unit tests use the SDK's test data source and never reach LaunchDarkly.
 
 ### `packages/events`
@@ -107,6 +107,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 - [ ] cdk-nag runs in the test suite and fails on unsuppressed findings.
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
 - [ ] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, the HTTP client's key handling and timeout behavior, and the flag client's defaults.
+  - [x] Done: the error mapping, the idempotency helper (against DynamoDB Local in CI), and the HTTP client's key handling, timeout and retry rules.
+  - [ ] Remaining: the envelope validation (with the events boxes above) and the flag client's defaults.
 - [ ] A template test that `ServiceApi` can serve `/v1` and `/v2` routes side by side under one API.
 
 ## Tasks summary

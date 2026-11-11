@@ -29,7 +29,19 @@ jobs:
 
       - run: npm run typecheck
 
+      - name: Start DynamoDB Local
+        run: |
+          docker run -d --name dynamodb-local -p 8000:8000 amazon/dynamodb-local:3.3.2 -jar DynamoDBLocal.jar -inMemory -sharedDb
+          for attempt in $(seq 1 30); do
+            curl -s -o /dev/null http://localhost:8000 && exit 0
+            sleep 1
+          done
+          docker logs dynamodb-local
+          exit 1
+
       - run: npm test
+        env:
+          DYNAMODB_ENDPOINT: http://localhost:8000
 
       - run: npm run lint:specs
 

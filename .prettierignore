@@ -4,3 +4,4 @@ coverage
 dist
 package-lock.json
 specs/*-service-v*.yaml
+generated
