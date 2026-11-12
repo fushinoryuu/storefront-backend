@@ -117,7 +117,7 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
 - [ ] Script to retrieve key values after deploy
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
-- [ ] Shared packages: logger, correlation id, error shape, event envelope, idempotency
+- [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
 - [x] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
 - [ ] Every API exposes `GET /v0/health` and `GET /v0/version`, and `ServiceApi` serves several versions under one API
 - [ ] CDK template tests and cdk-nag in the build
