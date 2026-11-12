@@ -7,6 +7,13 @@ export type StageName = (typeof stageNames)[number];
 export const serviceNames = ['Platform', 'Database', 'Customers', 'Orders', 'Shipping'] as const;
 export type ServiceName = (typeof serviceNames)[number];
 
+/** Stacks that belong to no stage. There is one of each, and every stage uses it. */
+export const sharedStackNames = ['Secrets'] as const;
+export type SharedStackName = (typeof sharedStackNames)[number];
+
+/** First part of every stack name. */
+export const projectStackPrefix = 'Storefront';
+
 /**
  * `persistent` stacks survive test runs. `per-run` stacks are destroyed after every run.
  * `external` stacks are not deployed in this stage: another stage owns them (see `databaseStage`).
@@ -47,7 +54,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
     // Where pull request runs deploy, test and tear down. It shares the cluster owned by `prod`.
     dev: {
         name: 'dev',
-        stackPrefix: 'Storefront',
+        stackPrefix: projectStackPrefix,
         removalPolicy: RemovalPolicy.DESTROY,
         deletionProtection: false,
         logRetention: RetentionDays.ONE_WEEK,
@@ -68,7 +75,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
     // the one Aurora cluster, which holds the `main` schema and the schema of each pull request.
     prod: {
         name: 'prod',
-        stackPrefix: 'Storefront',
+        stackPrefix: projectStackPrefix,
         removalPolicy: RemovalPolicy.RETAIN,
         deletionProtection: true,
         logRetention: RetentionDays.ONE_MONTH,
