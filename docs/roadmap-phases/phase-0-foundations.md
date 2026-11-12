@@ -32,7 +32,7 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 │   ├── lib/
 │   │   ├── config/stages.ts      # per-stage settings
 │   │   ├── constructs/           # reusable constructs (Phase 1)
-│   │   └── stacks/               # platform, database, customers, orders, shipping
+│   │   └── stacks/               # platform, secrets, database, customers, orders, shipping
 │   └── test/                     # CDK template tests
 ├── services/
 │   ├── customers/                # handlers, domain, migrations, openapi.yaml, tests
