@@ -14,6 +14,9 @@ export type SharedStackName = (typeof sharedStackNames)[number];
 /** First part of every stack name. */
 export const projectStackPrefix = 'Storefront';
 
+/** Value of the `owner` tag, the same in every stage and in the stacks that belong to none. */
+export const projectOwner = 'fushinoryuu';
+
 /**
  * `persistent` stacks survive test runs. `per-run` stacks are destroyed after every run.
  * `external` stacks are not deployed in this stage: another stage owns them (see `databaseStage`).
@@ -62,7 +65,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         aurora: null,
         carrierTimings: { pickedAfterSeconds: 2, shippedAfterSeconds: 4, deliveredAfterSeconds: 6 },
         alarmRecipients: [],
-        owner: 'fushinoryuu',
+        owner: projectOwner,
         stacks: {
             Platform: 'per-run',
             Database: 'external',
@@ -88,7 +91,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
             deliveredAfterSeconds: 900
         },
         alarmRecipients: [],
-        owner: 'fushinoryuu',
+        owner: projectOwner,
         stacks: {
             Platform: 'persistent',
             Database: 'persistent',

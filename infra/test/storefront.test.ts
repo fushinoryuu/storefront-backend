@@ -15,18 +15,15 @@ function runEntrypoint(context?: Record<string, string>) {
 }
 
 describe('infra/bin/storefront.ts', () => {
-    it.each([
-        ['no stage', undefined],
-        ['an unknown stage', { stage: 'staging' }]
-    ])(
-        'exits 1 with a one-line message for %s',
-        (_name, context) => {
-            const result = runEntrypoint(context);
+    it('exits 1 with a one-line message for an unknown stage', () => {
+        const result = runEntrypoint({ stage: 'staging' });
 
-            expect(result.status).toBe(1);
-            expect(result.stderr).toMatch(/Unknown stage .*Pass one of: dev, prod/);
-            expect(result.stderr.trim().split('\n')).toHaveLength(1);
-        },
-        30_000
-    );
+        expect(result.status).toBe(1);
+        expect(result.stderr).toMatch(/Unknown stage .*Pass one of: dev, prod/);
+        expect(result.stderr.trim().split('\n')).toHaveLength(1);
+    }, 30_000);
+
+    it('builds without a stage', () => {
+        expect(runEntrypoint().status).toBe(0);
+    }, 30_000);
 });

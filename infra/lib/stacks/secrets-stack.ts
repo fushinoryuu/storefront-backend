@@ -2,8 +2,7 @@ import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { CfnSecret } from 'aws-cdk-lib/aws-secretsmanager';
 import type { Construct } from 'constructs';
 import { applyStandardTags } from '../aspects/standard-tags';
-import { stageNames } from '../config/stages';
-import type { StageConfig } from '../config/stages';
+import { projectOwner, stageNames } from '../config/stages';
 import { launchDarklySdkKeySecretName, sharedStackName } from '../naming';
 
 /**
@@ -12,9 +11,9 @@ import { launchDarklySdkKeySecretName, sharedStackName } from '../naming';
  * `aws secretsmanager put-secret-value` (docs/aws-setup.md), so the value is not in a template, in the repo or in CloudFormation.
  */
 export class SecretsStack extends Stack {
-    constructor(scope: Construct, config: Pick<StageConfig, 'owner'>) {
+    constructor(scope: Construct) {
         super(scope, 'Secrets', { stackName: sharedStackName('Secrets') });
-        applyStandardTags(this, { name: 'shared', owner: config.owner }, 'Secrets');
+        applyStandardTags(this, { name: 'shared', owner: projectOwner }, 'Secrets');
 
         for (const stage of stageNames) {
             // `CfnSecret` and not `Secret`, because `Secret` generates a random value when it is given none.

@@ -1,26 +1,27 @@
 import { App } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { describe, expect, it } from 'vitest';
-import { stageNames, stages } from '../lib/config/stages';
+import { createApp } from '../lib/app';
+import { stageNames } from '../lib/config/stages';
 import { SecretsStack } from '../lib/stacks/secrets-stack';
 
-const template = (stage: (typeof stageNames)[number]) => Template.fromStack(new SecretsStack(new App(), stages[stage]));
+const template = () => Template.fromStack(new SecretsStack(new App()));
 
 describe('SecretsStack', () => {
     it('is named without a stage', () => {
-        expect(new SecretsStack(new App(), stages.dev).stackName).toBe('Storefront-Secrets');
+        expect(new SecretsStack(new App()).stackName).toBe('Storefront-Secrets');
     });
 
     it.each(stageNames)(
         'is the same whichever stage the app is built for (%s)',
         (stage) => {
-            expect(template(stage).toJSON()).toEqual(template('dev').toJSON());
+            expect(createApp({ context: { stage } }).synth().getStackByName('Storefront-Secrets').template).toEqual(createApp().synth().getStackByName('Storefront-Secrets').template);
         },
         30000
     );
 
     it('has one empty secret per stage for the LaunchDarkly SDK key, with no value in the template', () => {
-        const stack = template('dev');
+        const stack = template();
 
         stack.resourceCountIs('AWS::SecretsManager::Secret', stageNames.length);
         for (const stage of stageNames) {
@@ -34,7 +35,7 @@ describe('SecretsStack', () => {
     }, 30000);
 
     it('deletes the secrets with the stack, so a teardown leaves nothing that bills', () => {
-        const stack = template('prod');
+        const stack = template();
 
         for (const secret of Object.values(stack.findResources('AWS::SecretsManager::Secret'))) {
             expect(secret.DeletionPolicy).toBe('Delete');
