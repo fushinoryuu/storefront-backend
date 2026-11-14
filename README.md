@@ -25,7 +25,7 @@ Run these from the repo root:
 | `npm run bundle:specs`     | Write the bundled specs to `specs/` (`-- --check` is what CI runs: fails if one is stale)                                          |
 | `npm run synth`            | Synthesize the CDK app for `dev` and `prod` into `cdk.out/` (no AWS credentials needed)                                            |
 
-The CDK app needs a stage: `npx cdk synth -c stage=dev` or `-c stage=prod`.
+The CDK app builds the stacks of a stage when it is given one: `npx cdk synth -c stage=dev` or `-c stage=prod`. Without a stage it builds only `Storefront-Secrets`, which belongs to no stage.
 
 ## Layout
 

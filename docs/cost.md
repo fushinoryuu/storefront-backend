@@ -6,13 +6,13 @@ What the project costs when it is idle and when it is used, what to avoid, and h
 
 `prod` stays deployed from `main`, so these run all the time:
 
-| What                                       | Idle cost                                                                                                                                                |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aurora cluster, paused                     | Storage only, at $0.10 per GB-month of consumed storage. Backup storage beyond the free allocation is $0.021 per GB-month. A demo database is small.     |
-| Secrets Manager interface endpoint         | $0.01 per hour, about $7.30 a month, for the migration runner of `prod` (decision 0006). It is the largest fixed cost.                                   |
-| Secrets Manager secrets                    | $0.40 per secret per month. The database stack alone has five (the master secret and one for each of the four users in decision 0006), about $2 a month. |
-| DynamoDB, Lambda, API Gateway, EventBridge | No hourly charge. Tables are on-demand, so an idle table costs its storage. Point-in-time recovery in `prod` adds a per-GB charge.                       |
-| CloudWatch Logs and alarms                 | Log storage is kept short by the retention in `stages.ts` (one week in `dev`, one month in `prod`). Each alarm and dashboard has a small monthly charge. |
+| What                                       | Idle cost                                                                                                                                                                                                                                 |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aurora cluster, paused                     | Storage only, at $0.10 per GB-month of consumed storage. Backup storage beyond the free allocation is $0.021 per GB-month. A demo database is small.                                                                                      |
+| Secrets Manager interface endpoint         | $0.01 per hour, about $7.30 a month, for the migration runner of `prod` (decision 0006). It is the largest fixed cost.                                                                                                                    |
+| Secrets Manager secrets                    | $0.40 per secret per month. The database stack alone has five (the master secret and one for each of the four users in decision 0006), about $2 a month. The two LaunchDarkly SDK keys (decision 0011) are two more, about $0.80 a month. |
+| DynamoDB, Lambda, API Gateway, EventBridge | No hourly charge. Tables are on-demand, so an idle table costs its storage. Point-in-time recovery in `prod` adds a per-GB charge.                                                                                                        |
+| CloudWatch Logs and alarms                 | Log storage is kept short by the retention in `stages.ts` (one week in `dev`, one month in `prod`). Each alarm and dashboard has a small monthly charge.                                                                                  |
 
 ## What costs money when used
 
@@ -65,7 +65,7 @@ The teardown is planned for Phase 6, which builds and rehearses it. The order be
 
 **A full teardown.** It takes `prod` down and loses its data:
 
-1. Destroy the `prod` service stacks (`Shipping`, `Orders`, `Customers`), then `Platform`.
+1. Destroy the `prod` service stacks (`Shipping`, `Orders`, `Customers`), then `Platform`, then `Secrets`, which also holds the key of `dev`.
 2. Turn off CloudFormation termination protection on `Storefront-prod-Database`, and destroy it last. The cluster is `RETAIN`, so deleting the stack does not delete the cluster. Remove it by hand, and decide first whether a final snapshot is worth keeping.
 3. Check that nothing is left (the list below).
 
@@ -73,7 +73,7 @@ The teardown is planned for Phase 6, which builds and rehearses it. The order be
 
 - **Everything in `prod`**, because it is `RETAIN`: the Aurora cluster, DynamoDB tables and their backups. They keep billing until deleted by hand.
 - **Log groups.** CDK-created groups follow the stack's removal policy. A group a service created for itself has no retention and survives. This is why every log group is created in CDK (see [conventions.md](conventions.md)).
-- **Secrets.** A deleted secret stays recoverable for a recovery window before it is gone.
+- **Secrets.** A deleted secret stays recoverable for a recovery window before it is gone, and is not billed meanwhile. The `Storefront-Secrets` stack is not part of a run's teardown, so it stays until you destroy it by hand (`docs/aws-setup.md`).
 - **The bootstrap stack.** `CDKToolkit` keeps an S3 bucket and an image repository for deployment assets, and the assets from earlier deploys stay in them. Its cost is small, and it is needed for the next deploy.
 - **The budget and Identity Center,** which belong to the management account.
 

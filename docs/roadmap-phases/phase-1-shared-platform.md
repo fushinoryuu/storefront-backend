@@ -29,6 +29,8 @@ Everything the three services have in common, built once: the event bus, authent
 - [ ] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
 - [ ] **SSM parameters** (or stack outputs) for values other stacks and external tools need: event bus name, API key ids, and each service's base URL once deployed.
 - [ ] **Secrets:** client secrets live in Secrets Manager or are retrieved at deploy time by an authorized process, never committed.
+  - [x] Done: the LaunchDarkly SDK keys. The `Storefront-Secrets` stack creates one empty secret per stage, and the owner puts the value in (decision 0011).
+  - [ ] Remaining: the API key values, which the key retrieval script stores, and any other secret a service needs.
 - [ ] **Alarm topic:** an SNS topic that sends alarms to email.
 
 ## Reusable constructs
@@ -83,22 +85,26 @@ Wraps a REST API.
 - [x] **Validation:** a small wrapper that validates input against schemas taken from the OpenAPI spec (as decided in record 0004) and returns the shared error shape.
 - [x] **Idempotency helper:** conditional-write based dedupe keyed by event id or idempotency key, with TTL.
 - [x] **HTTP client** for service-to-service calls: timeout, correlation id propagation, attaching the `services` API key (read from Secrets Manager once per execution environment), no automatic retry on non-idempotent methods.
-- [ ] **Feature flag client:** the LaunchDarkly server SDK, created once per execution environment at module level and never inside a handler, because a client created per invocation opens many unnecessary connections. A typed registry lists the flags the code knows (key, default, description), so an unknown key fails typecheck. Flags are plain booleans with no targeting rules. If LaunchDarkly is unreachable, or the account has gone read-only, every flag evaluates to its default in code. Unit tests use the SDK's test data source and never reach LaunchDarkly.
+- [x] **Feature flag client:** the LaunchDarkly server SDK, created once per execution environment at module level and never inside a handler, because a client created per invocation opens many unnecessary connections. A typed registry lists the flags the code knows (key, default, description), so an unknown key fails typecheck. Flags are plain booleans with no targeting rules. If LaunchDarkly is unreachable, or the account has gone read-only, every flag evaluates to its default in code. Unit tests use the SDK's test data source and never reach LaunchDarkly.
 
 ### `packages/events`
 
-- [ ] **Event envelope:** `eventId`, `eventType`, `schemaVersion`, `occurredAt`, `correlationId`, `producer`, and a typed `data` payload.
-- [ ] Schemas for every event, defined in one place, with exported TypeScript types and runtime validators.
-- [ ] Helpers to build an envelope and to parse and validate an incoming one, so consumers fail loudly on malformed events.
-- [ ] Versioning rule: additive changes keep the version, breaking changes bump `schemaVersion` and run alongside the old one for a transition period.
+- [x] **Event envelope:** `eventId`, `eventType`, `schemaVersion`, `occurredAt`, `correlationId`, `producer`, and a typed `data` payload.
+- [x] Schemas for every event, defined in one place, with exported TypeScript types and runtime validators.
+- [x] Helpers to build an envelope and to parse and validate an incoming one, so consumers fail loudly on malformed events.
+- [x] Versioning rule: additive changes keep the version, breaking changes bump `schemaVersion` and run alongside the old one for a transition period.
 
 ## Feature flags
 
 LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the more widely used product). The services call LaunchDarkly directly through the flag client, and the backend exposes no endpoint that returns flag state, since that would show outside callers which flags are on.
 
 - [ ] **LaunchDarkly setup (manual):** an account, one project, and two environments: `dev`, shared by every pull request run, and `prod`. The SDK key of each environment is created in LaunchDarkly and stored outside the per-run stacks. Also create a personal API token with the built-in Reader role for the library project. The Developer plan has limits (at the time of writing: one project, three environments and five service connections a month), so check them again when signing up.
+  - [x] Done: the account, the project, the `dev` and `prod` environments, and the two flags the code knows (`shipment-simulation`, `customers-unavailable-simulation`), booleans that are off in both.
+  - [ ] Remaining: deploy `Storefront-Secrets` and put in the two SDK keys (`docs/aws-setup.md`), create the Reader token and check that it can read a flag, and add the project key to `docs/spec-handoff.md`.
 - [ ] **Decision record** covering why LaunchDarkly was chosen over AppConfig, the plan limits, the environment mapping, where the SDK keys are stored, the fallback to in-code defaults, and the decision that the backend exposes no flag state. How the free plan counts Lambda instances against its service connections is not documented, so deploy to `dev` with the client and read LaunchDarkly's usage page. If the count is too high, fall back to polling mode or fewer services reading flags directly.
-- [ ] Flag convention: a flag is on or off, nothing more, so its state is the environment's `on` value, which is what the library can read through the REST API.
+  - [x] Done: the record is written (decision 0011). It covers the plan limits, the environment mapping, where the SDK keys live and the fallback to defaults. LaunchDarkly does document how Lambda counts against service connections: by connection time.
+  - [ ] Remaining: deploy the client to `dev` with the hello service, read the service connections usage page by app id, and record the number in decision 0011.
+- [x] Flag convention: a flag is on or off, nothing more, so its state is the environment's `on` value, which is what the library can read through the REST API.
 
 ## Quality gates
 
@@ -106,16 +112,16 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
 - [ ] cdk-nag runs in the test suite and fails on unsuppressed findings.
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
-- [ ] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, the HTTP client's key handling and timeout behavior, and the flag client's defaults.
-  - [x] Done: the error mapping, the idempotency helper (against DynamoDB Local in CI), and the HTTP client's key handling, timeout and retry rules.
-  - [ ] Remaining: the envelope validation (with the events boxes above) and the flag client's defaults.
+  - [x] Done: the error kinds of `packages/shared` are checked against the `Problem` schema and the response examples of the shared spec components.
+  - [ ] Remaining: the customized gateway responses, and the health and version responses (with `ServiceApi`).
+- [x] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, the HTTP client's key handling and timeout behavior, and the flag client's defaults.
 - [ ] A template test that `ServiceApi` can serve `/v1` and `/v2` routes side by side under one API.
 
 ## Tasks summary
 
 - [ ] Build the platform stack and deploy it to `dev`.
 - [ ] Build each construct with tests.
-- [ ] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
+- [x] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
 - [ ] Add a throwaway "hello" service using the constructs to prove they work, deploy it, call it with the `tests` API key, then delete it.
 - [ ] Document the constructs in `docs/platform.md` with a short usage example each.
 

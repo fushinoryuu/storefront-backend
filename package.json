@@ -42,6 +42,7 @@
     "@aws-sdk/client-dynamodb": "^3.1166.0",
     "@aws-sdk/client-secrets-manager": "^3.1166.0",
     "@aws-sdk/lib-dynamodb": "^3.1166.0",
+    "@launchdarkly/node-server-sdk": "9.16.4",
     "aws-cdk-lib": "2.275.0",
     "constructs": "10.8.1",
     "zod": "^4.6.7"
