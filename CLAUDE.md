@@ -63,4 +63,4 @@ A reviewer's findings are posted as a Jira comment. The fixes go on the same bra
 
 Run what CI runs: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test`, `npm run lint:specs`, `npm run bundle:specs -- --check` and `npm run synth`. If one fails or is skipped, say which and show why.
 
-On Windows, run `npm test` from PowerShell. From Git Bash, the upper-case drive letter makes vitest load twice, and every test fails with "Cannot read properties of undefined (reading 'config')". The DynamoDB Local tests run only when `DYNAMODB_ENDPOINT` is set, and always in CI (see `packages/shared/README.md`).
+On Windows, run `npm test` from PowerShell. From Git Bash, a working directory with a lower-case drive letter (`cd /d/...` gives `d:\...`) makes vitest load twice, and every test fails with "Cannot read properties of undefined (reading 'config')". `cd "D:/..."` with an upper-case letter avoids it. The DynamoDB Local tests run only when `DYNAMODB_ENDPOINT` is set, and always in CI (see `packages/shared/README.md`).
