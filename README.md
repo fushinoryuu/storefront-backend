@@ -24,6 +24,8 @@ Run these from the repo root:
 | `npm run lint:specs`       | Lint the OpenAPI specs (Redocly plus the project rules in `docs/spec-conventions.md`)                                              |
 | `npm run bundle:specs`     | Write the bundled specs to `specs/` (`-- --check` is what CI runs: fails if one is stale)                                          |
 | `npm run synth`            | Synthesize the CDK app for `dev` and `prod` into `cdk.out/` (no AWS credentials needed)                                            |
+| `npm run deploy:secrets`   | Deploy the `Secrets` stack, which belongs to no stage, with the `storefront` profile (`docs/aws-setup.md`)                         |
+| `npm run destroy:secrets`  | Destroy the `Secrets` stack, which deletes both LaunchDarkly SDK key secrets. CDK asks for confirmation first                      |
 
 The CDK app builds the stacks of a stage when it is given one: `npx cdk synth -c stage=dev` or `-c stage=prod`. Without a stage it builds only `Storefront-Secrets`, which belongs to no stage.
 
