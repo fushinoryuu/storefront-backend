@@ -4,7 +4,7 @@ How we name things, record decisions and work with Git. The rules for the OpenAP
 
 ## Resource naming
 
-- A stack is named `Storefront-<stage>-<Service>`, for example `Storefront-dev-Customers`. `<stage>` is `dev` or `prod`, and `<Service>` is `Platform`, `Database`, `Customers`, `Orders` or `Shipping`. `stackName()` in `infra/lib/naming.ts` builds it, so use it instead of writing the string.
+- A stack is named `Storefront-<stage>-<Service>`, for example `Storefront-dev-Customers`. `<stage>` is `dev` or `prod`, and `<Service>` is `Platform`, `Database`, `Customers`, `Orders` or `Shipping`. `stackName()` in `infra/lib/naming.ts` builds it, so use it instead of writing the string. The one stack that belongs to no stage is `Storefront-Secrets` (`sharedStackName()`).
 - Leave physical names out and let CloudFormation generate them (no `bucketName`, `tableName` or `functionName`). Generated names include the stack name, so stage and service are already in them. A fixed name also stops CloudFormation from replacing the resource when a change needs it.
 - When a name has to be fixed, because another stack or an outside tool looks it up, use `storefront-<stage>-<service>-<purpose>` in lowercase, for example `storefront-dev-platform-bus`.
 - SSM parameters are `/storefront/<stage>/<service>/<name>`, with a lowercase, hyphenated name, for example `/storefront/dev/platform/event-bus-name`.

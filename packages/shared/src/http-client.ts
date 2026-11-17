@@ -1,34 +1,11 @@
-import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { correlationHeaders } from './correlation';
 import { ServiceUnavailableError } from './errors';
+import { createSecretProvider } from './secrets';
 
 // The client for calls from one service to another (decision 0009).
 
-export type SecretReader = (secretId: string) => Promise<string>;
-
-/** Reads the string value of a secret from Secrets Manager. */
-export function secretsManagerReader(client: Pick<SecretsManagerClient, 'send'> = new SecretsManagerClient({})): SecretReader {
-    return async (secretId) => {
-        const { SecretString } = await client.send(new GetSecretValueCommand({ SecretId: secretId }));
-        if (!SecretString) throw new Error(`The secret ${secretId} has no string value.`);
-        return SecretString;
-    };
-}
-
-/**
- * The `services` API key. The secret is read on the first call and the answer is kept for the life of the execution environment, so create the provider once, outside the handler.
- * Calls made while the first read is still running share it. A read that fails is not kept, so the next call tries again.
- */
-export function createServiceKeyProvider({ secretId, read = secretsManagerReader() }: { secretId: string; read?: SecretReader }): () => Promise<string> {
-    let key: Promise<string> | undefined;
-    return () => {
-        key ??= read(secretId).catch((error: unknown) => {
-            key = undefined;
-            throw error;
-        });
-        return key;
-    };
-}
+/** The `services` API key, read from its secret once per execution environment (see `createSecretProvider`). */
+export const createServiceKeyProvider = createSecretProvider;
 
 export type HttpMethod = 'GET' | 'HEAD' | 'OPTIONS' | 'PUT' | 'DELETE' | 'POST' | 'PATCH';
 

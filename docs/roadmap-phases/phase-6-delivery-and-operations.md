@@ -27,11 +27,17 @@ Make the system deployable by a pipeline instead of by hand, observable when it 
 
 Extend the Phase 0 workflow so every pull request runs:
 
-- [ ] Install, lint, typecheck, unit tests for the whole repo.
+- [x] Install, lint, typecheck, unit tests for the whole repo.
 - [ ] Repository tests that need containers (PostgreSQL, DynamoDB Local).
+  - [x] Done: DynamoDB Local, which CI starts as a container for the idempotency tests.
+  - [ ] Remaining: PostgreSQL.
 - [ ] CDK template tests with cdk-nag, and `cdk synth` for both stages.
+  - [x] Done: `cdk synth` for both stages, and template tests for the stacks that exist.
+  - [ ] Remaining: template tests for the constructs, and cdk-nag.
 - [ ] `cdk diff` against `dev`, posted as a pull request comment, so infrastructure changes are reviewed like code. This needs read-only AWS access through the OIDC role.
 - [ ] OpenAPI lint and bundle (in CI since Phase 0), plus the spec-based response validation and conformance tests, so any drift between an `openapi.yaml` and its implementation fails the build (decision 0004).
+  - [x] Done: the OpenAPI lint and the bundle check.
+  - [ ] Remaining: the spec-based response validation and conformance tests.
 - [ ] Event schema compatibility check.
 - [ ] A dependency vulnerability scan.
 

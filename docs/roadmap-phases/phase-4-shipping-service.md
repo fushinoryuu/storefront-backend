@@ -129,6 +129,8 @@ Write `docs/runbooks/shipping-dlq.md`:
 - [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
 - [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 - [ ] Event schemas published as JSON Schema files generated from the shared definitions, and a changelog file for events.
+  - [x] Done: the changelog file, `packages/events/CHANGELOG.md`.
+  - [ ] Remaining: the JSON Schema files generated from the shared definitions.
 
 ### 9. Tests
 

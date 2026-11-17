@@ -64,4 +64,4 @@ The backend uses LaunchDarkly for feature flags and exposes no flag state throug
 - Storefront flags are plain booleans with no targeting rules, so a flag's state is the `on` value of the flag in a LaunchDarkly environment. Read it with the LaunchDarkly REST API.
 - A personal API token with the built-in Reader role is enough for read-only access. This is to be confirmed when the token is created.
 - The environments are `dev` (shared by every pull request run) and `prod`.
-- The LaunchDarkly project key and the flag keys are not defined yet. They are listed here once the shared platform work defines them.
+- The flag keys are `shipment-simulation` (switches `advanceShipment` on) and `customers-unavailable-simulation` (makes orders treat its call to customers as failing). Both are off by default. The LaunchDarkly project key is listed here once the project exists.

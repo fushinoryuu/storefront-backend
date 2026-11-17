@@ -36,6 +36,8 @@ Make the project easy to understand and trustworthy to a reader who has two minu
 - [ ] Testing section: unit, repository, CDK, contract, end-to-end, and what each costs and needs.
 - [ ] A short "design decisions" list linking to the records.
 - [ ] CI badge and license.
+  - [x] Done: the license (`LICENSE`).
+  - [ ] Remaining: the CI badge.
 
 ### 2. Diagrams
 
@@ -85,7 +87,7 @@ Only claim what you measured. Record the date, region, and settings.
 - [ ] Secrets scan across files and history, and confirmation that no API key values, account ids, or personal data are committed.
 - [ ] Confirm all data and names are fake.
 - [ ] Remove dead code, stale TODOs, and unused constructs.
-- [ ] License, repository description, and topics.
+- [x] License, repository description, and topics.
 - [ ] Verify a fresh clone can follow the README to a deployed `dev` stage.
 - [ ] Confirm the budget alarm and teardown instructions, and decide whether to leave the stack running or point readers to the demo recording instead. A public API with a key in the README is not acceptable. If you leave it running, keep keys private.
 

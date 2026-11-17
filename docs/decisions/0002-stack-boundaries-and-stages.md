@@ -1,6 +1,6 @@
 # 0002: Stack boundaries and stages
 
-Status: accepted on 2026-11-03.
+Status: accepted on 2026-11-03. Amended on 2026-11-11: a sixth stack, `Secrets`, which belongs to no stage and holds the secrets that must outlive a run (decision 0011).
 
 ## Context
 
@@ -21,7 +21,7 @@ Pull request runs have to deploy, test and tear down everything they create, qui
 
 ## Decision
 
-- One CDK app with five stacks: `Platform`, `Database`, `Customers`, `Orders` and `Shipping`. They are named `Storefront-<stage>-<Service>`, for example `Storefront-dev-Customers`.
+- One CDK app with six stacks. Five belong to a stage: `Platform`, `Database`, `Customers`, `Orders` and `Shipping`. They are named `Storefront-<stage>-<Service>`, for example `Storefront-dev-Customers`. The sixth, `Secrets`, belongs to no stage and is named `Storefront-Secrets`: it holds the LaunchDarkly SDK key of each stage, so one stack serves both. It creates the secrets empty, so the value is set by hand and never enters a template.
 - `Platform` (event bus, API keys, shared parameters, alarm topic) and `Database` deploy first. The service stacks depend on them.
 - Two stages, `dev` and `prod`, both in the same account and region and configured in `infra/lib/config/stages.ts`. Each stack is marked `persistent`, `per-run` or `external` (owned by another stage):
 
@@ -31,7 +31,7 @@ Pull request runs have to deploy, test and tear down everything they create, qui
 | `prod` | Deployed from `main`, up for ad hoc testing | All `persistent`                                      | `RETAIN`, deletion protection     | One month     |
 
 - `prod` owns the one Aurora cluster, in `Storefront-prod-Database` with CloudFormation termination protection on. The cluster holds the `main` schema for `prod` and one schema per pull request run. `dev` reads its connection details and has no database stack of its own. ADR 0006 and 0007 cover how the schemas, users and scaling work.
-- A test run deploys to `dev`, runs the tests, drops its schema and destroys the `per-run` stacks. The teardown script lists those stacks explicitly and never runs `cdk destroy --all`.
+- A test run deploys to `dev`, runs the tests, drops its schema and destroys the `per-run` stacks. The teardown script lists those stacks explicitly and never runs `cdk destroy --all`, so it leaves `Secrets` alone. The secrets of `Secrets` are deleted with their stack, whatever the stage's removal policy, because their value can be copied again and a secret left behind bills.
 
 ## Consequences
 
