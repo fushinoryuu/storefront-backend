@@ -43,15 +43,15 @@ To check, open CloudFormation in `us-west-2` in the member account and look for 
 
 ## LaunchDarkly SDK keys
 
-The `Storefront-Secrets` stack creates one empty secret for the SDK key of each LaunchDarkly environment (decision 0011). It belongs to no stage, so it is deployed once, without one, and a test run never destroys it. Deploy it, then put each key in. In PowerShell, so that the key is typed hidden and stays out of the shell history:
+The `Storefront-Secrets` stack creates one empty secret for the SDK key of each LaunchDarkly environment (decision 0011). It belongs to no stage, so it is deployed once, without one, and a test run never destroys it. Deploy it, then put each key in. The `cdk` commands select the stack by its id in the app, `Secrets`, and not by its CloudFormation name `Storefront-Secrets`, which gives "No stacks match". `npx cdk ls` shows both, as `Secrets (Storefront-Secrets)`. In PowerShell, so that the key is typed hidden and stays out of the shell history:
 
 ```
-npx cdk deploy --profile storefront Storefront-Secrets
+npx cdk deploy --profile storefront Secrets
 $key = Read-Host "dev SDK key" -MaskInput
 aws secretsmanager put-secret-value --region us-west-2 --profile storefront --secret-id storefront-dev-secrets-launchdarkly-sdk-key --secret-string $key
 ```
 
-Then repeat the last two commands with `prod` in the two places. Use the **SDK key** of the environment (LaunchDarkly: the gear icon, **Projects**, the project, **Environments**), not the mobile key or the client-side ID. To remove both secrets, run `npx cdk destroy --profile storefront Storefront-Secrets`. Secrets Manager keeps a deleted secret for a recovery window and does not bill it meanwhile.
+Then repeat the last two commands with `prod` in the two places. Use the **SDK key** of the environment (LaunchDarkly: the gear icon, **Projects**, the project, **Environments**), not the mobile key or the client-side ID. To remove both secrets, run `npx cdk destroy --profile storefront Secrets`. Secrets Manager keeps a deleted secret for a recovery window and does not bill it meanwhile.
 
 ## Availability in `us-west-2`
 
