@@ -1,6 +1,6 @@
 # 0011: Feature flags with LaunchDarkly
 
-Status: accepted on 2026-11-11. One check is open: how many service connections the Lambda functions use (see Consequences).
+Status: accepted on 2026-11-11. One check is open: how many service connections the Lambda functions use (see Consequences). Amended on 2026-11-17: the Reader token check is recorded.
 
 ## Context
 
@@ -23,7 +23,7 @@ Use LaunchDarkly, on the free Developer plan, and not AppConfig. This project ex
 - **Flag convention.** Every flag is a plain boolean with no targeting rules or percentage rollouts. ON serves `true` and OFF serves `false`, so a flag's state is the `on` value of its environment. A test that changes a flag is optional and puts the old value back afterwards.
 - **The code never depends on LaunchDarkly.** `packages/shared` has a registry with the key, the default and the description of every flag the code knows, and `createFlagClient` takes only keys from it, so an unknown key fails typecheck. A flag is answered with its default when the SDK key cannot be read, the SDK is not ready within a configured timeout, it gives up, or an evaluation fails. The client reports each fallback so the service can log it. A simulation defaults to off.
 - **One SDK, one context.** The SDK is created on the first evaluation and reused. Every evaluation uses one context per service (`kind: service`, `key: <service name>`), which also keeps the number of contexts at three. The service name is the SDK app id, so the usage page can show which service uses what. Evaluation events are not sent, because nothing here reads them and a Lambda function freezes between calls.
-- **Reading a flag from outside.** The library and the tests read the state of a flag from the LaunchDarkly REST API with a personal token that has the built-in Reader role. Whether Reader is enough is checked when the token is made. Whether REST API calls count as a service connection is unverified.
+- **Reading a flag from outside.** The library and the tests read the state of a flag from the LaunchDarkly REST API with a personal token that has the built-in Reader role. Reader is enough: on 2026-11-17 a Reader token read a flag with `GET /api/v2/flags/<project key>/<flag key>`. Whether REST API calls count as a service connection is unverified.
 
 ## Consequences
 

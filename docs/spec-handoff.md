@@ -62,6 +62,6 @@ Raise a bug ticket in the Jira project BEP of this project. Say which file and `
 The backend uses LaunchDarkly for feature flags and exposes no flag state through the API, because that would show outside callers which flags are on. Where a flag changes what a route answers, the spec documents it. For example `advanceShipment` answers 404, the same as a route that does not exist, when its simulation flag is off.
 
 - Storefront flags are plain booleans with no targeting rules, so a flag's state is the `on` value of the flag in a LaunchDarkly environment. Read it with the LaunchDarkly REST API.
-- A personal API token with the built-in Reader role is enough for read-only access. This is to be confirmed when the token is created.
-- The environments are `dev` (shared by every pull request run) and `prod`.
-- The flag keys are `shipment-simulation` (switches `advanceShipment` on) and `customers-unavailable-simulation` (makes orders treat its call to customers as failing). Both are off by default. The LaunchDarkly project key is listed here once the project exists.
+- A personal API token with the built-in Reader role is enough for read-only access. It was confirmed on 2026-11-17: `GET https://app.launchdarkly.com/api/v2/flags/<project key>/<flag key>` answered with the flag.
+- The environments are `dev` (shared by every pull request run) and `prod`. In the REST API response, the flag's state per environment is under `environments.dev` and `environments.prod`.
+- The flag keys are `shipment-simulation` (switches `advanceShipment` on) and `customers-unavailable-simulation` (makes orders treat its call to customers as failing). Both are off by default. The LaunchDarkly project key is `default`.

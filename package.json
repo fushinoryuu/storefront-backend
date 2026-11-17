@@ -20,7 +20,9 @@
     "bundle:specs": "tsx scripts/bundle-specs.ts",
     "synth": "npm run synth:dev && npm run synth:prod",
     "synth:dev": "cdk synth -c stage=dev --output cdk.out/dev --quiet",
-    "synth:prod": "cdk synth -c stage=prod --output cdk.out/prod --quiet"
+    "synth:prod": "cdk synth -c stage=prod --output cdk.out/prod --quiet",
+    "deploy:secrets": "cdk deploy --profile storefront Secrets",
+    "destroy:secrets": "cdk destroy --profile storefront Secrets"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -85,6 +85,8 @@ Only claim what you measured. Record the date, region, and settings.
 ### 7. Repo hygiene
 
 - [ ] Secrets scan across files and history, and confirmation that no API key values, account ids, or personal data are committed.
+  - [x] Done: a TruffleHog scan runs on every push (`.github/workflows/secret-scanner.yaml`), and the AWS account id is not in any tracked file (checked on 2026-11-17).
+  - [ ] Remaining: a scan of the whole history, and the check for API key values and personal data.
 - [ ] Confirm all data and names are fake.
 - [ ] Remove dead code, stale TODOs, and unused constructs.
 - [x] License, repository description, and topics.
