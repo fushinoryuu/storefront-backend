@@ -68,7 +68,7 @@ Wraps a REST API.
 ### Others
 
 - [ ] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
-- [ ] A removal policy helper that reads from stage config.
+- [x] A removal policy helper that reads from stage config (`removalPolicyFor` in `infra/lib/removal-policy.ts`).
 - [ ] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`.
 - [ ] cdk-nag (AwsSolutions pack) added as an Aspect. Each suppression needs a written reason, kept in one place.
 
