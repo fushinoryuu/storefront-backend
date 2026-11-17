@@ -153,6 +153,21 @@ describe('when LaunchDarkly cannot answer', () => {
         expect(init).not.toHaveBeenCalled();
     });
 
+    it('gives the default when the evaluation of a ready SDK fails, and says why', async () => {
+        const sdk = await vi.importActual<typeof import('@launchdarkly/node-server-sdk')>('@launchdarkly/node-server-sdk');
+        const failure = new Error('evaluation failed');
+        vi.mocked(init).mockImplementationOnce((key, options) => {
+            const real = sdk.init(key, options);
+            vi.spyOn(real, 'boolVariation').mockRejectedValue(failure);
+            return real;
+        });
+        const fallbacks: FlagFallback[] = [];
+        const client = newClient({ ...source({ 'shipment-simulation': true }), onFallback: (fallback) => fallbacks.push(fallback) });
+
+        expect(await client.isEnabled('shipment-simulation')).toBe(false);
+        expect(fallbacks).toEqual([{ flag: 'shipment-simulation', reason: 'error', error: failure }]);
+    });
+
     it('is not changed by a callback that throws', async () => {
         const client = newClient({
             getSdkKey: () => Promise.reject(new Error('down')),
