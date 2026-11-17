@@ -157,3 +157,6 @@ cdk.out
 
 # Zod schemas generated from the bundled specs (npm run generate:schemas)
 /generated
+
+# API key values written by npm run get-api-keys
+/.api-keys/
