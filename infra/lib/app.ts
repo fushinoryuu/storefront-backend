@@ -1,6 +1,7 @@
 import { App } from 'aws-cdk-lib';
 import type { AppProps } from 'aws-cdk-lib';
 import { getStageConfig } from './config/stages';
+import { applyNag } from './nag';
 import { PlatformStack } from './stacks/platform-stack';
 import { SecretsStack } from './stacks/secrets-stack';
 
@@ -15,5 +16,6 @@ export function createApp(props?: AppProps): App {
     const stage: unknown = app.node.tryGetContext('stage');
     if (stage !== undefined) new PlatformStack(app, getStageConfig(stage));
     new SecretsStack(app);
+    applyNag(app);
     return app;
 }
