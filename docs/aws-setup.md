@@ -53,6 +53,16 @@ aws secretsmanager put-secret-value --region us-west-2 --profile storefront --se
 
 Then repeat the last two commands with `prod` in the two places. Use the **SDK key** of the environment (LaunchDarkly: the gear icon, **Projects**, the project, **Environments**), not the mobile key or the client-side ID. To remove both secrets, run `npx cdk destroy --profile storefront Secrets`. Secrets Manager keeps a deleted secret for a recovery window and does not bill it meanwhile.
 
+## API keys
+
+The platform stack of a stage owns three API Gateway keys, `tests`, `services` and `admin` (decision 0005), and publishes only their ids to SSM. After each deploy of the stack, write the values to a local file that git ignores:
+
+```
+npm run get-api-keys -- --stage dev
+```
+
+The command reads the ids from `/storefront/<stage>/platform/<kind>-api-key-id` and the values from API Gateway, and writes `.api-keys/<stage>.json`, readable only by you. It prints the kinds and the path, never a value. The `dev` stack is destroyed after each test run, so its keys change on every deploy and the command has to run again.
+
 ## Availability in `us-west-2`
 
 Checked on 2026-11-06 with the `storefront` profile.
