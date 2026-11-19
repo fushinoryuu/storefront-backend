@@ -48,11 +48,11 @@ Each construct has sensible defaults and a small props interface.
 
 Wraps `NodejsFunction`.
 
-- [ ] arm64 architecture, a current Node.js runtime, esbuild bundling with source maps, a modest memory default.
-- [ ] Explicit log retention, X-Ray tracing on, structured logging environment variables.
-- [ ] Standard environment variables: stage, service name, event bus name, log level.
-- [ ] Reserved timeout defaults, and a convention that the timeout is set deliberately per function.
-- [ ] Least-privilege grants through CDK `grant*` methods, never wildcard policies.
+- [x] arm64 architecture, a current Node.js runtime, esbuild bundling with source maps, a modest memory default.
+- [x] Explicit log retention, X-Ray tracing on, structured logging environment variables.
+- [x] Standard environment variables: stage, service name, event bus name, log level.
+- [x] Reserved timeout defaults, and a convention that the timeout is set deliberately per function. There is no default: the timeout is a required prop, and the duration alarm follows it.
+- [x] Least-privilege grants through CDK `grant*` methods, never wildcard policies. The function has its own role, which writes to its own log group only. The one wildcard is X-Ray's, which has no resource, and the construct acknowledges it in cdk-nag.
 
 ### `ServiceApi`
 
@@ -75,8 +75,10 @@ Wraps a REST API.
 ### Others
 
 - [ ] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
+  - [x] Done: `ServiceFunction`, with its log group.
+  - [ ] Remaining: `EventConsumer` and `ServiceApi`, as they are built.
 - [x] A removal policy helper that reads from stage config (`removalPolicyFor` in `infra/lib/removal-policy.ts`).
-- [ ] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`.
+- [x] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`.
 - [x] cdk-nag (AwsSolutions pack) added to the app. Each acknowledged finding needs a written reason, kept in `infra/lib/nag.ts`. cdk-nag 3 registers the pack as a validation plugin and not as an Aspect, and a finding that is not acknowledged fails `cdk synth`.
 
 ## Shared runtime packages
@@ -116,6 +118,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 ## Quality gates
 
 - [ ] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
+  - [x] Done: `ServiceFunction` and the Lambda alarms, including cdk-nag.
+  - [ ] Remaining: `EventConsumer` and `ServiceApi`, as they are built.
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
 - [x] cdk-nag runs in the test suite and fails on unsuppressed findings (`infra/test/nag.test.ts`, and every `createApp` test synthesizes with the pack on).
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
@@ -128,7 +132,9 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 - [x] Build the platform stack and deploy it to `dev`.
 - [ ] Build each construct with tests.
-- [x] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
+- [ ] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
+  - [x] Done: both packages with their tests, the flag client, and the decision record.
+  - [ ] Remaining: the service connections measurement on `dev` that the decision record waits for (see Feature flags above).
 - [ ] Add a throwaway "hello" service using the constructs to prove they work, deploy it, call it with the `tests` API key, then delete it.
 - [ ] Document the constructs in `docs/platform.md` with a short usage example each.
 
