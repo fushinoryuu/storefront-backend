@@ -128,6 +128,9 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] CDK template tests and cdk-nag in the build
   - [x] Done: cdk-nag runs on every stack, and the platform stack, `ServiceFunction` and the Lambda alarms have template tests
   - [ ] Remaining: tests for `EventConsumer` and `ServiceApi`, as they are built
+- [ ] Dependabot version updates and security alerts
+  - [x] Done: the configuration for npm and GitHub Actions, the conventions for its pull requests, and the lockfile updates an update can fix
+  - [ ] Remaining: the first run and its CI check, and the alerts open on the first day, each fixed or dismissed with a reason
 
 ### Phase 2: Customers (Aurora)
 
