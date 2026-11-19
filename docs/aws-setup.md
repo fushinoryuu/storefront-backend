@@ -67,12 +67,20 @@ The command reads the ids from `/storefront/<stage>/platform/<kind>-api-key-id` 
 
 The alarm topic of the platform stack emails the addresses in the `ALARM_RECIPIENTS` environment variable, a comma-separated list. It is read when the stack is built, so no address is in the repo. Each address gets a confirmation email from AWS, and has to follow its link before it receives anything.
 
+Put the variable in a `.env` file at the repo root, which git ignores and the CDK app loads:
+
+```
+ALARM_RECIPIENTS=you@example.com
+```
+
+Or set it for one command, which wins over the file:
+
 ```
 ALARM_RECIPIENTS=you@example.com npx cdk deploy --profile storefront -c stage=prod Platform
 ```
 
-- Leave the variable unset for `dev`. Its stack is destroyed after every run, so each deploy would send a new confirmation email.
-- Set it on every deploy of a stage that has recipients. A deploy without it removes the subscription. When deploys move to a workflow (Phase 6), set it there once, as a repository variable, and it is always present.
+- A `.env` file applies to every stage. Its stack is destroyed after every run, so a `dev` deploy with an address sends a new confirmation email each time. Deploy `dev` without the variable unless you are checking the subscription (with `ALARM_RECIPIENTS=` on the command line, an empty value wins over the file).
+- Have the variable on every deploy of a stage that has recipients. A deploy without it removes the subscription. When deploys move to a workflow (Phase 6), set it there once, as a repository variable, and it is always present. No file is needed there.
 - A value that is not an email address stops the build with a one-line message that does not repeat the value.
 
 ## Availability in `us-west-2`
