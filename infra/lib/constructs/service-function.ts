@@ -40,6 +40,7 @@ export interface ServiceFunctionProps {
 /**
  * A Lambda function with what every service function needs, so a stack only says what is different about its own:
  * arm64 on Node.js 24, bundled by esbuild with source maps, X-Ray tracing on, and its own log group with the retention of the stage (conventions: Logs).
+ * The bundler is the `esbuild` of the repo's `devDependencies`, pinned to an exact version. `allowScripts` in `package.json` names the same version, so a bump changes both.
  * It gets these environment variables: `STAGE`, `SERVICE_NAME` (lowercase), `EVENT_BUS_NAME`, `POWERTOOLS_SERVICE_NAME` and `POWERTOOLS_LOG_LEVEL` for the logger, and `NODE_OPTIONS` so that stack traces use the source maps.
  * It also gets the three alarms of `LambdaAlarms`, as `alarms`.
  *
