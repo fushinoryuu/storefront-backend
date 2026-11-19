@@ -3,7 +3,7 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import type { KeySource } from './cli';
 
 /** Reads from the account and region of the AWS profile in use. */
-export function awsKeySource(ssm = new SSMClient({}), apiGateway = new APIGatewayClient({})): KeySource {
+export function awsKeySource(ssm: Pick<SSMClient, 'send'> = new SSMClient({}), apiGateway: Pick<APIGatewayClient, 'send'> = new APIGatewayClient({})): KeySource {
     return {
         async parameter(name) {
             const { Parameter } = await ssm.send(new GetParameterCommand({ Name: name }));
