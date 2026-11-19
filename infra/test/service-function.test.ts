@@ -75,8 +75,14 @@ describe.each(stageNames)('ServiceFunction in %s', (stage) => {
         });
     });
 
-    it('has the three Lambda alarms', () => {
+    it('has no alarm besides the three Lambda alarms', () => {
         template.resourceCountIs('AWS::CloudWatch::Alarm', 3);
+    });
+
+    it.each(['Errors', 'Throttles', 'Duration'])('has the %s alarm, on this function and no other', (metric) => {
+        const [functionId] = Object.keys(template.findResources('AWS::Lambda::Function'));
+
+        template.hasResourceProperties('AWS::CloudWatch::Alarm', { Namespace: 'AWS/Lambda', MetricName: metric, Dimensions: [{ Name: 'FunctionName', Value: { Ref: functionId } }] });
     });
 });
 
@@ -86,6 +92,11 @@ describe('ServiceFunction props', () => {
 
         template.hasResourceProperties('AWS::Lambda::Function', { Timeout: 25, MemorySize: 512, Environment: { Variables: { POWERTOOLS_LOG_LEVEL: 'DEBUG' } } });
         template.hasResourceProperties('AWS::CloudWatch::Alarm', { MetricName: 'Duration', Threshold: 20_000 });
+    });
+
+    it('exports the handler it is asked for, and handler by default', () => {
+        build('dev', { handler: 'main' }).hasResourceProperties('AWS::Lambda::Function', { Handler: 'index.main' });
+        build('dev').hasResourceProperties('AWS::Lambda::Function', { Handler: 'index.handler' });
     });
 
     it('adds the variables of the caller, which cannot replace a standard one', () => {
