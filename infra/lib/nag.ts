@@ -13,7 +13,10 @@ export interface Acknowledgement {
     readonly reason: string;
 }
 
-/** Every acknowledged finding of the app. This is the only place where one is added. */
+/**
+ * Every acknowledged finding that belongs to one stack of the app. This is where one is added.
+ * A finding that a construct always has is acknowledged by the construct, once, and not by every stack that uses it (`ServiceFunction` does).
+ */
 export const acknowledgements: readonly Acknowledgement[] = stageNames.map((stage) => ({
     path: `Secrets/LaunchDarklySdkKey-${stage}`,
     id: 'AwsSolutions::AwsSolutions-SMG4',
