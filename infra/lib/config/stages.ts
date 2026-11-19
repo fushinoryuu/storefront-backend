@@ -48,8 +48,6 @@ export interface StageConfig {
         readonly shippedAfterSeconds: number;
         readonly deliveredAfterSeconds: number;
     };
-    /** Email addresses that receive alarm notifications. */
-    readonly alarmRecipients: readonly string[];
     /** Value of the `owner` tag. */
     readonly owner: string;
     readonly stacks: Readonly<Record<ServiceName, StackLifecycle>>;
@@ -67,7 +65,6 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         databaseStage: 'prod',
         aurora: null,
         carrierTimings: { pickedAfterSeconds: 2, shippedAfterSeconds: 4, deliveredAfterSeconds: 6 },
-        alarmRecipients: [],
         owner: projectOwner,
         stacks: {
             Platform: 'per-run',
@@ -94,7 +91,6 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
             shippedAfterSeconds: 300,
             deliveredAfterSeconds: 900
         },
-        alarmRecipients: [],
         owner: projectOwner,
         stacks: {
             Platform: 'persistent',

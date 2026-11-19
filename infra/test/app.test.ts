@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../lib/app';
+import { InvalidAlarmRecipientError } from '../lib/config/alarm-recipients';
 import { stageNames, stages } from '../lib/config/stages';
 
 describe('createApp', () => {
@@ -18,6 +19,33 @@ describe('createApp', () => {
             { project: 'storefront', stage, service: 'Platform', owner: stages[stage].owner },
             { project: 'storefront', stage: 'shared', service: 'Secrets', owner: stages[stage].owner }
         ]);
+    });
+
+    describe('alarm recipients', () => {
+        const emailsOf = (env: NodeJS.ProcessEnv) => {
+            const template = createApp({ context: { stage: 'prod' } }, env)
+                .synth()
+                .getStackByName('Storefront-prod-Platform').template as { Resources: Record<string, { Type: string; Properties: { Endpoint?: string } }> };
+            return Object.values(template.Resources)
+                .filter((resource) => resource.Type === 'AWS::SNS::Subscription')
+                .map((resource) => resource.Properties.Endpoint);
+        };
+
+        it('are the addresses in ALARM_RECIPIENTS, subscribed to the topic of the stage', () => {
+            expect(emailsOf({ ALARM_RECIPIENTS: 'one@example.com, two@example.com' })).toEqual(['one@example.com', 'two@example.com']);
+        }, 30000);
+
+        it('are none when the variable is not set', () => {
+            expect(emailsOf({})).toEqual([]);
+        }, 30000);
+
+        it('fail the build when an entry is not an address', () => {
+            expect(() => createApp({ context: { stage: 'prod' } }, { ALARM_RECIPIENTS: 'nope' })).toThrow(InvalidAlarmRecipientError);
+        });
+
+        it('are not read when no stage is named', () => {
+            expect(() => createApp(undefined, { ALARM_RECIPIENTS: 'nope' })).not.toThrow();
+        });
     });
 
     it('builds only the stack that belongs to no stage when no stage is named', () => {

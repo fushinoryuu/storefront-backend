@@ -6,7 +6,7 @@ import type { StageConfig } from '../lib/config/stages';
 import { apiKeyKinds } from '../lib/naming';
 import { PlatformStack } from '../lib/stacks/platform-stack';
 
-const build = (config: StageConfig) => Template.fromStack(new PlatformStack(new App(), config));
+const build = (config: StageConfig, alarmRecipients?: readonly string[]) => Template.fromStack(new PlatformStack(new App(), config, alarmRecipients));
 
 describe.each(stageNames)('PlatformStack in %s', (stage) => {
     const config = stages[stage];
@@ -58,14 +58,14 @@ describe.each(stageNames)('PlatformStack in %s', (stage) => {
         }
     });
 
-    it('has no subscription while the stage has no alarm recipient', () => {
+    it('has no subscription when no alarm recipient is given', () => {
         template.resourceCountIs('AWS::SNS::Subscription', 0);
     });
 });
 
 describe('PlatformStack alarm recipients', () => {
-    it('emails each recipient of the stage', () => {
-        const template = build({ ...stages.dev, alarmRecipients: ['one@example.com', 'two@example.com'] });
+    it('emails each recipient it is given', () => {
+        const template = build(stages.dev, ['one@example.com', 'two@example.com']);
 
         template.resourceCountIs('AWS::SNS::Subscription', 2);
         template.hasResourceProperties('AWS::SNS::Subscription', { Protocol: 'email', Endpoint: 'two@example.com' });

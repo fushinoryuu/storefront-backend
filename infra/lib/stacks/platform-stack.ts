@@ -13,9 +13,11 @@ import { removalPolicyFor } from '../removal-policy';
 /**
  * The resources every service shares, one set per stage (decision 0002): the event bus with its archive, the alarm topic and the three API keys
  * (decision 0005). The names and ids that other stacks and outside tools need are published to SSM, and no key value is.
+ * The topic emails `alarmRecipients`, which come from the environment and not from the stage config (`parseAlarmRecipients`), so no address is in a file.
+ * With none, the topic has no subscription.
  */
 export class PlatformStack extends Stack {
-    constructor(scope: Construct, config: StageConfig) {
+    constructor(scope: Construct, config: StageConfig, alarmRecipients: readonly string[] = []) {
         super(scope, 'Platform', { stackName: stackName(config, 'Platform') });
         applyStandardTags(this, config, 'Platform');
         const removalPolicy = removalPolicyFor(config);
@@ -33,7 +35,7 @@ export class PlatformStack extends Stack {
 
         const alarmTopic = new Topic(this, 'AlarmTopic', { displayName: `Storefront ${config.name} alarms`, enforceSSL: true });
         alarmTopic.applyRemovalPolicy(removalPolicy);
-        for (const recipient of config.alarmRecipients) {
+        for (const recipient of alarmRecipients) {
             alarmTopic.addSubscription(new EmailSubscription(recipient));
         }
 
