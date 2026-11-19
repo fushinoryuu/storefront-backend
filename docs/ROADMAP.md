@@ -114,12 +114,9 @@ The orders service calls the customers API to validate a customer when an order 
 
 ### Phase 1: Shared platform
 
-- [ ] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
-  - [x] Done: the stack is built and tested
-  - [ ] Remaining: deploy it to `dev` and check the SSM values and the alarm email
-- [ ] Script to retrieve key values after deploy
-  - [x] Done: `npm run get-api-keys`, tested against fake AWS clients
-  - [ ] Remaining: run it against a deployed `dev` stack
+- [x] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
+  - [x] Built, tested and deployed to `dev` on 2026-11-18, with the SSM values listed and the alarm email confirmed. The `prod` deploy comes with the hello service check.
+- [x] Script to retrieve key values after deploy
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
 - [x] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record

@@ -108,4 +108,4 @@ An AWS Budget guards the spend before anything is deployed:
 ## What is not set up yet
 
 - GitHub Actions access to AWS (an OIDC role). That arrives in Phase 6.
-- Any deployed stack except `Secrets`, which is deployed. The platform stack comes next.
+- The stacks of `prod`. `Secrets` is deployed, and the `dev` platform stack was deployed on 2026-11-18 to check it. The platform stack of `prod` comes next.

@@ -24,24 +24,21 @@ Everything the three services have in common, built once: the event bus, authent
 
 ## Platform stack
 
-- [ ] **Custom event bus** named per stage, with an archive enabled so events can be replayed during debugging (confirm retention settings and cost).
-  - [x] Done: the bus and its archive are built in `PlatformStack` (7 days in `dev`, 30 in `prod`), with template tests. The cost is in `docs/cost.md`.
-  - [ ] Remaining: deploy it to `dev` and check the bus name in SSM.
+- [x] **Custom event bus** named per stage, with an archive enabled so events can be replayed during debugging (confirm retention settings and cost).
+  - [x] Done: built in `PlatformStack` (7 days of archive in `dev`, 30 in `prod`), tested, and deployed to `dev` on 2026-11-18, where the bus name is in SSM.
 - [ ] **API keys:** three `ApiKey` resources owned by the platform stack, one per kind of caller: `tests` (test suites and the library project), `services` (service-to-service calls), `admin` (the shipping simulation endpoint). Let CDK generate the values and publish only the key ids to SSM. Each service's usage plans attach the keys they accept.
-  - [x] Done: the three keys with generated values, and their ids in SSM. No value is in the template, which a test checks.
-  - [ ] Remaining: the deploy to `dev`, and the usage plans that attach the keys, which come with `ServiceApi`.
-- [ ] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
-  - [x] Done: `npm run get-api-keys -- --stage <stage>` writes `.api-keys/<stage>.json` (ignored by git, readable only by the owner) and prints no value. It is tested against fake AWS clients.
-  - [ ] Remaining: run it against a deployed `dev` stack. The Secrets Manager destination is not built. It comes with the first service that calls another.
+  - [x] Done: the three keys with generated values, and their ids in SSM. No value is in the template, which a test checks. Deployed to `dev` on 2026-11-18.
+  - [ ] Remaining: the usage plans that attach the keys, which come with `ServiceApi`.
+- [x] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
+  - [x] Done: `npm run get-api-keys -- --stage <stage>` writes `.api-keys/<stage>.json` (ignored by git, readable only by the owner) and prints no value. It is tested against fake AWS clients, and it ran against the `dev` stack on 2026-11-18. The Secrets Manager copy is not built. It comes with the first service that calls another.
 - [ ] **SSM parameters** (or stack outputs) for values other stacks and external tools need: event bus name, API key ids, and each service's base URL once deployed.
-  - [x] Done: the event bus name and the three key ids.
-  - [ ] Remaining: check them in a deployed `dev` stack, and publish the base URL of each service, which each service adds.
+  - [x] Done: the event bus name and the three key ids, listed from the `dev` stack on 2026-11-18.
+  - [ ] Remaining: the base URL of each service, which each service adds.
 - [ ] **Secrets:** client secrets live in Secrets Manager or are retrieved at deploy time by an authorized process, never committed.
   - [x] Done: the LaunchDarkly SDK keys. The `Storefront-Secrets` stack creates one empty secret per stage, and the owner puts the value in (decision 0011).
   - [ ] Remaining: the key retrieval script writes the API key values to a local file only. The copy in Secrets Manager, and any other secret a service needs, is still open.
-- [ ] **Alarm topic:** an SNS topic that sends alarms to email.
-  - [x] Done: the topic requires TLS and emails the addresses in `ALARM_RECIPIENTS` (`docs/aws-setup.md`). With none set it has no subscription.
-  - [ ] Remaining: deploy it to `dev` with an address set, and confirm the email.
+- [x] **Alarm topic:** an SNS topic that sends alarms to email.
+  - [x] Done: the topic requires TLS and emails the addresses in `ALARM_RECIPIENTS` (`docs/aws-setup.md`). With none set it has no subscription. Deployed to `dev` with an address on 2026-11-18, and the subscription is confirmed. No alarm is attached to it yet.
 
 ## Reusable constructs
 
@@ -129,7 +126,7 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 ## Tasks summary
 
-- [ ] Build the platform stack and deploy it to `dev`.
+- [x] Build the platform stack and deploy it to `dev`.
 - [ ] Build each construct with tests.
 - [x] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
 - [ ] Add a throwaway "hello" service using the constructs to prove they work, deploy it, call it with the `tests` API key, then delete it.
