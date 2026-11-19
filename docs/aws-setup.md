@@ -63,6 +63,18 @@ npm run get-api-keys -- --stage dev
 
 The command reads the ids from `/storefront/<stage>/platform/<kind>-api-key-id` and the values from API Gateway, and writes `.api-keys/<stage>.json`, readable only by you. It prints the kinds and the path, never a value. The `dev` stack is destroyed after each test run, so its keys change on every deploy and the command has to run again.
 
+## Alarm emails
+
+The alarm topic of the platform stack emails the addresses in the `ALARM_RECIPIENTS` environment variable, a comma-separated list. It is read when the stack is built, so no address is in the repo. Each address gets a confirmation email from AWS, and has to follow its link before it receives anything.
+
+```
+ALARM_RECIPIENTS=you@example.com npx cdk deploy --profile storefront -c stage=prod Platform
+```
+
+- Leave the variable unset for `dev`. Its stack is destroyed after every run, so each deploy would send a new confirmation email.
+- Set it on every deploy of a stage that has recipients. A deploy without it removes the subscription. When deploys move to a workflow (Phase 6), set it there once, as a repository variable, and it is always present.
+- A value that is not an email address stops the build with a one-line message that does not repeat the value.
+
 ## Availability in `us-west-2`
 
 Checked on 2026-11-06 with the `storefront` profile.

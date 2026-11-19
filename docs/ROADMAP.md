@@ -115,12 +115,18 @@ The orders service calls the customers API to validate a customer when an order 
 ### Phase 1: Shared platform
 
 - [ ] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
+  - [x] Done: the stack is built and tested
+  - [ ] Remaining: deploy it to `dev` and check the SSM values and the alarm email
 - [ ] Script to retrieve key values after deploy
+  - [x] Done: `npm run get-api-keys`, tested against fake AWS clients
+  - [ ] Remaining: run it against a deployed `dev` stack
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
 - [x] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
 - [ ] Every API exposes `GET /v0/health` and `GET /v0/version`, and `ServiceApi` serves several versions under one API
 - [ ] CDK template tests and cdk-nag in the build
+  - [x] Done: cdk-nag runs on every stack, and the platform stack has template tests
+  - [ ] Remaining: tests for each construct, as the constructs are built
 
 ### Phase 2: Customers (Aurora)
 

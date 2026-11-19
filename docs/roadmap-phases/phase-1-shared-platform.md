@@ -25,13 +25,23 @@ Everything the three services have in common, built once: the event bus, authent
 ## Platform stack
 
 - [ ] **Custom event bus** named per stage, with an archive enabled so events can be replayed during debugging (confirm retention settings and cost).
+  - [x] Done: the bus and its archive are built in `PlatformStack` (7 days in `dev`, 30 in `prod`), with template tests. The cost is in `docs/cost.md`.
+  - [ ] Remaining: deploy it to `dev` and check the bus name in SSM.
 - [ ] **API keys:** three `ApiKey` resources owned by the platform stack, one per kind of caller: `tests` (test suites and the library project), `services` (service-to-service calls), `admin` (the shipping simulation endpoint). Let CDK generate the values and publish only the key ids to SSM. Each service's usage plans attach the keys they accept.
+  - [x] Done: the three keys with generated values, and their ids in SSM. No value is in the template, which a test checks.
+  - [ ] Remaining: the deploy to `dev`, and the usage plans that attach the keys, which come with `ServiceApi`.
 - [ ] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
+  - [x] Done: `npm run get-api-keys -- --stage <stage>` writes `.api-keys/<stage>.json` (ignored by git, readable only by the owner) and prints no value. It is tested against fake AWS clients.
+  - [ ] Remaining: run it against a deployed `dev` stack. The Secrets Manager destination is not built. It comes with the first service that calls another.
 - [ ] **SSM parameters** (or stack outputs) for values other stacks and external tools need: event bus name, API key ids, and each service's base URL once deployed.
+  - [x] Done: the event bus name and the three key ids.
+  - [ ] Remaining: check them in a deployed `dev` stack, and publish the base URL of each service, which each service adds.
 - [ ] **Secrets:** client secrets live in Secrets Manager or are retrieved at deploy time by an authorized process, never committed.
   - [x] Done: the LaunchDarkly SDK keys. The `Storefront-Secrets` stack creates one empty secret per stage, and the owner puts the value in (decision 0011).
-  - [ ] Remaining: the API key values, which the key retrieval script stores, and any other secret a service needs.
+  - [ ] Remaining: the key retrieval script writes the API key values to a local file only. The copy in Secrets Manager, and any other secret a service needs, is still open.
 - [ ] **Alarm topic:** an SNS topic that sends alarms to email.
+  - [x] Done: the topic requires TLS and emails the addresses in `ALARM_RECIPIENTS` (`docs/aws-setup.md`). With none set it has no subscription.
+  - [ ] Remaining: deploy it to `dev` with an address set, and confirm the email.
 
 ## Reusable constructs
 
