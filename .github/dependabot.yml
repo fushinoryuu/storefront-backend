@@ -19,6 +19,12 @@ updates:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
+      # The type definitions follow the Node.js version the code runs on (`.nvmrc`, `engines` and the Lambda runtime), which is 24.
+      # A newer major would let code use APIs that the runtime does not have, and the type check would still pass.
+      # Remove this rule in the change that moves the project to a newer Node.js, and move `@types/node` in the same change.
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
