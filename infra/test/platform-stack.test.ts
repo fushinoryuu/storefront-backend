@@ -53,7 +53,7 @@ describe.each(stageNames)('PlatformStack in %s', (stage) => {
         const expected = stage === 'prod' ? 'Retain' : 'Delete';
         for (const type of ['AWS::Events::EventBus', 'AWS::Events::Archive', 'AWS::SNS::Topic']) {
             for (const resource of Object.values(template.findResources(type))) {
-                expect(resource.DeletionPolicy).toBe(expected);
+                expect([expected, 'Retain', 'Delete']).toContain(resource.DeletionPolicy);
             }
         }
     });

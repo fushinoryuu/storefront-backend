@@ -11,7 +11,7 @@ export function awsKeySource(ssm = new SSMClient({}), apiGateway = new APIGatewa
             return Parameter.Value;
         },
         async keyValue(id) {
-            const { value } = await apiGateway.send(new GetApiKeyCommand({ apiKey: id, includeValue: true }));
+            const { value } = await apiGateway.send(new GetApiKeyCommand({ apiKey: id, includeValue: false }));
             if (!value) throw new Error(`The API key ${id} has no value.`);
             return value;
         }

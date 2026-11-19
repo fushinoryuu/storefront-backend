@@ -85,7 +85,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         removalPolicy: RemovalPolicy.RETAIN,
         deletionProtection: true,
         logRetention: RetentionDays.ONE_MONTH,
-        eventArchiveRetentionDays: 30,
+        eventArchiveRetentionDays: 0,
         databaseStage: 'prod',
         // ADR 0007: the cluster may pause. The maximum is low so a runaway test cannot scale it up.
         aurora: { minCapacity: 0, maxCapacity: 4 },

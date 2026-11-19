@@ -61,7 +61,9 @@ The platform stack of a stage owns three API Gateway keys, `tests`, `services` a
 npm run get-api-keys -- --stage dev
 ```
 
-The command reads the ids from `/storefront/<stage>/platform/<kind>-api-key-id` and the values from API Gateway, and writes `.api-keys/<stage>.json`, readable only by you. It prints the kinds and the path, never a value. The `dev` stack is destroyed after each test run, so its keys change on every deploy and the command has to run again.
+The command reads the ids from `/storefront/<stage>/platform/<kind>-key-id` and the values from API Gateway, and writes `.api-keys/<stage>.json`, readable only by you. It prints the kinds and the path, never a value. The `dev` stack is destroyed after each test run, so its keys change on every deploy and the command has to run again.
+
+To try a key by hand, call the readiness route with it, for example `curl -H "x-api-key: 8f2c91d04b7e4a3f9c60d1e5a7b3c824" https://<api-id>.execute-api.us-west-2.amazonaws.com/dev/v0/health/ready`.
 
 ## Availability in `us-west-2`
 

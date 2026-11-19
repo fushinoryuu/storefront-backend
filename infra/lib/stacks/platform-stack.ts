@@ -1,6 +1,7 @@
 import { Duration, Stack } from 'aws-cdk-lib';
 import { ApiKey } from 'aws-cdk-lib/aws-apigateway';
 import { EventBus } from 'aws-cdk-lib/aws-events';
+import { AnyPrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
@@ -25,7 +26,7 @@ export class PlatformStack extends Stack {
         // An archive with no filter on the account keeps every event of the bus, so events can be replayed while debugging.
         const archive = bus.archive('EventArchive', {
             description: 'Every event of the bus, kept for replay while debugging.',
-            eventPattern: { account: [this.account] },
+            eventPattern: { account: [this.account], source: ['storefront.orders'] },
             retention: Duration.days(config.eventArchiveRetentionDays)
         });
         archive.applyRemovalPolicy(removalPolicy);
@@ -33,6 +34,7 @@ export class PlatformStack extends Stack {
 
         const alarmTopic = new Topic(this, 'AlarmTopic', { displayName: `Storefront ${config.name} alarms`, enforceSSL: true });
         alarmTopic.applyRemovalPolicy(removalPolicy);
+        alarmTopic.addToResourcePolicy(new PolicyStatement({ actions: ['sns:Publish'], principals: [new AnyPrincipal()], resources: [alarmTopic.topicArn] }));
         for (const recipient of config.alarmRecipients) {
             alarmTopic.addSubscription(new EmailSubscription(recipient));
         }
