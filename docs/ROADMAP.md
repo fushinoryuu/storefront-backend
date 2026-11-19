@@ -118,12 +118,16 @@ The orders service calls the customers API to validate a customer when an order 
   - [x] Built, tested and deployed to `dev` on 2026-11-18, with the SSM values listed and the alarm email confirmed. The `prod` deploy comes with the hello service check.
 - [x] Script to retrieve key values after deploy
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
+  - [x] Done: `ServiceFunction` and the Lambda alarms, with tests and cdk-nag
+  - [ ] Remaining: `EventConsumer` and `ServiceApi`
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
-- [x] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
+- [ ] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
+  - [x] Done: the client with its in-code defaults, and the decision record (decision 0011)
+  - [ ] Remaining: the service connections a Lambda uses, measured on `dev` with the hello service and recorded in the decision record
 - [ ] Every API exposes `GET /v0/health` and `GET /v0/version`, and `ServiceApi` serves several versions under one API
 - [ ] CDK template tests and cdk-nag in the build
-  - [x] Done: cdk-nag runs on every stack, and the platform stack has template tests
-  - [ ] Remaining: tests for each construct, as the constructs are built
+  - [x] Done: cdk-nag runs on every stack, and the platform stack, `ServiceFunction` and the Lambda alarms have template tests
+  - [ ] Remaining: tests for `EventConsumer` and `ServiceApi`, as they are built
 
 ### Phase 2: Customers (Aurora)
 
