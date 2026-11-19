@@ -30,6 +30,8 @@ export interface StageConfig {
     readonly removalPolicy: RemovalPolicy;
     readonly deletionProtection: boolean;
     readonly logRetention: RetentionDays;
+    /** How many days the archive of the event bus keeps events for replay. Archived events cost $0.10 per GB, then $0.023 per GB-month (docs/cost.md). */
+    readonly eventArchiveRetentionDays: number;
     /** The stage whose `Database` stack holds the Aurora cluster this stage uses. */
     readonly databaseStage: StageName;
     /**
@@ -46,8 +48,6 @@ export interface StageConfig {
         readonly shippedAfterSeconds: number;
         readonly deliveredAfterSeconds: number;
     };
-    /** Email addresses that receive alarm notifications. */
-    readonly alarmRecipients: readonly string[];
     /** Value of the `owner` tag. */
     readonly owner: string;
     readonly stacks: Readonly<Record<ServiceName, StackLifecycle>>;
@@ -61,10 +61,10 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         removalPolicy: RemovalPolicy.DESTROY,
         deletionProtection: false,
         logRetention: RetentionDays.ONE_WEEK,
+        eventArchiveRetentionDays: 7,
         databaseStage: 'prod',
         aurora: null,
         carrierTimings: { pickedAfterSeconds: 2, shippedAfterSeconds: 4, deliveredAfterSeconds: 6 },
-        alarmRecipients: [],
         owner: projectOwner,
         stacks: {
             Platform: 'per-run',
@@ -82,6 +82,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         removalPolicy: RemovalPolicy.RETAIN,
         deletionProtection: true,
         logRetention: RetentionDays.ONE_MONTH,
+        eventArchiveRetentionDays: 30,
         databaseStage: 'prod',
         // ADR 0007: the cluster may pause. The maximum is low so a runaway test cannot scale it up.
         aurora: { minCapacity: 0, maxCapacity: 4 },
@@ -90,7 +91,6 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
             shippedAfterSeconds: 300,
             deliveredAfterSeconds: 900
         },
-        alarmRecipients: [],
         owner: projectOwner,
         stacks: {
             Platform: 'persistent',

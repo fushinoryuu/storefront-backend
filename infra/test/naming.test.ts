@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { stages } from '../lib/config/stages';
-import { databaseStackName, launchDarklySdkKeySecretName, sharedStackName, stackName } from '../lib/naming';
+import { apiKeyIdParameterName, databaseStackName, eventBusNameParameterName, launchDarklySdkKeySecretName, sharedStackName, ssmParameterName, stackName } from '../lib/naming';
 
 describe('stackName', () => {
     it('builds Storefront-<stage>-<Service>', () => {
@@ -27,5 +27,17 @@ describe('databaseStackName', () => {
     it('points every stage at the Database stack of prod', () => {
         expect(databaseStackName(stages.prod)).toBe('Storefront-prod-Database');
         expect(databaseStackName(stages.dev)).toBe('Storefront-prod-Database');
+    });
+});
+
+describe('ssmParameterName', () => {
+    it('builds /storefront/<stage>/<service>/<name> with the service in lowercase', () => {
+        expect(ssmParameterName(stages.dev, 'Platform', 'event-bus-name')).toBe('/storefront/dev/platform/event-bus-name');
+        expect(ssmParameterName(stages.prod, 'Customers', 'base-url')).toBe('/storefront/prod/customers/base-url');
+    });
+
+    it('names the event bus and API key id parameters of the platform stack', () => {
+        expect(eventBusNameParameterName(stages.dev)).toBe('/storefront/dev/platform/event-bus-name');
+        expect(apiKeyIdParameterName(stages.prod, 'admin')).toBe('/storefront/prod/platform/admin-api-key-id');
     });
 });

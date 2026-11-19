@@ -24,14 +24,21 @@ Everything the three services have in common, built once: the event bus, authent
 
 ## Platform stack
 
-- [ ] **Custom event bus** named per stage, with an archive enabled so events can be replayed during debugging (confirm retention settings and cost).
+- [x] **Custom event bus** named per stage, with an archive enabled so events can be replayed during debugging (confirm retention settings and cost).
+  - [x] Done: built in `PlatformStack` (7 days of archive in `dev`, 30 in `prod`), tested, and deployed to `dev` on 2026-11-18, where the bus name is in SSM.
 - [ ] **API keys:** three `ApiKey` resources owned by the platform stack, one per kind of caller: `tests` (test suites and the library project), `services` (service-to-service calls), `admin` (the shipping simulation endpoint). Let CDK generate the values and publish only the key ids to SSM. Each service's usage plans attach the keys they accept.
-- [ ] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
+  - [x] Done: the three keys with generated values, and their ids in SSM. No value is in the template, which a test checks. Deployed to `dev` on 2026-11-18.
+  - [ ] Remaining: the usage plans that attach the keys, which come with `ServiceApi`.
+- [x] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
+  - [x] Done: `npm run get-api-keys -- --stage <stage>` writes `.api-keys/<stage>.json` (ignored by git, readable only by the owner) and prints no value. It is tested against fake AWS clients, and it ran against the `dev` stack on 2026-11-18. The Secrets Manager copy is not built. It comes with the first service that calls another.
 - [ ] **SSM parameters** (or stack outputs) for values other stacks and external tools need: event bus name, API key ids, and each service's base URL once deployed.
+  - [x] Done: the event bus name and the three key ids, listed from the `dev` stack on 2026-11-18.
+  - [ ] Remaining: the base URL of each service, which each service adds.
 - [ ] **Secrets:** client secrets live in Secrets Manager or are retrieved at deploy time by an authorized process, never committed.
   - [x] Done: the LaunchDarkly SDK keys. The `Storefront-Secrets` stack creates one empty secret per stage, and the owner puts the value in (decision 0011).
-  - [ ] Remaining: the API key values, which the key retrieval script stores, and any other secret a service needs.
-- [ ] **Alarm topic:** an SNS topic that sends alarms to email.
+  - [ ] Remaining: the key retrieval script writes the API key values to a local file only. The copy in Secrets Manager, and any other secret a service needs, is still open.
+- [x] **Alarm topic:** an SNS topic that sends alarms to email.
+  - [x] Done: the topic requires TLS and emails the addresses in `ALARM_RECIPIENTS` (`docs/aws-setup.md`). With none set it has no subscription. Deployed to `dev` with an address on 2026-11-18, and the subscription is confirmed. No alarm is attached to it yet.
 
 ## Reusable constructs
 
@@ -70,7 +77,7 @@ Wraps a REST API.
 - [ ] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
 - [x] A removal policy helper that reads from stage config (`removalPolicyFor` in `infra/lib/removal-policy.ts`).
 - [ ] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`.
-- [ ] cdk-nag (AwsSolutions pack) added as an Aspect. Each suppression needs a written reason, kept in one place.
+- [x] cdk-nag (AwsSolutions pack) added to the app. Each acknowledged finding needs a written reason, kept in `infra/lib/nag.ts`. cdk-nag 3 registers the pack as a validation plugin and not as an Aspect, and a finding that is not acknowledged fails `cdk synth`.
 
 ## Shared runtime packages
 
@@ -110,7 +117,7 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 - [ ] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
-- [ ] cdk-nag runs in the test suite and fails on unsuppressed findings.
+- [x] cdk-nag runs in the test suite and fails on unsuppressed findings (`infra/test/nag.test.ts`, and every `createApp` test synthesizes with the pack on).
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
   - [x] Done: the error kinds of `packages/shared` are checked against the `Problem` schema and the response examples of the shared spec components.
   - [ ] Remaining: the customized gateway responses, and the health and version responses (with `ServiceApi`).
@@ -119,7 +126,7 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 ## Tasks summary
 
-- [ ] Build the platform stack and deploy it to `dev`.
+- [x] Build the platform stack and deploy it to `dev`.
 - [ ] Build each construct with tests.
 - [x] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
 - [ ] Add a throwaway "hello" service using the constructs to prove they work, deploy it, call it with the `tests` API key, then delete it.

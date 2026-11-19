@@ -53,6 +53,36 @@ aws secretsmanager put-secret-value --region us-west-2 --profile storefront --se
 
 Then repeat the last two commands with `prod` in the two places. Use the **SDK key** of the environment (LaunchDarkly: the gear icon, **Projects**, the project, **Environments**), not the mobile key or the client-side ID. To remove both secrets, run `npx cdk destroy --profile storefront Secrets`. Secrets Manager keeps a deleted secret for a recovery window and does not bill it meanwhile.
 
+## API keys
+
+The platform stack of a stage owns three API Gateway keys, `tests`, `services` and `admin` (decision 0005), and publishes only their ids to SSM. After each deploy of the stack, write the values to a local file that git ignores:
+
+```
+npm run get-api-keys -- --stage dev
+```
+
+The command reads the ids from `/storefront/<stage>/platform/<kind>-api-key-id` and the values from API Gateway, and writes `.api-keys/<stage>.json`, readable only by you. It prints the kinds and the path, never a value. The `dev` stack is destroyed after each test run, so its keys change on every deploy and the command has to run again.
+
+## Alarm emails
+
+The alarm topic of the platform stack emails the addresses in the `ALARM_RECIPIENTS` environment variable, a comma-separated list. It is read when the stack is built, so no address is in the repo. Each address gets a confirmation email from AWS, and has to follow its link before it receives anything.
+
+Put the variable in a `.env` file at the repo root, which git ignores and the CDK app loads:
+
+```
+ALARM_RECIPIENTS=you@example.com
+```
+
+Or set it for one command, which wins over the file:
+
+```
+ALARM_RECIPIENTS=you@example.com npx cdk deploy --profile storefront -c stage=prod Platform
+```
+
+- A `.env` file applies to every stage. Its stack is destroyed after every run, so a `dev` deploy with an address sends a new confirmation email each time. Deploy `dev` without the variable unless you are checking the subscription (with `ALARM_RECIPIENTS=` on the command line, an empty value wins over the file).
+- Have the variable on every deploy of a stage that has recipients. A deploy without it removes the subscription. When deploys move to a workflow (Phase 6), set it there once, as a repository variable, and it is always present. No file is needed there.
+- A value that is not an email address stops the build with a one-line message that does not repeat the value.
+
 ## Availability in `us-west-2`
 
 Checked on 2026-11-06 with the `storefront` profile.
@@ -78,4 +108,4 @@ An AWS Budget guards the spend before anything is deployed:
 ## What is not set up yet
 
 - GitHub Actions access to AWS (an OIDC role). That arrives in Phase 6.
-- Any deployed stack except `Secrets`, which is deployed. The platform stack comes next.
+- The stacks of `prod`. `Secrets` is deployed, and the `dev` platform stack was deployed on 2026-11-18 to check it. The platform stack of `prod` comes next.
