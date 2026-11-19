@@ -37,6 +37,7 @@ Every error response from every service has the shape of the `Problem` schema in
   - at most 63 bytes, the PostgreSQL limit for an identifier;
   - the `main` branch uses the fixed schema `main`.
 - A derived name always ends in an underscore and digits, so it can never equal `main`. A pipeline fails when a branch has no key, or the name is too long. It must not shorten the name, because two branches could then end up sharing a schema.
+- The one exception is a Dependabot branch (`dependabot/...`), which has no key. The CI workflow runs on it, because it needs no AWS access and no secrets. A pipeline that deploys a pull request to `dev` skips these branches instead of failing, and never derives a schema for one. See [Dependencies](#dependencies).
 
 ## Commits
 
@@ -59,6 +60,31 @@ npm run lint:specs
 npm run bundle:specs -- --check
 npm run synth
 ```
+
+## Dependencies
+
+Dependabot (`.github/dependabot.yml`) checks the npm packages and the GitHub Actions every Monday. It opens one pull request for all the minor and patch updates of an ecosystem, and one pull request for each major update, with at most five open per ecosystem. It also raises an alert for each advisory that affects a locked version.
+
+- A Dependabot branch and pull request have no Jira key, and their title and commit message are Dependabot's (`Bump x from a to b`). The rules for keys in branches and titles do not apply to them (see [Branches](#branches)). Nothing is merged automatically: a person reviews each one like any other pull request.
+- Several dependencies are pinned to an exact version on purpose: `aws-cdk-lib`, `aws-cdk`, `cdk-nag`, `esbuild`, `@hey-api/openapi-ts`, `@aws-lambda-powertools/logger` and `@launchdarkly/node-server-sdk`. A pull request that changes one of them changes the pin, so before merging it the reviewer:
+  - reads the decision record that names the pin (0004 for the generator, 0010 for Powertools, 0011 for LaunchDarkly), including the Node.js versions it was checked against;
+  - for `esbuild`, changes `allowScripts` in `package.json` to the same version, because it names the version it approves;
+  - runs the seven commands under [Pull requests](#pull-requests). CI runs them too, and the reviewer reads the result.
+- A grouped pull request can hold a pinned package, so the reviewer reads the list of packages in it.
+- TypeScript stays on 6.x (decision 0004), and the `ignore` rule in `dependabot.yml` keeps Dependabot from proposing 7. It names when to remove the rule.
+- Fix an alert by updating the package. When no update exists, or the package is a dev tool that reads only our own files, dismiss the alert with a written reason, so the list of open alerts stays short and every entry in it needs a decision.
+
+## Repository settings
+
+These GitHub settings are on. They are not in the repository, so this list is what to check when the repository is set up again.
+
+| Setting                     | Where                       | On since   |
+| --------------------------- | --------------------------- | ---------- |
+| Dependency graph            | Settings, Advanced Security | 2026-11-19 |
+| Dependabot alerts           | Settings, Advanced Security | 2026-11-19 |
+| Dependabot security updates | Settings, Advanced Security | 2026-11-19 |
+
+Secret scanning and push protection were also on when the list was written (checked on 2026-11-19).
 
 ## Decision records
 

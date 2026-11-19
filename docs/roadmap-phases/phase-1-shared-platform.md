@@ -128,6 +128,12 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 - [x] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, the HTTP client's key handling and timeout behavior, and the flag client's defaults.
 - [ ] A template test that `ServiceApi` can serve `/v1` and `/v2` routes side by side under one API.
 
+## Dependency updates
+
+- [ ] Dependabot version updates for npm and GitHub Actions, security alerts and security updates on, and the rules for its pull requests in `docs/conventions.md` (Dependencies).
+  - [x] Done: `.github/dependabot.yml` (weekly, minor and patch grouped, TypeScript kept below 7), the conventions, and the lockfile updates that fix the alerts an update can fix.
+  - [ ] Remaining: the first run opens a pull request for each ecosystem, one of them passes CI, no TypeScript 7 pull request appears, and every alert open on the first day is fixed or dismissed with a reason.
+
 ## Tasks summary
 
 - [x] Build the platform stack and deploy it to `dev`.

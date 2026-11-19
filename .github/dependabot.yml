@@ -1,0 +1,33 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One pull request for all the minor and patch updates. A major update is not in a group, so it gets its own.
+      npm-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Decision 0004: the schema generator (`@hey-api/openapi-ts`) fails to start on TypeScript 7, so TypeScript stays on 6.x.
+      # Remove this rule when a release of the generator supports TypeScript 7 and decision 0004 is amended.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-and-patch:
+        update-types:
+          - minor
+          - patch
