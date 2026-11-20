@@ -68,15 +68,15 @@ Wraps a REST API.
 
 ### `EventConsumer`
 
-- [ ] An EventBridge rule on the custom bus, an SQS queue as the target, a dead-letter queue with a redrive policy, and a Lambda event source with partial batch failure reporting.
-- [ ] Queue visibility timeout set relative to the function timeout (AWS guidance is a multiple of it; check the current recommendation).
-- [ ] Alarms on DLQ depth and age of the oldest message.
+- [x] An EventBridge rule on the custom bus, an SQS queue as the target, a dead-letter queue with a redrive policy, and a Lambda event source with partial batch failure reporting. It takes a `ServiceFunction` and the source and detail types of the events (`infra/lib/constructs/event-consumer.ts`). A message is parked after 5 receives, which is what Lambda's documentation recommends at least, so a throttled function does not park a good message.
+- [x] Queue visibility timeout set relative to the function timeout: 6 times it, the minimum that Lambda's documentation recommends (checked on 2026-11-19). The construct has no batching window, so nothing is added to it.
+- [x] Alarms on DLQ depth (one message or more) and age of the oldest message (a day or more). A failed message stays 14 days in the dead-letter queue, the most SQS allows, and the age alarm is the second notice for one that nobody dealt with.
 
 ### Others
 
 - [ ] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
-  - [x] Done: `ServiceFunction`, with its log group.
-  - [ ] Remaining: `EventConsumer` and `ServiceApi`, as they are built.
+  - [x] Done: `ServiceFunction`, with its log group, and `EventConsumer`, with its two queues. An event rule cannot carry tags in CloudFormation.
+  - [ ] Remaining: `ServiceApi`, as it is built.
 - [x] A removal policy helper that reads from stage config (`removalPolicyFor` in `infra/lib/removal-policy.ts`).
 - [x] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`.
 - [x] cdk-nag (AwsSolutions pack) added to the app. Each acknowledged finding needs a written reason, kept in `infra/lib/nag.ts`. cdk-nag 3 registers the pack as a validation plugin and not as an Aspect, and a finding that is not acknowledged fails `cdk synth`.
@@ -118,8 +118,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 ## Quality gates
 
 - [ ] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
-  - [x] Done: `ServiceFunction` and the Lambda alarms, including cdk-nag.
-  - [ ] Remaining: `EventConsumer` and `ServiceApi`, as they are built.
+  - [x] Done: `ServiceFunction`, the Lambda alarms and `EventConsumer`, including cdk-nag.
+  - [ ] Remaining: `ServiceApi`, as it is built.
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
 - [x] cdk-nag runs in the test suite and fails on unsuppressed findings (`infra/test/nag.test.ts`, and every `createApp` test synthesizes with the pack on).
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
