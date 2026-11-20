@@ -29,7 +29,7 @@ Extend the Phase 0 workflow so every pull request runs:
 
 - [x] Install, lint, typecheck, unit tests for the whole repo.
 - [ ] Repository tests that need containers (PostgreSQL, DynamoDB Local).
-  - [x] Done: DynamoDB Local, which CI starts as a container for the idempotency tests.
+  - [x] Done: DynamoDB Local, which the test run starts as a container for the idempotency tests, in CI and on a machine with a container runtime.
   - [ ] Remaining: PostgreSQL.
 - [ ] CDK template tests with cdk-nag, and `cdk synth` for both stages.
   - [x] Done: `cdk synth` for both stages with cdk-nag, which fails on a finding that is not acknowledged, and template tests for the stacks and the constructs that exist.
