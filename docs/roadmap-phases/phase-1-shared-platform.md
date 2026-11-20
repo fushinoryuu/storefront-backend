@@ -138,6 +138,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 - [x] Build the platform stack and deploy it to `dev`.
 - [ ] Build each construct with tests.
+  - [x] Done: `ServiceFunction`, the Lambda alarms and `EventConsumer`, with template tests and cdk-nag.
+  - [ ] Remaining: `ServiceApi`.
 - [ ] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
   - [x] Done: both packages with their tests, the flag client, and the decision record.
   - [ ] Remaining: the service connections measurement on `dev` that the decision record waits for (see Feature flags above).
