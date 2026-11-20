@@ -60,6 +60,7 @@ export interface EventConsumerProps {
  * Permissions are given the CDK way and stay narrow: the function can read this queue, and only this rule can send to it. There is no wildcard.
  * One consumer can take several event types, which then share the queue and the function. Events that need different handling get an `EventConsumer` each, with a queue and a dead-letter queue of their own.
  * An event rule cannot carry tags in CloudFormation, so the two queues carry the standard tags.
+ * The rule has no dead-letter queue of its own: an event that EventBridge cannot deliver to the queue is retried for 24 hours (its default) and then dropped. That is accepted, because the target is a queue in the same account and the rule has permission to send to it.
  *
  * @example
  * const consumer = new EventConsumer(this, 'OrderPlaced', {
