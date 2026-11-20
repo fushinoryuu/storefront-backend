@@ -1,0 +1,16 @@
+services:
+  # DynamoDB Local, for the tests that need a DynamoDB (`npm test` starts and stops it, see scripts/dynamodb-local.ts).
+  # This file is the one place that names the image and its version. CI reads it too.
+  dynamodb:
+    image: amazon/dynamodb-local:3.3.2
+    container_name: storefront-dynamodb
+    command: ['-jar', 'DynamoDBLocal.jar', '-inMemory', '-sharedDb']
+    ports:
+      # Only this machine can reach it: DynamoDB Local has no authentication.
+      - '127.0.0.1:8000:8000'
+    healthcheck:
+      # Any answer means it is up (a plain GET gets an HTTP error status, which curl does not count as a failure without -f).
+      test: ['CMD', 'curl', '-s', '-o', '/dev/null', 'http://localhost:8000']
+      interval: 1s
+      timeout: 3s
+      retries: 30
