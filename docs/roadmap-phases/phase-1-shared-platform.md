@@ -28,12 +28,14 @@ Everything the three services have in common, built once: the event bus, authent
   - [x] Done: built in `PlatformStack` (7 days of archive in `dev`, 30 in `prod`), tested, and deployed to `dev` on 2026-11-18, where the bus name is in SSM.
 - [ ] **API keys:** three `ApiKey` resources owned by the platform stack, one per kind of caller: `tests` (test suites and the library project), `services` (service-to-service calls), `admin` (the shipping simulation endpoint). Let CDK generate the values and publish only the key ids to SSM. Each service's usage plans attach the keys they accept.
   - [x] Done: the three keys with generated values, and their ids in SSM. No value is in the template, which a test checks. Deployed to `dev` on 2026-11-18.
-  - [ ] Remaining: the usage plans that attach the keys, which come with `ServiceApi`.
+  - [x] Done: the usage plans that attach the keys. `ServiceApi` makes one plan per kind of key and reads the key ids from those SSM parameters when its stack is deployed, so the platform stack deploys first and the service stacks are deployed again after it is.
+  - [ ] Remaining: a deployed plan that accepts the `tests` key and rejects a missing or wrong one, which the hello service checks.
 - [x] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
   - [x] Done: `npm run get-api-keys -- --stage <stage>` writes `.api-keys/<stage>.json` (ignored by git, readable only by the owner) and prints no value. It is tested against fake AWS clients, and it ran against the `dev` stack on 2026-11-18. The Secrets Manager copy is not built. It comes with the first service that calls another.
 - [ ] **SSM parameters** (or stack outputs) for values other stacks and external tools need: event bus name, API key ids, and each service's base URL once deployed.
   - [x] Done: the event bus name and the three key ids, listed from the `dev` stack on 2026-11-18.
-  - [ ] Remaining: the base URL of each service, which each service adds.
+  - [x] Done: `ServiceApi` publishes the base URL of its service at `/storefront/<stage>/<service>/base-url`, with the stage and no trailing slash. The template test checks it.
+  - [ ] Remaining: see the parameter in SSM after the first service is deployed to `dev`.
 - [ ] **Secrets:** client secrets live in Secrets Manager or are retrieved at deploy time by an authorized process, never committed.
   - [x] Done: the LaunchDarkly SDK keys. The `Storefront-Secrets` stack creates one empty secret per stage, and the owner puts the value in (decision 0011).
   - [ ] Remaining: the key retrieval script writes the API key values to a local file only. The copy in Secrets Manager, and any other secret a service needs, is still open.
@@ -59,11 +61,15 @@ Wraps `NodejsFunction`.
 Wraps a REST API.
 
 - [ ] `apiKeyRequired` on every method except `GET /v0/health` and `GET /v0/version`, with a usage plan per caller type (`tests`, `services`, `admin`) carrying throttle and quota limits.
-- [ ] Access logging to a log group, throttling set low by default, and a stage per deployment stage.
+  - [x] Done: `apiKeyRequired` on every method that `addRoute` adds, and a usage plan per caller type with the throttle and the daily quota of `api.usagePlans` in the stage config (the same in `dev` and `prod`), attached to the stage.
+  - [ ] Remaining: the two built-in routes that need no key.
+- [x] Access logging to a log group, throttling set low by default, and a stage per deployment stage. The log group keeps logs for the retention of the stage, a line holds the declared route and never the real path (so no id is logged), and the stage throttles every method at the `api.defaultThrottle` of the stage config. The endpoint is Regional, set explicitly (decision 0003). The role that API Gateway needs to write access logs is set once for the account, outside this construct, and an API with access logs does not deploy before it exists.
 - [ ] A helper to add a route with a Lambda integration in one call, with an `adminOnly` flag and an API version option (default `v1`) that puts the route under `/v<N>`. One API serves several versions side by side, so `/v1` and `/v2` routes can coexist. Usage plans apply per stage, not per route, so admin-only routes are enforced in the handler by comparing the caller's key id from the request context with the admin key id.
+  - [x] Done: `addRoute(method, path, handler, { version })`, which puts the route under `/v<N>`, gives the integration permission to invoke that function from this API only, and refuses `v0`, a version that the specs do not list, and a path that is malformed or already has a version.
+  - [ ] Remaining: the `adminOnly` flag.
 - [ ] Customized gateway responses so missing or invalid keys (403) and throttling (429) use the shared error shape (`Problem`).
 - [ ] Built-in `GET /v0/health` (unauthenticated, no dependencies) and `GET /v0/version` (build id, stage, and `specVersions` listing every prefix the API serves). Their response shapes come from the shared spec components.
-- [ ] Publishes its base URL to SSM.
+- [x] Publishes its base URL to SSM.
 - [ ] 5xx, 4xx, and latency alarms attached to the alarm topic.
 
 ### `EventConsumer`
@@ -74,9 +80,8 @@ Wraps a REST API.
 
 ### Others
 
-- [ ] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
-  - [x] Done: `ServiceFunction`, with its log group, and `EventConsumer`, with its two queues. An event rule cannot carry tags in CloudFormation.
-  - [ ] Remaining: `ServiceApi`, as it is built.
+- [x] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
+  - [x] Done: `ServiceFunction`, with its log group, `EventConsumer`, with its two queues, and `ServiceApi`, with its API, stage, usage plans and access log group. An event rule cannot carry tags in CloudFormation.
 - [x] A removal policy helper that reads from stage config (`removalPolicyFor` in `infra/lib/removal-policy.ts`).
 - [x] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`.
 - [x] cdk-nag (AwsSolutions pack) added to the app. Each acknowledged finding needs a written reason, kept in `infra/lib/nag.ts`. cdk-nag 3 registers the pack as a validation plugin and not as an Aspect, and a finding that is not acknowledged fails `cdk synth`.
@@ -118,15 +123,15 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 ## Quality gates
 
 - [ ] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
-  - [x] Done: `ServiceFunction`, the Lambda alarms and `EventConsumer`, including cdk-nag.
-  - [ ] Remaining: `ServiceApi`, as it is built.
+  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer` and the core of `ServiceApi`, including cdk-nag.
+  - [ ] Remaining: the rest of `ServiceApi` (the built-in routes, the `adminOnly` flag, gateway responses and alarms), as it is built.
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
 - [x] cdk-nag runs in the test suite and fails on unsuppressed findings (`infra/test/nag.test.ts`, and every `createApp` test synthesizes with the pack on).
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
   - [x] Done: the error kinds of `packages/shared` are checked against the `Problem` schema and the response examples of the shared spec components.
   - [ ] Remaining: the customized gateway responses, and the health and version responses (with `ServiceApi`).
 - [x] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, the HTTP client's key handling and timeout behavior, and the flag client's defaults.
-- [ ] A template test that `ServiceApi` can serve `/v1` and `/v2` routes side by side under one API.
+- [x] A template test that `ServiceApi` can serve `/v1` and `/v2` routes side by side under one API.
 
 ## Dependency updates
 
