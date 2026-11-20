@@ -54,11 +54,11 @@ aws apigateway get-account --region us-west-2 --profile storefront
 Then deploy, and run the same command again. `cloudwatchRoleArn` is now the role of the stack:
 
 ```
-npx cdk deploy --profile storefront ApiGatewayAccount
+npm run deploy:api-gateway-account
 aws apigateway get-account --region us-west-2 --profile storefront
 ```
 
-`npx cdk destroy --profile storefront ApiGatewayAccount` deletes the role. Deploy the stack again before the next API.
+`npm run destroy:api-gateway-account` deletes the role. Deploy the stack again before the next API.
 
 ## LaunchDarkly SDK keys
 
