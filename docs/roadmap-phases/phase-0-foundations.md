@@ -88,6 +88,8 @@ Write `docs/conventions.md` once and apply it everywhere:
 - [x] Resource naming: stage and service in every name, no hard-coded physical names where CloudFormation can generate them.
 - [x] Tags applied by an Aspect: `project`, `stage`, `service`, `owner`.
 - [ ] Log group retention set explicitly on every Lambda.
+  - [x] Done: the rule is in `docs/conventions.md` (Logs), and `ServiceFunction` creates the log group with the retention of the stage.
+  - [ ] Remaining: every function of the services uses `ServiceFunction` (Phases 2 to 4).
 - [x] Event naming: `source` is `storefront.<service>`, `detail-type` is PascalCase past tense (`OrderPlaced`).
 - [ ] Error responses use one shared shape across services (Phase 1).
   - [x] Done: the shape is the `Problem` schema of the shared spec components, and `packages/shared` maps errors to it, checked against the spec examples.
