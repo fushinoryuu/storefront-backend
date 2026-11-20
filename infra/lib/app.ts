@@ -3,6 +3,7 @@ import type { AppProps } from 'aws-cdk-lib';
 import { alarmRecipientsVariable, parseAlarmRecipients } from './config/alarm-recipients';
 import { getStageConfig } from './config/stages';
 import { applyNag } from './nag';
+import { ApiGatewayAccountStack } from './stacks/api-gateway-account-stack';
 import { PlatformStack } from './stacks/platform-stack';
 import { SecretsStack } from './stacks/secrets-stack';
 
@@ -18,6 +19,7 @@ export function createApp(props?: AppProps, env: NodeJS.ProcessEnv = process.env
     const stage: unknown = app.node.tryGetContext('stage');
     if (stage !== undefined) new PlatformStack(app, getStageConfig(stage), parseAlarmRecipients(env[alarmRecipientsVariable]));
     new SecretsStack(app);
+    new ApiGatewayAccountStack(app);
     applyNag(app);
     return app;
 }
