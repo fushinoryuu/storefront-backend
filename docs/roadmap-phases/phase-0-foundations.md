@@ -75,7 +75,7 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
   - [ ] The database stack with the Aurora cluster and CloudFormation termination protection.
   - [ ] Point-in-time recovery on the DynamoDB table, with the orders stack.
 - [ ] Both stages in the same account and region as separate stacks named `Storefront-<stage>-<Service>`. The one database stack is `Storefront-prod-Database`, and `dev` reads its connection details.
-  - [x] Both stages share the one member account and region (`docs/aws-setup.md`), and `infra/lib/naming.ts` builds the stack names, including `Storefront-prod-Database`. The `Platform` stack already uses it. The one stack that belongs to no stage, `Storefront-Secrets`, is the exception (decision 0002).
+  - [x] Both stages share the one member account and region (`docs/aws-setup.md`), and `infra/lib/naming.ts` builds the stack names, including `Storefront-prod-Database`. The `Platform` stack already uses it. The stacks that belong to no stage, `Storefront-Secrets` and `Storefront-ApiGatewayAccount`, are the exception (decision 0002).
   - [ ] The database stack, and `dev` reading its connection details.
 - [ ] Mark each stack in `stages.ts` as persistent, per-run or external (owned by another stage). In `dev` every stack except the database is per-run, and in `prod` every stack is persistent. A teardown script lists the per-run stacks explicitly instead of destroying everything.
   - [x] `stages.ts` marks every stack as `persistent`, `per-run` or `external`: in `dev` every stack except `Database` is `per-run`, and in `prod` every stack is `persistent`.

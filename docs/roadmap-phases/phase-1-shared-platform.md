@@ -65,11 +65,14 @@ Wraps a REST API.
   - [ ] Remaining: the two built-in routes that need no key.
 - [ ] Access logging to a log group, throttling set low by default, and a stage per deployment stage.
   - [x] Done: the construct sets all three, with tests and cdk-nag. The log group keeps logs for the retention of the stage, a line holds the declared route and the API key id and never the real path (so no id is logged), the stage throttles every method at the `api.defaultThrottle` of the stage config, and the endpoint is Regional, set explicitly (decision 0003).
-  - [ ] Remaining: the role that API Gateway needs to write access logs. It is set once for the account, outside this construct, and an API with access logs does not deploy before it exists. After the first deploy, a log line seen in the log group in `dev`.
+  - [ ] Remaining: the role that API Gateway needs to write access logs is built (see the API Gateway logging role item), but not deployed, and an API with access logs does not deploy before it exists. After the first deploy of an API, a log line seen in its log group in `dev`.
 - [ ] A helper to add a route with a Lambda integration in one call, with an `adminOnly` flag and an API version option (default `v1`) that puts the route under `/v<N>`. One API serves several versions side by side, so `/v1` and `/v2` routes can coexist. Usage plans apply per stage, not per route, so admin-only routes are enforced in the handler by comparing the caller's key id from the request context with the admin key id.
   - [x] Done: `addRoute(method, path, handler, { version })`, which puts the route under `/v<N>`, gives the integration permission to invoke that function from this API only, and refuses `v0`, a version that the specs do not list, and a path that is malformed or already has a version.
   - [ ] Remaining: the `adminOnly` flag.
 - [ ] Customized gateway responses so missing or invalid keys (403) and throttling (429) use the shared error shape (`Problem`).
+- [ ] **API Gateway logging role:** the one IAM role that API Gateway writes access logs with, and the account setting that points to it. It exists once for the account and region, so it has its own stack, `Storefront-ApiGatewayAccount`, which belongs to no stage (decision 0002).
+  - [x] Done: the stack, with tests and cdk-nag, and the setup steps in `docs/aws-setup.md`.
+  - [ ] Remaining: the owner deploys it, and `aws apigateway get-account` shows the role.
 - [ ] Built-in `GET /v0/health` (unauthenticated, no dependencies) and `GET /v0/version` (build id, stage, and `specVersions` listing every prefix the API serves). Their response shapes come from the shared spec components.
 - [x] Publishes its base URL to SSM.
 - [ ] 5xx, 4xx, and latency alarms attached to the alarm topic.

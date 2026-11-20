@@ -75,6 +75,7 @@ The teardown is planned for Phase 6, which builds and rehearses it. The order be
 - **Everything in `prod`**, because it is `RETAIN`: the Aurora cluster, DynamoDB tables and their backups. They keep billing until deleted by hand.
 - **Log groups.** CDK-created groups follow the stack's removal policy. A group a service created for itself has no retention and survives. This is why every log group is created in CDK (see [conventions.md](conventions.md)).
 - **Secrets.** A deleted secret stays recoverable for a recovery window before it is gone, and is not billed meanwhile. The `Storefront-Secrets` stack is not part of a run's teardown, so it stays until you destroy it by hand (`docs/aws-setup.md`).
+- **The API Gateway logging role.** The `Storefront-ApiGatewayAccount` stack holds the account-wide role and setting, which are free. Like `Secrets`, it is not part of a run's teardown. The logs that API Gateway writes with it are billed by CloudWatch Logs, like any other log group.
 - **The bootstrap stack.** `CDKToolkit` keeps an S3 bucket and an image repository for deployment assets, and the assets from earlier deploys stay in them. Its cost is small, and it is needed for the next deploy.
 - **The budget and Identity Center,** which belong to the management account.
 

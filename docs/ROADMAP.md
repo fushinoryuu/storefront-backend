@@ -120,6 +120,9 @@ The orders service calls the customers API to validate a customer when an order 
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
   - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and the core of `ServiceApi` (routes under `/v<N>` with an API key, usage plans, access logs, base URL), with tests and cdk-nag
   - [ ] Remaining: the rest of `ServiceApi` (the built-in health and version routes, the `adminOnly` flag, customized gateway responses and alarms)
+- [ ] API Gateway logging role: the account-wide role that access logs need, in its own stack that belongs to no stage (`Storefront-ApiGatewayAccount`)
+  - [x] Done: the stack, with tests and cdk-nag, and the setup steps
+  - [ ] Remaining: the owner deploys it, and `aws apigateway get-account` shows the role
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
 - [ ] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
   - [x] Done: the client with its in-code defaults, and the decision record (decision 0011)
