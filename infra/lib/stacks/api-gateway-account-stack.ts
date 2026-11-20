@@ -17,13 +17,14 @@ export const loggingManagedPolicyName = 'service-role/AmazonAPIGatewayPushToClou
  * `ServiceApi` does not create it (`cloudWatchRole` is off, and `cdk.json` disables the CDK default). An API with access logs does not deploy until this stack has been deployed once.
  * The owner deploys it by hand (docs/aws-setup.md). It holds no secret and costs nothing, and the logs are billed by CloudWatch Logs.
  *
- * Destroying the stack deletes the role. API Gateway is expected to keep the old role in the setting, so logging would fail until the stack is deployed again (not verified). Deploy it again before the next API.
+ * Every API of the account depends on it, so CloudFormation termination protection is on, whatever the stage. To destroy the stack, turn it off first (docs/aws-setup.md).
+ * Destroying it deletes the role. API Gateway is expected to keep the old role in the setting, so logging would fail until the stack is deployed again (not verified). Deploy it again before the next API.
  */
 export class ApiGatewayAccountStack extends Stack {
     readonly loggingRole: Role;
 
     constructor(scope: Construct) {
-        super(scope, 'ApiGatewayAccount', { stackName: sharedStackName('ApiGatewayAccount') });
+        super(scope, 'ApiGatewayAccount', { stackName: sharedStackName('ApiGatewayAccount'), terminationProtection: true });
         applyStandardTags(this, { name: 'shared', owner: projectOwner }, 'ApiGatewayAccount');
 
         this.loggingRole = new Role(this, 'LoggingRole', {

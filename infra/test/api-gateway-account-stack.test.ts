@@ -13,6 +13,11 @@ describe('ApiGatewayAccountStack', () => {
         expect(new ApiGatewayAccountStack(new App()).stackName).toBe('Storefront-ApiGatewayAccount');
     });
 
+    it('has termination protection on, because every API of the account depends on it', () => {
+        expect(new ApiGatewayAccountStack(new App()).terminationProtection).toBe(true);
+        expect(createApp().synth().getStackByName('Storefront-ApiGatewayAccount').terminationProtection).toBe(true);
+    }, 30000);
+
     it.each(stageNames)(
         'is built once and is the same whichever stage the app is built for (%s)',
         (stage) => {

@@ -58,7 +58,14 @@ npm run deploy:api-gateway-account
 aws apigateway get-account --region us-west-2 --profile storefront
 ```
 
-`npm run destroy:api-gateway-account` deletes the role. Deploy the stack again before the next API.
+The stack has CloudFormation termination protection on, because every API of the account depends on it, so `npm run destroy:api-gateway-account` fails until you turn it off:
+
+```
+aws cloudformation update-termination-protection --no-enable-termination-protection --stack-name Storefront-ApiGatewayAccount --region us-west-2 --profile storefront
+npm run destroy:api-gateway-account
+```
+
+Destroying the stack deletes the role. Deploy the stack again before the next API. It turns termination protection back on.
 
 ## LaunchDarkly SDK keys
 
