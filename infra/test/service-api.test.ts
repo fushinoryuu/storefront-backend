@@ -27,7 +27,7 @@ function build(stage: StageName, options: { overrides?: Partial<ServiceApiProps>
     const config = stages[stage];
     const eventBus = new EventBus(stack, 'Bus');
     const handler = new ServiceFunction(stack, 'GetCustomer', { config, service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: eventBus.eventBusName });
-    const serviceApi = new ServiceApi(stack, 'Api', { config, service: 'Customers', specVersions, ...options.overrides });
+    const serviceApi = new ServiceApi(stack, 'Api', { config, service: 'Customers', specVersions, keyKinds: apiKeyKinds, ...options.overrides });
     (options.routes ?? ((api, fn) => api.addRoute('GET', '/customers/{customerId}', fn)))(serviceApi, handler);
     return { stack, serviceApi, handler };
 }
@@ -216,6 +216,53 @@ describe('ServiceApi versions', () => {
     it('needs at least one spec version, and each one must be a prefix like v1', () => {
         expect(() => build('dev', { overrides: { specVersions: {} } })).toThrow(/at least one spec/);
         expect(() => build('dev', { overrides: { specVersions: { one: '1.0.0' } } })).toThrow(/must look like v1/);
+    });
+});
+
+describe('ServiceApi key kinds', () => {
+    it.each(stageNames)('makes a plan and attaches a key only for the kinds the service accepts, in %s', (stage) => {
+        const config = stages[stage];
+        const { template, serviceApi } = setup(stage, { overrides: { keyKinds: ['tests', 'services'] } });
+        const plans = Object.values(template.findResources('AWS::ApiGateway::UsagePlan')).map((plan) => plan.Properties.UsagePlanName as string);
+        const parameters = Object.entries(template.toJSON().Parameters as Record<string, { Default: string }>)
+            .filter(([name]) => name !== 'BootstrapVersion')
+            .map(([, parameter]) => parameter.Default);
+
+        expect(plans.sort()).toEqual([`Storefront-${stage}-Customers-services`, `Storefront-${stage}-Customers-tests`]);
+        template.resourceCountIs('AWS::ApiGateway::UsagePlanKey', 2);
+        // The id of the admin key is not read at all, so the stack does not depend on it.
+        expect(parameters.sort()).toEqual([apiKeyIdParameterName(config, 'services'), apiKeyIdParameterName(config, 'tests')].sort());
+        expect(Object.keys(serviceApi.usagePlans).sort()).toEqual(['services', 'tests']);
+        expect(serviceApi.usagePlans.admin).toBeUndefined();
+    });
+
+    it('makes three plans when the service accepts all three kinds', () => {
+        const { template, serviceApi } = setup('dev', { overrides: { keyKinds: ['admin', 'services', 'tests'] } });
+
+        template.resourceCountIs('AWS::ApiGateway::UsagePlan', 3);
+        template.resourceCountIs('AWS::ApiGateway::UsagePlanKey', 3);
+        expect(Object.keys(serviceApi.usagePlans).sort()).toEqual(['admin', 'services', 'tests']);
+    });
+
+    it('keeps the limits of each kind from the stage config', () => {
+        const { template } = setup('prod', { overrides: { keyKinds: ['services'] } });
+        const { rateLimit, burstLimit, quotaPerDay } = stages.prod.api.usagePlans.services;
+
+        template.hasResourceProperties('AWS::ApiGateway::UsagePlan', { Throttle: { RateLimit: rateLimit, BurstLimit: burstLimit }, Quota: { Limit: quotaPerDay, Period: 'DAY' } });
+    });
+
+    it('refuses an empty list, an unknown kind and a kind listed twice', () => {
+        expect(() => build('dev', { overrides: { keyKinds: [] } })).toThrow(/at least one kind/);
+        expect(() => build('dev', { overrides: { keyKinds: ['tests', 'root' as never] } })).toThrow(/"root" is not one of tests, services, admin/);
+        expect(() => build('dev', { overrides: { keyKinds: ['tests', 'services', 'tests'] } })).toThrow(/"tests" is listed twice/);
+    });
+
+    it('passes cdk-nag with two kinds', () => {
+        const app = newApp();
+        build('dev', { app, overrides: { keyKinds: ['tests', 'services'] } });
+        applyNag(app, []);
+
+        expect(() => app.synth()).not.toThrow();
     });
 });
 
