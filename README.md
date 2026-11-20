@@ -25,6 +25,7 @@ Run these from the repo root:
 | `npm run bundle:specs`                | Write the bundled specs to `specs/` (`-- --check` is what CI runs: fails if one is stale)                                                                              |
 | `npm run synth`                       | Synthesize the CDK app for `dev` and `prod` into `cdk.out/` (no AWS credentials needed)                                                                                |
 | `npm run get-api-keys`                | Write the three API key values of a stage to `.api-keys/<stage>.json`, which git ignores (`-- --stage dev`, after the platform stack is deployed; `docs/aws-setup.md`) |
+| `npm run aws:login`                   | Sign in to the `storefront` AWS profile with SSO and print the identity, which the deploy scripts need (`docs/aws-setup.md`)                                           |
 | `npm run deploy:secrets`              | Deploy the `Secrets` stack, which belongs to no stage, with the `storefront` profile (`docs/aws-setup.md`)                                                             |
 | `npm run destroy:secrets`             | Destroy the `Secrets` stack, which deletes both LaunchDarkly SDK key secrets. CDK asks for confirmation first                                                          |
 | `npm run deploy:api-gateway-account`  | Deploy the `ApiGatewayAccount` stack, the account-wide API Gateway logging role, with the `storefront` profile (`docs/aws-setup.md`)                                   |
