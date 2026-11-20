@@ -1,5 +1,6 @@
 import { RemovalPolicy } from 'aws-cdk-lib';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+import type { ApiKeyKind } from '../naming';
 
 export const stageNames = ['dev', 'prod'] as const;
 export type StageName = (typeof stageNames)[number];
@@ -16,6 +17,24 @@ export const projectStackPrefix = 'Storefront';
 
 /** Value of the `owner` tag, the same in every stage and in the stacks that belong to none. */
 export const projectOwner = 'fushinoryuu';
+
+/** Requests a second that a caller may sustain, and how many it may send at once. */
+export interface ThrottleLimits {
+    readonly rateLimit: number;
+    readonly burstLimit: number;
+}
+
+/** What one caller type may use of an API: its throttle, and how many requests it may send in a day. */
+export interface UsageLimits extends ThrottleLimits {
+    readonly quotaPerDay: number;
+}
+
+export interface ApiLimits {
+    /** Applies to every method of the stage and every caller, so a runaway test cannot flood a service. */
+    readonly defaultThrottle: ThrottleLimits;
+    /** One usage plan per kind of API key (decision 0005). The plans carry these limits for the callers that hold the key. */
+    readonly usagePlans: Readonly<Record<ApiKeyKind, UsageLimits>>;
+}
 
 /**
  * `persistent` stacks survive test runs. `per-run` stacks are destroyed after every run.
@@ -42,6 +61,8 @@ export interface StageConfig {
         readonly minCapacity: number;
         readonly maxCapacity: number;
     } | null;
+    /** Throttle and quota of the APIs of this stage (`ServiceApi`). */
+    readonly api: ApiLimits;
     /** How long the simulated carrier waits before each shipment status change. */
     readonly carrierTimings: {
         readonly pickedAfterSeconds: number;
@@ -52,6 +73,20 @@ export interface StageConfig {
     readonly owner: string;
     readonly stacks: Readonly<Record<ServiceName, StackLifecycle>>;
 }
+
+/**
+ * Low on purpose: this is a demo, so a loop that goes wrong in a test costs little and cannot reach a service's limits.
+ * Both stages use the same numbers, so what a test sees in `dev` is what `prod` does.
+ * The `services` key carries the calls between services, `tests` the test suites and the library project, and `admin` the shipping simulation.
+ */
+const apiLimits: ApiLimits = {
+    defaultThrottle: { rateLimit: 50, burstLimit: 100 },
+    usagePlans: {
+        services: { rateLimit: 50, burstLimit: 100, quotaPerDay: 100_000 },
+        tests: { rateLimit: 20, burstLimit: 40, quotaPerDay: 20_000 },
+        admin: { rateLimit: 5, burstLimit: 10, quotaPerDay: 1_000 }
+    }
+};
 
 export const stages: Readonly<Record<StageName, StageConfig>> = {
     // Where pull request runs deploy, test and tear down. It shares the cluster owned by `prod`.
@@ -64,6 +99,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         eventArchiveRetentionDays: 7,
         databaseStage: 'prod',
         aurora: null,
+        api: apiLimits,
         carrierTimings: { pickedAfterSeconds: 2, shippedAfterSeconds: 4, deliveredAfterSeconds: 6 },
         owner: projectOwner,
         stacks: {
@@ -86,6 +122,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         databaseStage: 'prod',
         // ADR 0007: the cluster may pause. The maximum is low so a runaway test cannot scale it up.
         aurora: { minCapacity: 0, maxCapacity: 4 },
+        api: apiLimits,
         carrierTimings: {
             pickedAfterSeconds: 60,
             shippedAfterSeconds: 300,

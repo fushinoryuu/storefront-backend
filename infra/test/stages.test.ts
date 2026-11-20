@@ -42,6 +42,24 @@ describe('stage config', () => {
         }
     });
 
+    it('sets the API limits of every caller type, the same in every stage, and never above the default throttle of the stage', () => {
+        expect(stages.dev.api).toEqual(stages.prod.api);
+        for (const name of stageNames) {
+            const { defaultThrottle, usagePlans } = stages[name].api;
+            expect(Object.keys(usagePlans).sort()).toEqual(['admin', 'services', 'tests']);
+            for (const { rateLimit, burstLimit, quotaPerDay } of Object.values(usagePlans)) {
+                expect(rateLimit).toBeGreaterThan(0);
+                expect(burstLimit).toBeGreaterThanOrEqual(rateLimit);
+                expect(quotaPerDay).toBeGreaterThan(0);
+                expect(rateLimit).toBeLessThanOrEqual(defaultThrottle.rateLimit);
+                expect(burstLimit).toBeLessThanOrEqual(defaultThrottle.burstLimit);
+            }
+            // The admin caller only starts a simulation, so it gets the least.
+            expect(usagePlans.admin.quotaPerDay).toBeLessThan(usagePlans.tests.quotaPerDay);
+            expect(usagePlans.tests.quotaPerDay).toBeLessThan(usagePlans.services.quotaPerDay);
+        }
+    });
+
     it('looks up a stage by name', () => {
         expect(getStageConfig('prod')).toBe(stages.prod);
     });
