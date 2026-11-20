@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { CreateTableCommand, DescribeTimeToLiveCommand, DynamoDBClient, UpdateTimeToLiveCommand } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-// Tests that need DynamoDB Local run when DYNAMODB_ENDPOINT is set (for example http://localhost:8000) and always in CI, where a missing endpoint fails them instead of skipping them quietly.
-// Start it with: docker run --rm -p 8000:8000 amazon/dynamodb-local:3.3.2 -jar DynamoDBLocal.jar -inMemory -sharedDb
+// Tests that need DynamoDB Local run when DYNAMODB_ENDPOINT is set and always in CI, where a missing endpoint fails them instead of skipping them quietly.
+// The global setup of vitest (scripts/dynamodb-local.ts) sets the variable: it starts the container when it is not set, and the image is named in docker-compose.yaml.
 
 export const dynamoDbLocalEndpoint = process.env['DYNAMODB_ENDPOINT'];
 export const needsDynamoDbLocal = dynamoDbLocalEndpoint !== undefined || process.env['CI'] === 'true';

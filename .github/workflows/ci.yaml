@@ -9,9 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  DYNAMODB_VERSION: 3.3.2
-
 jobs:
   run-tests:
     runs-on: ubuntu-latest
@@ -32,25 +29,18 @@ jobs:
 
       - run: npm run typecheck
 
-      - name: Restore DynamoDB Local Image
+      # The image and its version are named in docker-compose.yaml only. The test run starts the container from it (scripts/dynamodb-local.ts).
+      - name: Get DynamoDB Local image version
+        id: dynamodb-local
+        run: echo "image=$(docker compose config --images)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore DynamoDB Local image
         uses: fushinoryuu/gha-workflows/.github/actions/cache-docker-image@main
         with:
-          cache-key: dynamodb-${{ env.DYNAMODB_VERSION }}
-          full-image-name: amazon/dynamodb-local:${{ env.DYNAMODB_VERSION }}
-
-      - name: Start DynamoDB Local
-        run: |
-          docker run -d --name dynamodb-local -p 8000:8000 amazon/dynamodb-local:${{ env.DYNAMODB_VERSION }} -jar DynamoDBLocal.jar -inMemory -sharedDb
-          for attempt in $(seq 1 30); do
-            curl -s -o /dev/null http://localhost:8000 && exit 0
-            sleep 1
-          done
-          docker logs dynamodb-local
-          exit 1
+          cache-key: dynamodb-local-${{ hashFiles('docker-compose.yaml') }}
+          full-image-name: ${{ steps.dynamodb-local.outputs.image }}
 
       - run: npm test
-        env:
-          DYNAMODB_ENDPOINT: http://localhost:8000
 
       - run: npm run lint:specs
 
