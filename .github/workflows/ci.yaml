@@ -29,6 +29,12 @@ jobs:
 
       - run: npm run typecheck
 
+      - name: Restore DynamoDB Local Image
+        uses: fushinoryuu/gha-workflows/.github/actions/cache-docker-image@main
+        with:
+          cache-key: dynamodb
+          full-image-name: amazon/dynamodb-local:3.3.2
+
       - name: Start DynamoDB Local
         run: |
           docker run -d --name dynamodb-local -p 8000:8000 amazon/dynamodb-local:3.3.2 -jar DynamoDBLocal.jar -inMemory -sharedDb
