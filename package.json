@@ -22,8 +22,11 @@
     "synth:dev": "cdk synth -c stage=dev --output cdk.out/dev --quiet",
     "synth:prod": "cdk synth -c stage=prod --output cdk.out/prod --quiet",
     "get-api-keys": "tsx scripts/get-api-keys.ts",
+    "aws:login": "aws sso login --profile storefront && aws sts get-caller-identity --profile storefront",
     "deploy:secrets": "cdk deploy --profile storefront Secrets",
-    "destroy:secrets": "cdk destroy --profile storefront Secrets"
+    "destroy:secrets": "cdk destroy --profile storefront Secrets",
+    "deploy:api-gateway-account": "cdk deploy --profile storefront ApiGatewayAccount",
+    "destroy:api-gateway-account": "cdk destroy --profile storefront ApiGatewayAccount"
   },
   "devDependencies": {
     "@aws-sdk/client-api-gateway": "^3.1170.0",

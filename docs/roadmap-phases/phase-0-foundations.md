@@ -75,7 +75,7 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
   - [ ] The database stack with the Aurora cluster and CloudFormation termination protection.
   - [ ] Point-in-time recovery on the DynamoDB table, with the orders stack.
 - [ ] Both stages in the same account and region as separate stacks named `Storefront-<stage>-<Service>`. The one database stack is `Storefront-prod-Database`, and `dev` reads its connection details.
-  - [x] Both stages share the one member account and region (`docs/aws-setup.md`), and `infra/lib/naming.ts` builds the stack names, including `Storefront-prod-Database`. The `Platform` stack already uses it. The one stack that belongs to no stage, `Storefront-Secrets`, is the exception (decision 0002).
+  - [x] Both stages share the one member account and region (`docs/aws-setup.md`), and `infra/lib/naming.ts` builds the stack names, including `Storefront-prod-Database`. The `Platform` stack already uses it. The stacks that belong to no stage, `Storefront-Secrets` and `Storefront-ApiGatewayAccount`, are the exception (decision 0002).
   - [ ] The database stack, and `dev` reading its connection details.
 - [ ] Mark each stack in `stages.ts` as persistent, per-run or external (owned by another stage). In `dev` every stack except the database is per-run, and in `prod` every stack is persistent. A teardown script lists the per-run stacks explicitly instead of destroying everything.
   - [x] `stages.ts` marks every stack as `persistent`, `per-run` or `external`: in `dev` every stack except `Database` is `per-run`, and in `prod` every stack is `persistent`.
@@ -124,6 +124,8 @@ Notes for the harder ones:
 - [x] Budget alarm in place (see above), with a monthly limit you are comfortable with.
 - [ ] Avoid NAT gateways. They are a common source of surprise cost, and the default design does not need one.
 - [ ] DynamoDB in on-demand mode, short log retention, API throttling set low.
+  - [x] Done: log retention is short and set by the stage (`ServiceFunction`, `ServiceApi`), and `ServiceApi` throttles every method at the `api.defaultThrottle` of the stage config.
+  - [ ] Remaining: DynamoDB in on-demand mode, with the orders and shipping tables (Phases 3 and 4).
 - [x] A documented `cdk destroy` order and a list of resources that survive destroy (log groups with retention, snapshots, secrets pending deletion). It is in `docs/cost.md`, and Phase 6 builds and rehearses it.
 - [ ] Test runs deploy to `dev`, test, then destroy every per-run stack. The `prod` stage stays up, including the shared database stack, because creating the cluster takes 10 to 15 minutes and a paused cluster costs storage only. `prod` also keeps its own Flyway runner and Secrets Manager interface endpoint (about $7 a month, see `docs/cost.md`) for as long as it is deployed. Pull request runs also drop their own database schema before the stacks are destroyed. Document the full teardown too, which first removes termination protection from the database stack.
 - [x] `docs/cost.md` records expected idle and active cost behavior in words, with a note to check current AWS pricing when you build, since prices change.

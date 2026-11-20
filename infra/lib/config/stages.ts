@@ -9,7 +9,7 @@ export const serviceNames = ['Platform', 'Database', 'Customers', 'Orders', 'Shi
 export type ServiceName = (typeof serviceNames)[number];
 
 /** Stacks that belong to no stage. There is one of each, and every stage uses it. */
-export const sharedStackNames = ['Secrets'] as const;
+export const sharedStackNames = ['Secrets', 'ApiGatewayAccount'] as const;
 export type SharedStackName = (typeof sharedStackNames)[number];
 
 /** First part of every stack name. */

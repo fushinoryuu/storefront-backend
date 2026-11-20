@@ -8,7 +8,7 @@ describe('createApp', () => {
         'synthesizes for %s',
         (stage) => {
             const assembly = createApp({ context: { stage } }).synth();
-            expect(assembly.stacks.map((stack) => stack.stackName)).toEqual([`Storefront-${stage}-Platform`, 'Storefront-Secrets']);
+            expect(assembly.stacks.map((stack) => stack.stackName)).toEqual(['Storefront-ApiGatewayAccount', `Storefront-${stage}-Platform`, 'Storefront-Secrets']);
         },
         30000
     );
@@ -16,6 +16,7 @@ describe('createApp', () => {
     it.each(stageNames)('tags every stack with the standard tags in %s', (stage) => {
         const assembly = createApp({ context: { stage } }).synth();
         expect(assembly.stacks.map((stack) => stack.tags)).toEqual([
+            { project: 'storefront', stage: 'shared', service: 'ApiGatewayAccount', owner: stages[stage].owner },
             { project: 'storefront', stage, service: 'Platform', owner: stages[stage].owner },
             { project: 'storefront', stage: 'shared', service: 'Secrets', owner: stages[stage].owner }
         ]);
@@ -48,9 +49,9 @@ describe('createApp', () => {
         });
     });
 
-    it('builds only the stack that belongs to no stage when no stage is named', () => {
+    it('builds only the stacks that belong to no stage when no stage is named', () => {
         const assembly = createApp().synth();
-        expect(assembly.stacks.map((stack) => stack.stackName)).toEqual(['Storefront-Secrets']);
+        expect(assembly.stacks.map((stack) => stack.stackName)).toEqual(['Storefront-ApiGatewayAccount', 'Storefront-Secrets']);
     }, 30000);
 
     it.each(['staging', '', null])('fails for a stage that is named but unknown (%j)', (stage) => {

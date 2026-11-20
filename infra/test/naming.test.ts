@@ -13,6 +13,7 @@ describe('stackName', () => {
 describe('sharedStackName', () => {
     it('builds Storefront-<Stack>, with no stage in it', () => {
         expect(sharedStackName('Secrets')).toBe('Storefront-Secrets');
+        expect(sharedStackName('ApiGatewayAccount')).toBe('Storefront-ApiGatewayAccount');
     });
 });
 

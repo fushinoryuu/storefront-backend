@@ -16,6 +16,7 @@ Everything the three services have in common, built once: the event bus, authent
 | ---------------------------- | ------------------------------------------------------ |
 | Platform stack               | `infra/lib/stacks/platform-stack.ts`                   |
 | Reusable constructs          | `infra/lib/constructs/`                                |
+| API Gateway logging role     | `infra/lib/stacks/api-gateway-account-stack.ts`        |
 | Shared runtime package       | `packages/shared/` (including the feature flag client) |
 | Event schemas and envelope   | `packages/events/`                                     |
 | Feature flag decision record | `docs/decisions/` (the next free number)               |
@@ -65,7 +66,7 @@ Wraps a REST API.
   - [ ] Remaining: the two built-in routes that need no key.
 - [ ] Access logging to a log group, throttling set low by default, and a stage per deployment stage.
   - [x] Done: the construct sets all three, with tests and cdk-nag. The log group keeps logs for the retention of the stage, a line holds the declared route and the API key id and never the real path (so no id is logged), the stage throttles every method at the `api.defaultThrottle` of the stage config, and the endpoint is Regional, set explicitly (decision 0003).
-  - [ ] Remaining: the role that API Gateway needs to write access logs. It is set once for the account, outside this construct, and an API with access logs does not deploy before it exists. After the first deploy, a log line seen in the log group in `dev`.
+  - [ ] Remaining: after the first deploy of an API, a log line seen in its log group in `dev`. The account role that API Gateway writes with is deployed (see the API Gateway logging role item under Others).
 - [ ] A helper to add a route with a Lambda integration in one call, with an `adminOnly` flag and an API version option (default `v1`) that puts the route under `/v<N>`. One API serves several versions side by side, so `/v1` and `/v2` routes can coexist. Usage plans apply per stage, not per route, so admin-only routes are enforced in the handler by comparing the caller's key id from the request context with the admin key id.
   - [x] Done: `addRoute(method, path, handler, { version })`, which puts the route under `/v<N>`, gives the integration permission to invoke that function from this API only, and refuses `v0`, a version that the specs do not list, and a path that is malformed or already has a version.
   - [ ] Remaining: the `adminOnly` flag.
@@ -82,6 +83,8 @@ Wraps a REST API.
 
 ### Others
 
+- [x] **API Gateway logging role:** the one IAM role that API Gateway writes access logs with, and the account setting that points to it. It exists once for the account and region, so it has its own stack, `Storefront-ApiGatewayAccount`, which belongs to no stage (decision 0002).
+  - [x] Done: the stack, with tests and cdk-nag, and the setup steps in `docs/aws-setup.md`. It was deployed on 2026-11-20, and `aws apigateway get-account` shows its role.
 - [x] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
   - [x] Done: `ServiceFunction`, with its log group, `EventConsumer`, with its two queues, and `ServiceApi`, with its API, stage, usage plans and access log group. An event rule cannot carry tags in CloudFormation.
 - [x] A removal policy helper that reads from stage config (`removalPolicyFor` in `infra/lib/removal-policy.ts`).
@@ -145,8 +148,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 - [x] Build the platform stack and deploy it to `dev`.
 - [ ] Build each construct with tests.
-  - [x] Done: `ServiceFunction`, the Lambda alarms and `EventConsumer`, with template tests and cdk-nag.
-  - [ ] Remaining: `ServiceApi`.
+  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer` and the core of `ServiceApi`, with template tests and cdk-nag.
+  - [ ] Remaining: the rest of `ServiceApi` (the built-in health and version routes, the `adminOnly` flag, customized gateway responses and alarms).
 - [ ] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
   - [x] Done: both packages with their tests, the flag client, and the decision record.
   - [ ] Remaining: the service connections measurement on `dev` that the decision record waits for (see Feature flags above).

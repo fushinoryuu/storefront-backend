@@ -41,6 +41,32 @@ The command uses the account from the profile, so nothing in it has to be copied
 
 To check, open CloudFormation in `us-west-2` in the member account and look for the `CDKToolkit` stack. Running the command again prints "bootstrapped (no changes)".
 
+## API Gateway logging role
+
+API Gateway writes access logs with one IAM role for the whole account and region, and this account has none. The `Storefront-ApiGatewayAccount` stack creates the role and sets it as the account setting. It belongs to no stage, because `dev` and `prod` share the setting (decision 0002). Deploy it once, before the first API: an API with access logs does not deploy without the role. It costs nothing.
+
+Before the first deploy, check that no role is set, so the stack does not replace one that something else relies on. The output must have no `cloudwatchRoleArn`. If it has one, stop and find out what uses it:
+
+```
+aws apigateway get-account --region us-west-2 --profile storefront
+```
+
+Then deploy, and run the same command again. `cloudwatchRoleArn` is now the role of the stack:
+
+```
+npm run deploy:api-gateway-account
+aws apigateway get-account --region us-west-2 --profile storefront
+```
+
+The stack has CloudFormation termination protection on, because every API of the account depends on it, so `npm run destroy:api-gateway-account` fails until you turn it off:
+
+```
+aws cloudformation update-termination-protection --no-enable-termination-protection --stack-name Storefront-ApiGatewayAccount --region us-west-2 --profile storefront
+npm run destroy:api-gateway-account
+```
+
+Destroying the stack deletes the role. Deploy the stack again before the next API. It turns termination protection back on.
+
 ## LaunchDarkly SDK keys
 
 The `Storefront-Secrets` stack creates one empty secret for the SDK key of each LaunchDarkly environment (decision 0011). It belongs to no stage, so it is deployed once, without one, and a test run never destroys it. Deploy it, then put each key in. The `cdk` commands select the stack by its id in the app, `Secrets`, and not by its CloudFormation name `Storefront-Secrets`, which gives "No stacks match". `npx cdk ls` shows both, as `Secrets (Storefront-Secrets)`. In PowerShell, so that the key is typed hidden and stays out of the shell history:
@@ -108,4 +134,4 @@ An AWS Budget guards the spend before anything is deployed:
 ## What is not set up yet
 
 - GitHub Actions access to AWS (an OIDC role). That arrives in Phase 6.
-- The stacks of `prod`. `Secrets` is deployed, and the `dev` platform stack was deployed on 2026-11-18 to check it. The platform stack of `prod` comes next.
+- The stacks of `prod`. `Secrets` and `ApiGatewayAccount` are deployed, and the `dev` platform stack was deployed on 2026-11-18 to check it. The platform stack of `prod` comes next.
