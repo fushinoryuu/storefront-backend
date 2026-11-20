@@ -134,5 +134,4 @@ An AWS Budget guards the spend before anything is deployed:
 ## What is not set up yet
 
 - GitHub Actions access to AWS (an OIDC role). That arrives in Phase 6.
-- The API Gateway logging role (`ApiGatewayAccount`), until it is deployed as described above.
-- The stacks of `prod`. `Secrets` is deployed, and the `dev` platform stack was deployed on 2026-11-18 to check it. The platform stack of `prod` comes next.
+- The stacks of `prod`. `Secrets` and `ApiGatewayAccount` are deployed, and the `dev` platform stack was deployed on 2026-11-18 to check it. The platform stack of `prod` comes next.
