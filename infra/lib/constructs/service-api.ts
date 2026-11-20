@@ -26,6 +26,12 @@ export interface ServiceApiProps {
     readonly config: StageConfig;
     readonly service: ApiServiceName;
     /**
+     * The kinds of API key that this service accepts, for example `['tests', 'services']`. There is no default, so a service always says which callers it serves.
+     * The API gets a usage plan for each kind, and the platform key of that kind is attached to it. A key of a kind that is not listed is refused at the gateway.
+     * A service that checks the `admin` key in a handler must list `admin`, or the handler never sees that key.
+     */
+    readonly keyKinds: readonly ApiKeyKind[];
+    /**
      * The `info.version` of every spec the API serves, keyed by prefix: `{ v0: '0.2.0', v1: '0.3.0' }`.
      * It is the list of versions that `addRoute` accepts, and what `GET /v0/version` reports.
      */
@@ -38,12 +44,13 @@ export interface AddRouteOptions {
 }
 
 /**
- * The REST API of a service: a Regional endpoint with one stage, named after the deployment stage, and the usage plans of the three caller types.
+ * The REST API of a service: a Regional endpoint with one stage, named after the deployment stage, and a usage plan for each kind of key the service accepts (`keyKinds`).
  * Routes are added with `addRoute`, which puts the route under `/v<N>` and requires an API key.
  *
  * It sets what every service API needs, so a stack only says what is different about its own:
  * - The endpoint is Regional, set explicitly. An edge-optimized API cannot raise the 29 second integration timeout that decision 0003 relies on, and the CDK default may be edge-optimized.
- * - The stage throttles every method (`api.defaultThrottle` of the stage config). One usage plan per kind of key (`tests`, `services`, `admin`) carries the throttle and the daily quota of that caller type.
+ * - The stage throttles every method (`api.defaultThrottle` of the stage config). One usage plan per accepted kind of key (`tests`, `services`, `admin`) carries the throttle and the daily quota of that caller type.
+ *   Only the keys of the kinds in `keyKinds` are attached, so an API does not accept the key of a caller it has no use for (decision 0005).
  *   The keys belong to the platform stack (decision 0005), and their ids are read from its SSM parameters when the stack is deployed. Deploy the platform stack first.
  *   A platform stack that is destroyed and deployed again has new keys, so deploy the service stacks again after it.
  * - Access logs go to a log group with the retention of the stage (conventions: Logs). A line has the request id, the route as declared (`/v1/customers/{customerId}`, never the real path, so no id is logged), the status, the latencies and the id of the API key.
@@ -56,15 +63,15 @@ export interface AddRouteOptions {
  * A route works the CDK way: the handler is in the same stack, and the integration gets permission to invoke that function from this API and nothing else.
  *
  * @example
- * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0' } });
+ * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0' }, keyKinds: ['tests', 'services'] });
  * api.addRoute('GET', '/customers/{customerId}', getCustomer); // GET /v1/customers/{customerId}
  * api.addRoute('POST', '/customers', createCustomer, { version: 'v2' }); // POST /v2/customers
  */
 export class ServiceApi extends Construct {
     readonly api: RestApi;
     readonly accessLogGroup: LogGroup;
-    /** One per kind of API key. */
-    readonly usagePlans: Readonly<Record<ApiKeyKind, UsagePlan>>;
+    /** One per kind of API key in `keyKinds`, and no other. */
+    readonly usagePlans: Readonly<Partial<Record<ApiKeyKind, UsagePlan>>>;
     /** `https://<id>.execute-api.<region>.amazonaws.com/<stage>`, with no trailing slash. */
     readonly baseUrl: string;
     readonly baseUrlParameter: StringParameter;
@@ -72,7 +79,13 @@ export class ServiceApi extends Construct {
 
     constructor(scope: Construct, id: string, props: ServiceApiProps) {
         super(scope, id);
-        const { config, service, specVersions } = props;
+        const { config, service, specVersions, keyKinds } = props;
+        if (keyKinds.length === 0) throw new Error('A ServiceApi needs at least one kind of API key in keyKinds.');
+        for (const kind of keyKinds) {
+            if (!apiKeyKinds.includes(kind)) throw new Error(`The key kind "${kind}" is not one of ${apiKeyKinds.join(', ')}.`);
+        }
+        const repeated = keyKinds.find((kind, index) => keyKinds.indexOf(kind) !== index);
+        if (repeated !== undefined) throw new Error(`The key kind "${repeated}" is listed twice in keyKinds.`);
         const prefixes = Object.keys(specVersions);
         if (prefixes.length === 0) throw new Error('A ServiceApi needs the version of at least one spec.');
         for (const prefix of prefixes) {
@@ -97,7 +110,7 @@ export class ServiceApi extends Construct {
         });
 
         const plans: Partial<Record<ApiKeyKind, UsagePlan>> = {};
-        for (const kind of apiKeyKinds) {
+        for (const kind of apiKeyKinds.filter((candidate) => keyKinds.includes(candidate))) {
             const { rateLimit, burstLimit, quotaPerDay } = config.api.usagePlans[kind];
             const name = pascalCase(kind);
             const plan = this.api.addUsagePlan(`${name}UsagePlan`, {
@@ -111,7 +124,7 @@ export class ServiceApi extends Construct {
             plan.addApiKey(ApiKey.fromApiKeyId(this, `${name}ApiKey`, StringParameter.valueForStringParameter(this, apiKeyIdParameterName(config, kind))));
             plans[kind] = plan;
         }
-        this.usagePlans = plans as Record<ApiKeyKind, UsagePlan>;
+        this.usagePlans = plans;
 
         this.baseUrl = Fn.join('', ['https://', this.api.restApiId, '.execute-api.', Aws.REGION, '.', Aws.URL_SUFFIX, '/', config.name]);
         this.baseUrlParameter = new StringParameter(this, 'BaseUrlParameter', {

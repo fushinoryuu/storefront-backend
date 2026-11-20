@@ -100,7 +100,7 @@ Scale to zero means the first request after idle waits for the database to resum
 - [ ] Email normalization, and a deliberate response on duplicates (409 with the shared error shape). A deleted customer keeps its email, so creating a customer with that email also returns 409.
 - [ ] `listCustomers` leaves out deleted customers by default, and `status=deleted` shows them.
 - [ ] Optimistic concurrency on update.
-- [ ] Access control: API key required on every method except `GET /v0/health` and `GET /v0/version`. `GET /v0/health/ready` requires a key. Both the `tests` and `services` keys may read and write customers. Any admin-only behavior is checked in the handler against the caller's key id.
+- [ ] Access control: API key required on every method except `GET /v0/health` and `GET /v0/version`. `GET /v0/health/ready` requires a key. Both the `tests` and `services` keys may read and write customers, and the API accepts no other kind, so the `admin` key is refused at the gateway. Any admin-only behavior is checked in the handler against the caller's key id.
 - [ ] Correlation id on logs and responses.
 
 ### 6. Events (optional but useful)
