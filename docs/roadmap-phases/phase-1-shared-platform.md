@@ -33,15 +33,16 @@ Everything the three services have in common, built once: the event bus, authent
   - [ ] Remaining: a deployed plan that accepts the `tests` key and rejects a missing or wrong one, which the hello service checks.
 - [x] **Key retrieval script** (`scripts/get-api-keys`): reads the values with the API Gateway `get-api-key` call that includes the value, and writes them to Secrets Manager or an untracked local file. Never put key values in code, config, or the repo. The platform stack is destroyed after test runs, so new keys are generated on every deploy and the script runs after every deploy.
   - [x] Done: `npm run get-api-keys -- --stage <stage>` writes `.api-keys/<stage>.json` (ignored by git, readable only by the owner) and prints no value. It is tested against fake AWS clients, and it ran against the `dev` stack on 2026-11-18. The Secrets Manager copy is not built. It comes with the first service that calls another.
-- [ ] **SSM parameters** (or stack outputs) for values other stacks and external tools need: event bus name, API key ids, and each service's base URL once deployed.
+- [ ] **SSM parameters** (or stack outputs) for values other stacks and external tools need: event bus name, alarm topic ARN, API key ids, and each service's base URL once deployed.
   - [x] Done: the event bus name and the three key ids, listed from the `dev` stack on 2026-11-18.
+  - [x] Done: the platform stack publishes the ARN of its alarm topic at `/storefront/<stage>/platform/alarm-topic-arn`, so a service stack can pass the topic to `ServiceApi` and `ServiceFunction`. The template test checks it.
   - [x] Done: `ServiceApi` publishes the base URL of its service at `/storefront/<stage>/<service>/base-url`, with the stage and no trailing slash. The template test checks it.
-  - [ ] Remaining: see the parameter in SSM after the first service is deployed to `dev`.
+  - [ ] Remaining: see the alarm topic parameter in SSM after the platform stack is deployed to `dev` again, and the base URL parameter after the first service is deployed to `dev`.
 - [ ] **Secrets:** client secrets live in Secrets Manager or are retrieved at deploy time by an authorized process, never committed.
   - [x] Done: the LaunchDarkly SDK keys. The `Storefront-Secrets` stack creates one empty secret per stage, and the owner puts the value in (decision 0011).
   - [ ] Remaining: the key retrieval script writes the API key values to a local file only. The copy in Secrets Manager, and any other secret a service needs, is still open.
 - [x] **Alarm topic:** an SNS topic that sends alarms to email.
-  - [x] Done: the topic requires TLS and emails the addresses in `ALARM_RECIPIENTS` (`docs/aws-setup.md`). With none set it has no subscription. Deployed to `dev` with an address on 2026-11-18, and the subscription is confirmed. No alarm is attached to it yet.
+  - [x] Done: the topic requires TLS and emails the addresses in `ALARM_RECIPIENTS` (`docs/aws-setup.md`). With none set it has no subscription. Deployed to `dev` with an address on 2026-11-18, and the subscription is confirmed. The alarms of every function and every API notify it (a service stack builds it from the SSM parameter that holds its ARN).
 
 ## Reusable constructs
 
@@ -71,10 +72,12 @@ Wraps a REST API.
   - [ ] Remaining: the `adminOnly` flag.
 - [ ] Customized gateway responses so missing or invalid keys (403) and throttling (429) use the shared error shape (`Problem`).
 - [ ] Built-in `GET /v0/health` (unauthenticated, no dependencies) and `GET /v0/version` (build id, stage, and `specVersions` listing every prefix the API serves). Their response shapes come from the shared spec components.
-  - [x] Done: `ServiceApi` adds both routes with no API key, and one function from `packages/shared` (`operations.ts`, an extra `ServiceFunction` per API) answers them. Its answers are tested against the schemas generated from the three `/v0` specs. The build id is the `BUILD_ID` variable, else the short git commit (with `-dirty` when the working tree has changes), else `local`. It is read when the app is built, and a deploy workflow is to set `BUILD_ID`. The function has the alarms of `ServiceFunction`, which notify nobody until the API has an alarm topic.
+  - [x] Done: `ServiceApi` adds both routes with no API key, and one function from `packages/shared` (`operations.ts`, an extra `ServiceFunction` per API) answers them. Its answers are tested against the schemas generated from the three `/v0` specs. The build id is the `BUILD_ID` variable, else the short git commit (with `-dirty` when the working tree has changes), else `local`. It is read when the app is built, and a deploy workflow is to set `BUILD_ID`. The function has the alarms of `ServiceFunction`, which notify the alarm topic of the API.
   - [ ] Remaining: both routes answering in `dev`, after the first deploy of an API (the hello service check).
 - [x] Publishes its base URL to SSM.
 - [ ] 5xx, 4xx, and latency alarms attached to the alarm topic.
+  - [x] Done: `ServiceApi` takes the alarm topic (a required prop, as `ServiceFunction` does) and has three alarms on its stage (`ApiAlarms`): one 5xx in five minutes, 100 4xx or more in two of three windows, and a p95 latency of 5 seconds or more in two of three windows. They notify the topic, and a window with no requests is not a breach. The numbers are a starting point, and the delivery and operations phase tunes them. The template tests check the alarms and where they notify.
+  - [ ] Remaining: the platform stack deployed to `dev` again, so the topic parameter exists, and an alarm that fires on purpose in `dev` (the hello service check).
 
 ### `EventConsumer`
 
@@ -89,7 +92,7 @@ Wraps a REST API.
 - [x] `TagAspect` (built in Phase 0) applied to every construct here, with a template test that the tags from the conventions doc are present.
   - [x] Done: `ServiceFunction`, with its log group, `EventConsumer`, with its two queues, and `ServiceApi`, with its API, stage, usage plans and access log group. An event rule cannot carry tags in CloudFormation.
 - [x] A removal policy helper that reads from stage config (`removalPolicyFor` in `infra/lib/removal-policy.ts`).
-- [x] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`.
+- [x] A construct for Lambda alarms (errors, throttles, duration) used by `ServiceFunction`, which requires the alarm topic so that no function has alarms that notify nobody.
 - [x] cdk-nag (AwsSolutions pack) added to the app. Each acknowledged finding needs a written reason, kept in `infra/lib/nag.ts`. cdk-nag 3 registers the pack as a validation plugin and not as an Aspect, and a finding that is not acknowledged fails `cdk synth`.
 
 ## Shared runtime packages
@@ -129,8 +132,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 ## Quality gates
 
 - [ ] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
-  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in routes, including cdk-nag.
-  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag, gateway responses and alarms), as it is built.
+  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in routes and its alarms, including cdk-nag.
+  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag and gateway responses), as it is built.
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
 - [x] cdk-nag runs in the test suite and fails on unsuppressed findings (`infra/test/nag.test.ts`, and every `createApp` test synthesizes with the pack on).
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
@@ -150,8 +153,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 - [x] Build the platform stack and deploy it to `dev`.
 - [ ] Build each construct with tests.
-  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in health and version routes, with template tests and cdk-nag.
-  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag, customized gateway responses and alarms).
+  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in health and version routes and its alarms, with template tests and cdk-nag.
+  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag and customized gateway responses).
 - [ ] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
   - [x] Done: both packages with their tests, the flag client, and the decision record.
   - [ ] Remaining: the service connections measurement on `dev` that the decision record waits for (see Feature flags above).
