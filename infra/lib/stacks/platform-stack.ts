@@ -7,12 +7,12 @@ import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import type { Construct } from 'constructs';
 import { applyStandardTags } from '../aspects/standard-tags';
 import type { StageConfig } from '../config/stages';
-import { apiKeyIdParameterName, apiKeyKinds, eventBusNameParameterName, stackName } from '../naming';
+import { alarmTopicArnParameterName, apiKeyIdParameterName, apiKeyKinds, eventBusNameParameterName, stackName } from '../naming';
 import { removalPolicyFor } from '../removal-policy';
 
 /**
  * The resources every service shares, one set per stage (decision 0002): the event bus with its archive, the alarm topic and the three API keys
- * (decision 0005). The names and ids that other stacks and outside tools need are published to SSM, and no key value is.
+ * (decision 0005). The bus name, the ARN of the alarm topic and the key ids, which other stacks and outside tools need, are published to SSM, and no key value is.
  * The topic emails `alarmRecipients`, which come from the environment and not from the stage config (`parseAlarmRecipients`), so no address is in a file.
  * With none, the topic has no subscription.
  */
@@ -38,6 +38,7 @@ export class PlatformStack extends Stack {
         for (const recipient of alarmRecipients) {
             alarmTopic.addSubscription(new EmailSubscription(recipient));
         }
+        new StringParameter(this, 'AlarmTopicArnParameter', { parameterName: alarmTopicArnParameterName(config), stringValue: alarmTopic.topicArn });
 
         for (const kind of apiKeyKinds) {
             // No `value`: API Gateway generates it. A script reads it after the deploy (scripts/get-api-keys.ts).

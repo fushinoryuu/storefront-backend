@@ -39,6 +39,12 @@ describe.each(stageNames)('PlatformStack in %s', (stage) => {
         });
     });
 
+    it('publishes the ARN of the alarm topic to SSM, for the service stacks that pass it to their functions and APIs', () => {
+        const [topicId] = Object.keys(template.findResources('AWS::SNS::Topic'));
+
+        template.hasResourceProperties('AWS::SSM::Parameter', { Name: `/storefront/${stage}/platform/alarm-topic-arn`, Type: 'String', Value: { Ref: topicId } });
+    });
+
     it.each(apiKeyKinds)('has an API key for %s, with its id in SSM and no value in the template', (kind) => {
         template.hasResourceProperties('AWS::SSM::Parameter', { Name: `/storefront/${stage}/platform/${kind}-api-key-id`, Value: Match.anyValue() });
         const keys = Object.values(template.findResources('AWS::ApiGateway::ApiKey'));
