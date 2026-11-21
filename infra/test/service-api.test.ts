@@ -1,7 +1,7 @@
 import { App, Duration, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { EventBus } from 'aws-cdk-lib/aws-events';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { applyStandardTags } from '../lib/aspects/standard-tags';
 import { stageNames, stages } from '../lib/config/stages';
 import type { StageName } from '../lib/config/stages';
@@ -13,6 +13,7 @@ import { applyNag } from '../lib/nag';
 
 const entry = 'infra/test/fixtures/handler.ts';
 const specVersions = { v0: '0.2.0', v1: '0.3.0', v2: '0.1.0' };
+const buildId = 'abc1234';
 
 /** Bundling is skipped, because esbuild is slow and the template does not depend on it. */
 const newApp = () => new App({ context: { 'aws:cdk:bundling-stacks': [] } });
@@ -27,7 +28,7 @@ function build(stage: StageName, options: { overrides?: Partial<ServiceApiProps>
     const config = stages[stage];
     const eventBus = new EventBus(stack, 'Bus');
     const handler = new ServiceFunction(stack, 'GetCustomer', { config, service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: eventBus.eventBusName });
-    const serviceApi = new ServiceApi(stack, 'Api', { config, service: 'Customers', specVersions, keyKinds: apiKeyKinds, ...options.overrides });
+    const serviceApi = new ServiceApi(stack, 'Api', { config, service: 'Customers', specVersions, keyKinds: apiKeyKinds, buildId, ...options.overrides });
     (options.routes ?? ((api, fn) => api.addRoute('GET', '/customers/{customerId}', fn)))(serviceApi, handler);
     return { stack, serviceApi, handler };
 }
@@ -39,13 +40,20 @@ function setup(stage: StageName, options: Parameters<typeof build>[1] = {}) {
 }
 
 /** The `PathPart`s from the root to the resource, as one path: `/v1/customers/{customerId}`. */
+function pathOf(resources: ReturnType<Template['findResources']>, id: string): string {
+    const { PathPart, ParentId } = resources[id]!.Properties as { PathPart: string; ParentId: { Ref?: string } };
+    return `${ParentId.Ref !== undefined && resources[ParentId.Ref] ? pathOf(resources, ParentId.Ref) : ''}/${PathPart}`;
+}
+
 function pathsOf(template: Template): string[] {
     const resources = template.findResources('AWS::ApiGateway::Resource');
-    const pathOf = (id: string): string => {
-        const { PathPart, ParentId } = resources[id]!.Properties as { PathPart: string; ParentId: { Ref?: string } };
-        return `${ParentId.Ref !== undefined && resources[ParentId.Ref] ? pathOf(ParentId.Ref) : ''}/${PathPart}`;
-    };
-    return Object.keys(resources).map(pathOf);
+    return Object.keys(resources).map((id) => pathOf(resources, id));
+}
+
+/** Every method, as `GET /v1/customers/{customerId}`, with whether it requires an API key. */
+function methodsOf(template: Template): Record<string, boolean> {
+    const resources = template.findResources('AWS::ApiGateway::Resource');
+    return Object.fromEntries(Object.values(template.findResources('AWS::ApiGateway::Method')).map(({ Properties }) => [`${Properties.HttpMethod} ${pathOf(resources, (Properties.ResourceId as { Ref: string }).Ref)}`, Properties.ApiKeyRequired === true]));
 }
 
 const accessLogGroupId = (template: Template) => Object.keys(template.findResources('AWS::Logs::LogGroup')).find((id) => id.includes('AccessLogs'))!;
@@ -93,11 +101,8 @@ describe.each(stageNames)('ServiceApi in %s', (stage) => {
         expect(template.findResources('AWS::Logs::LogGroup')[accessLogGroupId(template)]!.DeletionPolicy).toBe(stage === 'prod' ? 'Retain' : 'Delete');
     });
 
-    it('requires an API key on every method', () => {
-        const methods = Object.values(template.findResources('AWS::ApiGateway::Method'));
-
-        expect(methods).toHaveLength(1);
-        for (const method of methods) expect(method.Properties.ApiKeyRequired).toBe(true);
+    it('requires an API key on every method, except GET /v0/health and GET /v0/version, which are the only two without one', () => {
+        expect(methodsOf(template)).toEqual({ 'GET /v0/health': false, 'GET /v0/version': false, 'GET /v1/customers/{customerId}': true });
     });
 
     it('puts a route under /v1 by default, with the path as given', () => {
@@ -145,19 +150,24 @@ describe.each(stageNames)('ServiceApi in %s', (stage) => {
 
     it('does not create the account-wide role for access logs, which has a stack of its own', () => {
         template.resourceCountIs('AWS::ApiGateway::Account', 0);
-        template.resourceCountIs('AWS::IAM::Role', 1); // the role of the function
+        template.resourceCountIs('AWS::IAM::Role', 2); // the roles of the two functions, the route and the operational routes
     });
 
-    it('lets this API invoke the function, on its stage and for the method it is added to only', () => {
+    it('lets this API invoke each function, on its stage and for the methods it is added to only', () => {
         const permissions = Object.values(template.findResources('AWS::Lambda::Permission'));
 
-        expect(permissions).toHaveLength(1); // no second one for the test button of the console
-        expect(permissions[0]!.Properties.Principal).toBe('apigateway.amazonaws.com');
-        expect(permissions[0]!.Properties.Action).toBe('lambda:InvokeFunction');
-        const source = JSON.stringify(permissions[0]!.Properties.SourceArn);
-        expect(source).toContain(Object.keys(template.findResources('AWS::ApiGateway::RestApi'))[0]);
-        expect(source).toContain(Object.keys(template.findResources('AWS::ApiGateway::Stage'))[0]);
-        expect(source).toContain('/GET/v1/customers/*'); // CDK writes a path parameter as a wildcard in the source ARN
+        expect(permissions).toHaveLength(3); // one for each method, and none for the test button of the console
+        const sources = permissions.map((permission) => JSON.stringify(permission.Properties.SourceArn));
+        for (const permission of permissions) {
+            expect(permission.Properties.Principal).toBe('apigateway.amazonaws.com');
+            expect(permission.Properties.Action).toBe('lambda:InvokeFunction');
+        }
+        for (const source of sources) {
+            expect(source).toContain(Object.keys(template.findResources('AWS::ApiGateway::RestApi'))[0]);
+            expect(source).toContain(Object.keys(template.findResources('AWS::ApiGateway::Stage'))[0]);
+        }
+        // CDK writes a path parameter as a wildcard in the source ARN
+        for (const method of ['/GET/v1/customers/*', '/GET/v0/health', '/GET/v0/version']) expect(sources.filter((source) => source.includes(method))).toHaveLength(1);
     });
 
     it('adds no wildcard action to any policy', () => {
@@ -185,9 +195,13 @@ describe('ServiceApi versions', () => {
 
         template.resourceCountIs('AWS::ApiGateway::RestApi', 1);
         expect(pathsOf(template)).toEqual(expect.arrayContaining(['/v1/customers/{customerId}', '/v2/customers/{customerId}', '/v2/customers']));
-        const methods = Object.values(template.findResources('AWS::ApiGateway::Method'));
-        expect(methods).toHaveLength(3);
-        for (const method of methods) expect(method.Properties.ApiKeyRequired).toBe(true);
+        expect(methodsOf(template)).toEqual({
+            'GET /v0/health': false,
+            'GET /v0/version': false,
+            'GET /v1/customers/{customerId}': true,
+            'GET /v2/customers/{customerId}': true,
+            'POST /v2/customers': true
+        });
     });
 
     it('refuses a version that the API does not serve', () => {
@@ -263,6 +277,53 @@ describe('ServiceApi key kinds', () => {
         applyNag(app, []);
 
         expect(() => app.synth()).not.toThrow();
+    });
+});
+
+describe('ServiceApi operational routes', () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    /** The function that answers them: the one with a build id. */
+    const operationsFunction = (template: Template) => Object.entries(template.findResources('AWS::Lambda::Function')).find(([, fn]) => fn.Properties.Environment?.Variables?.BUILD_ID !== undefined)!;
+
+    it.each(stageNames)('answers GET /v0/health and GET /v0/version with one function, which has the build id, the stage and the spec versions in %s', (stage) => {
+        const { template } = setup(stage);
+        const [id, fn] = operationsFunction(template);
+
+        template.resourceCountIs('AWS::Lambda::Function', 2); // that one, and the one of the route
+        expect(fn.Properties.Environment.Variables).toMatchObject({ STAGE: stage, BUILD_ID: buildId, SPEC_VERSIONS: JSON.stringify(specVersions) });
+        expect(fn.Properties.Environment.Variables).not.toHaveProperty('EVENT_BUS_NAME');
+        const integrations = Object.values(template.findResources('AWS::ApiGateway::Method')).filter(({ Properties }) => Properties.ApiKeyRequired !== true);
+        expect(integrations).toHaveLength(2);
+        for (const { Properties } of integrations) expect(JSON.stringify(Properties.Integration.Uri)).toContain(id);
+    });
+
+    it('has the alarms, the log group and the role of every ServiceFunction, and no wildcard beyond the resource of X-Ray', () => {
+        const { template } = setup('dev');
+        const [id] = operationsFunction(template);
+        const alarms = Object.values(template.findResources('AWS::CloudWatch::Alarm')).filter(({ Properties }) => JSON.stringify(Properties.Dimensions).includes(id));
+        const policies = Object.values(template.findResources('AWS::IAM::Policy')).filter((policy) => JSON.stringify(policy.Properties.Roles).includes('OperationsRole'));
+
+        expect(alarms).toHaveLength(3);
+        expect(policies).toHaveLength(1);
+        for (const { Action, Resource } of policies[0]!.Properties.PolicyDocument.Statement as Statement[]) {
+            const actions = Array.isArray(Action) ? Action : [Action];
+            expect(actions.filter((action) => action === '*' || action.endsWith(':*'))).toEqual([]);
+            if (Resource === '*') expect(actions.every((action) => action.startsWith('xray:'))).toBe(true);
+        }
+    });
+
+    it('takes the build id from resolveBuildId when the stack does not give one', () => {
+        vi.stubEnv('BUILD_ID', 'from-the-environment');
+        const { template } = setup('dev', { overrides: { buildId: undefined } });
+
+        expect(operationsFunction(template)[1].Properties.Environment.Variables.BUILD_ID).toBe('from-the-environment');
+    });
+
+    it('lists every version of the API, however many there are', () => {
+        const { template } = setup('dev', { overrides: { specVersions: { v0: '0.2.0', v1: '1.0.0' } } });
+
+        expect(JSON.parse(operationsFunction(template)[1].Properties.Environment.Variables.SPEC_VERSIONS)).toEqual({ v0: '0.2.0', v1: '1.0.0' });
     });
 });
 

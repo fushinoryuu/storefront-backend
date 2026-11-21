@@ -118,8 +118,8 @@ The orders service calls the customers API to validate a customer when an order 
   - [x] Built, tested and deployed to `dev` on 2026-11-18, with the SSM values listed and the alarm email confirmed. The `prod` deploy comes with the hello service check.
 - [x] Script to retrieve key values after deploy
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
-  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and the core of `ServiceApi` (routes under `/v<N>` with an API key, usage plans, access logs, base URL), with tests and cdk-nag
-  - [ ] Remaining: the rest of `ServiceApi` (the built-in health and version routes, the `adminOnly` flag, customized gateway responses and alarms)
+  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` (routes under `/v<N>` with an API key, usage plans, access logs, base URL, built-in health and version routes), with tests and cdk-nag
+  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag, customized gateway responses and alarms)
 - [x] API Gateway logging role: the account-wide role that access logs need, in its own stack that belongs to no stage (`Storefront-ApiGatewayAccount`). Deployed on 2026-11-20, and `aws apigateway get-account` shows its role
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
 - [ ] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
@@ -127,10 +127,11 @@ The orders service calls the customers API to validate a customer when an order 
   - [ ] Remaining: the service connections a Lambda uses, measured on `dev` with the hello service and recorded in the decision record
 - [ ] Every API exposes `GET /v0/health` and `GET /v0/version`, and `ServiceApi` serves several versions under one API
   - [x] Done: `ServiceApi` serves `/v1` and `/v2` routes side by side under one API, and refuses `v0` and a version that its specs do not list
-  - [ ] Remaining: the built-in `GET /v0/health` and `GET /v0/version`
+  - [x] Done: `ServiceApi` adds `GET /v0/health` and `GET /v0/version` with no API key, answered by one shared function, and tests check their responses against the `/v0` specs
+  - [ ] Remaining: both routes answering in `dev`, after the first deploy of an API
 - [ ] CDK template tests and cdk-nag in the build
-  - [x] Done: cdk-nag runs on every stack, and the platform stack, `ServiceFunction`, the Lambda alarms, `EventConsumer` and the core of `ServiceApi` have template tests
-  - [ ] Remaining: tests for the rest of `ServiceApi`, as it is built
+  - [x] Done: cdk-nag runs on every stack, and the platform stack, `ServiceFunction`, the Lambda alarms, `EventConsumer` and `ServiceApi` with its built-in routes have template tests
+  - [ ] Remaining: tests for the rest of `ServiceApi` (the `adminOnly` flag, gateway responses and alarms), as it is built
 - [ ] Dependabot version updates and security alerts
   - [x] Done: the configuration for npm and GitHub Actions, the conventions for its pull requests, and the lockfile updates an update can fix
   - [ ] Remaining: the first run and its CI check, and the alerts open on the first day, each fixed or dismissed with a reason

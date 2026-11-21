@@ -23,8 +23,8 @@ export interface ServiceFunctionProps {
     readonly entry: string;
     /** There is no default, so every function has a timeout that someone chose. It also sets the duration alarm. */
     readonly timeout: Duration;
-    /** The name of the stage's event bus, which the platform stack publishes to SSM. */
-    readonly eventBusName: string;
+    /** The name of the stage's event bus, which the platform stack publishes to SSM. Leave it out for a function that neither publishes nor consumes events, and `EVENT_BUS_NAME` is not set. */
+    readonly eventBusName?: string;
     /** Name of the exported handler. Defaults to `handler`. */
     readonly handler?: string;
     /** Defaults to 256 MB. */
@@ -41,7 +41,7 @@ export interface ServiceFunctionProps {
  * A Lambda function with what every service function needs, so a stack only says what is different about its own:
  * arm64 on Node.js 24, bundled by esbuild with source maps, X-Ray tracing on, and its own log group with the retention of the stage (conventions: Logs).
  * The bundler is the `esbuild` of the repo's `devDependencies`, pinned to an exact version. `allowScripts` in `package.json` names the same version, so a bump changes both.
- * It gets these environment variables: `STAGE`, `SERVICE_NAME` (lowercase), `EVENT_BUS_NAME`, `POWERTOOLS_SERVICE_NAME` and `POWERTOOLS_LOG_LEVEL` for the logger, and `NODE_OPTIONS` so that stack traces use the source maps.
+ * It gets these environment variables: `STAGE`, `SERVICE_NAME` (lowercase), `EVENT_BUS_NAME` (when `eventBusName` is given), `POWERTOOLS_SERVICE_NAME` and `POWERTOOLS_LOG_LEVEL` for the logger, and `NODE_OPTIONS` so that stack traces use the source maps.
  * It also gets the three alarms of `LambdaAlarms`, as `alarms`.
  *
  * It is a `NodejsFunction`, so permissions are given the CDK way and stay as narrow as the resource: `table.grantReadData(fn)`, `secret.grantRead(fn)`, `bus.grantPutEventsTo(fn)`.
@@ -90,7 +90,7 @@ export class ServiceFunction extends NodejsFunction {
                 ...props.environment,
                 STAGE: props.config.name,
                 SERVICE_NAME: serviceName,
-                EVENT_BUS_NAME: props.eventBusName,
+                ...(props.eventBusName !== undefined && { EVENT_BUS_NAME: props.eventBusName }),
                 POWERTOOLS_SERVICE_NAME: serviceName,
                 POWERTOOLS_LOG_LEVEL: logLevel,
                 // Node ignores the source maps unless it is told to use them, and then a stack trace would point into the bundle.
