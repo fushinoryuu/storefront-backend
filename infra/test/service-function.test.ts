@@ -105,6 +105,13 @@ describe('ServiceFunction props', () => {
         template.hasResourceProperties('AWS::Lambda::Function', { Environment: { Variables: { TABLE_NAME: 'orders', STAGE: 'dev', EVENT_BUS_NAME: 'storefront-bus' } } });
     });
 
+    it('has no EVENT_BUS_NAME when it is not given the name of a bus', () => {
+        const [fn] = Object.values(build('dev', { eventBusName: undefined }).findResources('AWS::Lambda::Function'));
+
+        expect(fn!.Properties.Environment.Variables).toMatchObject({ STAGE: 'dev', SERVICE_NAME: 'customers' });
+        expect(fn!.Properties.Environment.Variables).not.toHaveProperty('EVENT_BUS_NAME');
+    });
+
     it('sends its alarms to the alarm topic it is given', () => {
         const template = build('dev', { alarmTopic: Topic.fromTopicArn(new Stack(newApp(), 'Other'), 'AlarmTopic', 'arn:aws:sns:us-west-2:111111111111:alarms') });
 
