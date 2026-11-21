@@ -48,6 +48,10 @@ The error body is the `Problem` schema of `specs/shared/components.yaml`, and a 
 
 A kind of problem that only one service has is a `DomainError` with its own `ProblemKind`, for example `new DomainError({ slug: 'unknown-customer', title: 'Unknown customer', status: 422 }, 'There is no customer with this id.')` in orders. The 429 for a throttled key is produced by API Gateway, so there is no class for it here. An error that is not a `DomainError` is answered with a 500 and no detail, so its message does not reach the caller, and it should be logged before it is returned.
 
+## Health and version
+
+Every API answers `GET /v0/health` and `GET /v0/version`, and `ServiceApi` adds them, so a service writes no handler for them. `operations.ts` holds the one handler (`handleOperations`) and `operations-handler.ts` its Lambda entry, which `ServiceApi` bundles as an extra function. A service does not import either. The answers match the `/v0` specs, and a test checks them against the generated schemas. Health reads nothing. Version reports the `STAGE`, `BUILD_ID` and `SPEC_VERSIONS` variables of the function, which `ServiceApi` sets when the app is built (`BUILD_ID` from the variable of that name, else the short git commit, else `local`).
+
 ## Validation
 
 Requests are validated with the Zod schemas generated from the bundled specs (decision [0004](../../docs/decisions/0004-api-definition.md)). `npm run generate:schemas` writes them to `generated/<bundle>/zod.gen.ts`, and `npm test` and `npm run typecheck` run it first. Each operation has `z<OperationId>Body`, `z<OperationId>Path`, `z<OperationId>Query` and `z<OperationId>Headers` where it has that part, for example `zCreateOrderBody` and `zListOrdersQuery` in `generated/orders-service-v1/zod.gen.ts`.

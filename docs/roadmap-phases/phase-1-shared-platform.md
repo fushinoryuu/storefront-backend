@@ -61,9 +61,8 @@ Wraps `NodejsFunction`.
 
 Wraps a REST API.
 
-- [ ] `apiKeyRequired` on every method except `GET /v0/health` and `GET /v0/version`, with a usage plan per caller type (`tests`, `services`, `admin`) carrying throttle and quota limits.
-  - [x] Done: `apiKeyRequired` on every method that `addRoute` adds, and a usage plan for each caller type that the service accepts (`keyKinds`), with the throttle and the daily quota of `api.usagePlans` in the stage config (the same in `dev` and `prod`), attached to the stage.
-  - [ ] Remaining: the two built-in routes that need no key.
+- [x] `apiKeyRequired` on every method except `GET /v0/health` and `GET /v0/version`, with a usage plan per caller type (`tests`, `services`, `admin`) carrying throttle and quota limits.
+  - [x] Done: `apiKeyRequired` on every method that `addRoute` adds, and on no other except the two built-in routes (a test lists every method and whether it needs a key). A usage plan for each caller type that the service accepts (`keyKinds`), with the throttle and the daily quota of `api.usagePlans` in the stage config (the same in `dev` and `prod`), attached to the stage.
 - [ ] Access logging to a log group, throttling set low by default, and a stage per deployment stage.
   - [x] Done: the construct sets all three, with tests and cdk-nag. The log group keeps logs for the retention of the stage, a line holds the declared route and the API key id and never the real path (so no id is logged), the stage throttles every method at the `api.defaultThrottle` of the stage config, and the endpoint is Regional, set explicitly (decision 0003).
   - [ ] Remaining: after the first deploy of an API, a log line seen in its log group in `dev`. The account role that API Gateway writes with is deployed (see the API Gateway logging role item under Others).
@@ -72,6 +71,8 @@ Wraps a REST API.
   - [ ] Remaining: the `adminOnly` flag.
 - [ ] Customized gateway responses so missing or invalid keys (403) and throttling (429) use the shared error shape (`Problem`).
 - [ ] Built-in `GET /v0/health` (unauthenticated, no dependencies) and `GET /v0/version` (build id, stage, and `specVersions` listing every prefix the API serves). Their response shapes come from the shared spec components.
+  - [x] Done: `ServiceApi` adds both routes with no API key, and one function from `packages/shared` (`operations.ts`, an extra `ServiceFunction` per API) answers them. Its answers are tested against the schemas generated from the three `/v0` specs. The build id is the `BUILD_ID` variable, else the short git commit (with `-dirty` when the working tree has changes), else `local`. It is read when the app is built, and a deploy workflow is to set `BUILD_ID`. The function has the alarms of `ServiceFunction`, which notify nobody until the API has an alarm topic.
+  - [ ] Remaining: both routes answering in `dev`, after the first deploy of an API (the hello service check).
 - [x] Publishes its base URL to SSM.
 - [ ] 5xx, 4xx, and latency alarms attached to the alarm topic.
 
@@ -128,13 +129,14 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 ## Quality gates
 
 - [ ] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
-  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer` and the core of `ServiceApi`, including cdk-nag.
-  - [ ] Remaining: the rest of `ServiceApi` (the built-in routes, the `adminOnly` flag, gateway responses and alarms), as it is built.
+  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in routes, including cdk-nag.
+  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag, gateway responses and alarms), as it is built.
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
 - [x] cdk-nag runs in the test suite and fails on unsuppressed findings (`infra/test/nag.test.ts`, and every `createApp` test synthesizes with the pack on).
 - [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
   - [x] Done: the error kinds of `packages/shared` are checked against the `Problem` schema and the response examples of the shared spec components.
-  - [ ] Remaining: the customized gateway responses, and the health and version responses (with `ServiceApi`).
+  - [x] Done: the health and version responses (`packages/shared/test/operations.test.ts`).
+  - [ ] Remaining: the customized gateway responses (with `ServiceApi`).
 - [x] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, the HTTP client's key handling and timeout behavior, and the flag client's defaults.
 - [x] A template test that `ServiceApi` can serve `/v1` and `/v2` routes side by side under one API.
 
@@ -148,8 +150,8 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 - [x] Build the platform stack and deploy it to `dev`.
 - [ ] Build each construct with tests.
-  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer` and the core of `ServiceApi`, with template tests and cdk-nag.
-  - [ ] Remaining: the rest of `ServiceApi` (the built-in health and version routes, the `adminOnly` flag, customized gateway responses and alarms).
+  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in health and version routes, with template tests and cdk-nag.
+  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag, customized gateway responses and alarms).
 - [ ] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
   - [x] Done: both packages with their tests, the flag client, and the decision record.
   - [ ] Remaining: the service connections measurement on `dev` that the decision record waits for (see Feature flags above).
