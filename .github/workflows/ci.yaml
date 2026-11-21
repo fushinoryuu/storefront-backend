@@ -29,7 +29,7 @@ jobs:
 
       - run: npm run typecheck
 
-      # The image and its version are named in docker-compose.yaml only. The test run starts the container from it (scripts/dynamodb-local.ts).
+      # The image and its version are named in docker-compose.yaml only.
       - name: Get DynamoDB Local image version
         id: dynamodb-local
         run: echo "image=$(docker compose config --images)" >> "$GITHUB_OUTPUT"
@@ -40,7 +40,14 @@ jobs:
           cache-key: dynamodb-local-${{ hashFiles('docker-compose.yaml') }}
           full-image-name: ${{ steps.dynamodb-local.outputs.image }}
 
+      - name: Start DynamoDB Local
+        run: docker compose up --detach --wait
+
       - run: npm test
+
+      - name: Show the logs of DynamoDB Local
+        if: failure()
+        run: docker compose logs dynamodb
 
       - run: npm run lint:specs
 

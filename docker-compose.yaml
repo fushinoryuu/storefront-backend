@@ -1,5 +1,5 @@
 services:
-  # DynamoDB Local, for the tests that need a DynamoDB (`npm test` starts and stops it, see scripts/dynamodb-local.ts).
+  # DynamoDB Local, for the tests that need a DynamoDB. Start it before `npm test`: docker compose up --detach --wait
   # This file is the one place that names the image and its version. CI reads it too.
   dynamodb:
     image: amazon/dynamodb-local:3.3.2
