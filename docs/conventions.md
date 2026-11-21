@@ -63,14 +63,18 @@ npm run synth
 
 ## Dependencies
 
-Dependabot (`.github/dependabot.yml`) checks the npm packages and the GitHub Actions every Monday. It opens one pull request for all the minor and patch updates of an ecosystem, and one pull request for each major update, with at most five open per ecosystem. It also raises an alert for each advisory that affects a locked version.
+Dependabot (`.github/dependabot.yml`) checks the npm packages and the GitHub Actions every Monday. It opens one pull request for `vitest` and its coverage provider (every update type, major included), one for all the other minor and patch updates of an ecosystem, and one for each other major update, with at most five open per ecosystem. It also raises an alert for each advisory that affects a locked version.
 
 - A Dependabot branch and pull request have no Jira key, and their title and commit message are Dependabot's (`Bump x from a to b`). The rules for keys in branches and titles do not apply to them (see [Branches](#branches)). Nothing is merged automatically: a person reviews each one like any other pull request.
-- Several dependencies are pinned to an exact version on purpose: `aws-cdk-lib`, `aws-cdk`, `cdk-nag`, `esbuild`, `@hey-api/openapi-ts`, `@aws-lambda-powertools/logger` and `@launchdarkly/node-server-sdk`. A pull request that changes one of them changes the pin, so before merging it the reviewer:
-  - reads the decision record that names the pin (0004 for the generator, 0010 for Powertools, 0011 for LaunchDarkly), including the Node.js versions it was checked against;
-  - for `esbuild`, changes `allowScripts` in `package.json` to the same version, because it names the version it approves;
+- Dependencies use a `^` range, and the lockfile fixes the version that is installed. Two are pinned to an exact version, each for a reason:
+  - `@hey-api/openapi-ts` is a 0.x package, where a minor release can change the generated code, and decision 0004 was checked against the pinned version, including the TypeScript versions it works with.
+  - `esbuild` is a 0.x package too, and `allowScripts` in `package.json` names the exact version it approves, so a range would stop approving it. The Dependabot pull request that bumps it changes `allowScripts` to the same version.
+- `vitest` and `@vitest/coverage-v8` are one group in `dependabot.yml`, because each release of the coverage provider needs exactly the same version of `vitest`. A bump of one without the other fails to install.
+- Before merging a dependency pull request, the reviewer:
+  - for a pinned package, reads the decision record that names it (0004 for the generator), including the versions it was checked against;
+  - for `@aws-lambda-powertools/logger` and `@launchdarkly/node-server-sdk`, reads the Node.js support that decisions 0010 and 0011 checked, and checks it again when the Lambda runtime moves to a newer Node.js;
   - runs the seven commands under [Pull requests](#pull-requests). CI runs them too, and the reviewer reads the result.
-- A grouped pull request can hold a pinned package, so the reviewer reads the list of packages in it.
+- A grouped pull request holds many packages, so the reviewer reads the list of packages in it.
 - TypeScript stays on 6.x (decision 0004), and the `ignore` rule in `dependabot.yml` keeps Dependabot from proposing 7. It names when to remove the rule.
 - `@types/node` stays on the major of the Node.js version the code runs on (`.nvmrc`, `engines` and the Lambda runtime), because a newer major lets code use APIs that the runtime does not have while the type check passes. A rule in `dependabot.yml` ignores its major updates, and the change that moves the project to a newer Node.js removes the rule.
 - A new release of `aws-cdk-lib` can add a Lambda runtime, and cdk-nag then fails a function for not using the newest one. The fix is to move to that runtime when Lambda offers it for production. Until then, `ServiceFunction` acknowledges the rule with the reason written next to it, and the move removes the acknowledgement.

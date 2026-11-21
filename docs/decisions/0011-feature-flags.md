@@ -1,6 +1,6 @@
 # 0011: Feature flags with LaunchDarkly
 
-Status: accepted on 2026-11-11. One check is open: how many service connections the Lambda functions use (see Consequences). Amended on 2026-11-17: the Reader token check is recorded.
+Status: accepted on 2026-11-11. One check is open: how many service connections the Lambda functions use (see Consequences). Amended on 2026-11-17: the Reader token check is recorded. Amended on 2026-11-21: the SDK is a `^` range, no longer an exact version.
 
 ## Context
 
@@ -30,6 +30,6 @@ Use LaunchDarkly, on the free Developer plan, and not AppConfig. This project ex
 - No service can fail because LaunchDarkly is down or out of plan. The cost is that a flag then silently has its default, so `onFallback` should be logged. While LaunchDarkly is down, every evaluation can wait up to the timeout, so a service picks a short one.
 - Service connections for Lambda are counted by connection time, not by instance. [The documentation](https://launchdarkly.com/docs/home/account/service-connections) says a function that runs under a minute is sampled once a minute, and each sample counts as 1/43,800 of a connection, and that pre-production environments count. The earlier note in the Phase 1 doc that this is not documented is out of date. What our traffic costs is unverified: once the client runs in `dev` (the hello service in Phase 1), read the service connections usage page by app id, and record the number in this record. If it is too high, switch the SDK to polling or let fewer services read flags directly.
 - A new SDK key takes effect only in execution environments that start after the change.
-- The SDK (`@launchdarkly/node-server-sdk`, pinned to an exact version, Apache-2.0) adds to the bundle of every function that reads a flag. Its README supports Node.js 16 and above, and the unit tests here run on 24. Measure the bundle size and cold start when the first function is deployed, as in decision 0010.
+- The SDK (`@launchdarkly/node-server-sdk`, a `^` range with the version fixed by the lockfile, Apache-2.0) adds to the bundle of every function that reads a flag. Its README supports Node.js 16 and above, and the unit tests here run on 24. Measure the bundle size and cold start when the first function is deployed, as in decision 0010.
 - Some steps stay manual: the account, the project, the two environments, the two flags, the Reader token, and putting the two key values into the secrets. A deleted secret is recoverable for a recovery window, and is not billed while it waits (AWS documents this).
 - Source: [LaunchDarkly service connections](https://launchdarkly.com/docs/home/account/service-connections).

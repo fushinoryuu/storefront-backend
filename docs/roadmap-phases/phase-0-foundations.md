@@ -54,7 +54,7 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
 - [x] TypeScript strict mode with one root `tsconfig.json`, kept simple (no project references).
 - [x] A Node LTS version pinned in `.nvmrc` and `engines`.
 - [x] ESLint and a formatter, vitest for unit tests, one trivial passing test in each service and package folder.
-- [x] `aws-cdk-lib` and `constructs` pinned, the CDK CLI as a dev dependency so everyone uses the same version.
+- [x] `aws-cdk-lib` and `constructs` fixed by the lockfile, the CDK CLI as a dev dependency so everyone uses the same version.
 
 ### 2. AWS account and bootstrap
 
