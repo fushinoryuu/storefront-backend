@@ -8,7 +8,12 @@ import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
 const composeEndpoint = 'http://127.0.0.1:8000';
 
-export const dynamoDbLocalEndpoint = process.env['DYNAMODB_ENDPOINT'] || composeEndpoint;
+/** The endpoint in `DYNAMODB_ENDPOINT`, or the one of the compose file when the variable is not set or is empty. */
+export function resolveEndpoint(env: NodeJS.ProcessEnv): string {
+    return env['DYNAMODB_ENDPOINT'] || composeEndpoint;
+}
+
+export const dynamoDbLocalEndpoint = resolveEndpoint(process.env);
 
 export interface LocalTable {
     client: DynamoDBDocumentClient;
@@ -23,8 +28,8 @@ function isConnectionRefused(error: unknown): boolean {
 }
 
 /** A new table with string keys `PK` and `SK` and TTL on `expiresAt`, named so that tests never share a table. */
-export async function createTable(): Promise<LocalTable> {
-    const raw = new DynamoDBClient({ endpoint: dynamoDbLocalEndpoint, region: 'us-west-2', credentials: { accessKeyId: 'local', secretAccessKey: 'local' } });
+export async function createTable(endpoint: string = dynamoDbLocalEndpoint): Promise<LocalTable> {
+    const raw = new DynamoDBClient({ endpoint, region: 'us-west-2', credentials: { accessKeyId: 'local', secretAccessKey: 'local' } });
     const tableName = `test-${randomUUID()}`;
     try {
         await raw.send(
@@ -43,7 +48,7 @@ export async function createTable(): Promise<LocalTable> {
         );
     } catch (error) {
         if (isConnectionRefused(error)) {
-            throw new Error(`There is no DynamoDB Local at ${dynamoDbLocalEndpoint}. Start it with "docker compose up --detach --wait" (docker-compose.yaml), or set DYNAMODB_ENDPOINT.`, { cause: error });
+            throw new Error(`There is no DynamoDB Local at ${endpoint}. Start it with "docker compose up --detach --wait" (docker-compose.yaml), or set DYNAMODB_ENDPOINT.`, { cause: error });
         }
         throw error;
     }
