@@ -8,7 +8,13 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     groups:
-      # One pull request for all the minor and patch updates. A major update is not in a group, so it gets its own.
+      # Each release of `@vitest/coverage-v8` needs exactly the same version of `vitest` (its peer dependency), so the two always move in one pull request.
+      # This group is listed first, because a package goes to the first group that matches it. It takes every update type, major included.
+      vitest:
+        patterns:
+          - vitest
+          - '@vitest/*'
+      # One pull request for all the other minor and patch updates. A major update is not in a group, so it gets its own.
       npm-minor-and-patch:
         update-types:
           - minor
