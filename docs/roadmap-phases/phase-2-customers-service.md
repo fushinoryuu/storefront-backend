@@ -119,7 +119,7 @@ Scale to zero means the first request after idle waits for the database to resum
 ### 8. Tests
 
 - [ ] **Unit:** domain rules, validation, cursor encoding, error mapping.
-- [ ] **Repository tests against a real PostgreSQL** (a container started by the test run), covering uniqueness, foreign keys, the default-address rule, concurrency, and pagination.
+- [ ] **Repository tests against a real PostgreSQL** (a service in `docker-compose.yaml`, started with `docker compose up`), covering uniqueness, foreign keys, the default-address rule, concurrency, and pagination.
 - [ ] **Migration test** with Flyway from an empty database.
 - [ ] **Schema isolation tests:** two schemas side by side do not see each other's data, `clean` on a PR schema leaves `main` intact, and the runner refuses to clean `main` or a name outside the PR pattern.
 - [ ] **Handler tests** with fake events, asserting status codes and response bodies, and validating every response against the spec.

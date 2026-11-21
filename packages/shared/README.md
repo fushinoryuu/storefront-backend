@@ -116,9 +116,14 @@ if (!(await flagClient.isEnabled('shipment-simulation'))) return notFound(); // 
 
 ## Tests that need DynamoDB Local
 
-The idempotency tests run against DynamoDB Local when `DYNAMODB_ENDPOINT` is set, and are skipped when it is not. In CI (`CI=true`) a missing endpoint fails them instead. CI starts the container itself. To run them on your machine:
+The idempotency tests run against DynamoDB Local, which `docker-compose.yaml` defines. Start it before `npm test`, and stop it when you are done:
 
 ```
-docker run --rm -p 8000:8000 amazon/dynamodb-local:3.3.2 -jar DynamoDBLocal.jar -inMemory -sharedDb
-DYNAMODB_ENDPOINT=http://localhost:8000 npm test
+docker compose up --detach --wait
+npm test
+docker compose down
 ```
+
+It listens on `127.0.0.1:8000`, so nothing else on the machine may use that port. Without it the tests fail with a message that says how to start it. They are not skipped, because a skipped test is a check nobody sees. `DYNAMODB_ENDPOINT` points them at another DynamoDB Local instead.
+
+`docker-compose.yaml` is the one place that names the image and its version. CI reads it too, starts the container in its workflow, and Dependabot proposes new versions of it.

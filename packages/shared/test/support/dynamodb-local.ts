@@ -2,11 +2,18 @@ import { randomUUID } from 'node:crypto';
 import { CreateTableCommand, DescribeTimeToLiveCommand, DynamoDBClient, UpdateTimeToLiveCommand } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-// Tests that need DynamoDB Local run when DYNAMODB_ENDPOINT is set (for example http://localhost:8000) and always in CI, where a missing endpoint fails them instead of skipping them quietly.
-// Start it with: docker run --rm -p 8000:8000 amazon/dynamodb-local:3.3.2 -jar DynamoDBLocal.jar -inMemory -sharedDb
+// The tests that need a DynamoDB run against the DynamoDB Local of docker-compose.yaml, which listens on 127.0.0.1:8000.
+// Start it before `npm test` with: docker compose up --detach --wait
+// DYNAMODB_ENDPOINT points the tests at another DynamoDB Local. CI starts the container in its workflow.
 
-export const dynamoDbLocalEndpoint = process.env['DYNAMODB_ENDPOINT'];
-export const needsDynamoDbLocal = dynamoDbLocalEndpoint !== undefined || process.env['CI'] === 'true';
+const composeEndpoint = 'http://127.0.0.1:8000';
+
+/** The endpoint in `DYNAMODB_ENDPOINT`, or the one of the compose file when the variable is not set or is empty. */
+export function resolveEndpoint(env: NodeJS.ProcessEnv): string {
+    return env['DYNAMODB_ENDPOINT'] || composeEndpoint;
+}
+
+export const dynamoDbLocalEndpoint = resolveEndpoint(process.env);
 
 export interface LocalTable {
     client: DynamoDBDocumentClient;
@@ -15,25 +22,36 @@ export interface LocalTable {
     timeToLiveAttribute(): Promise<string | undefined>;
 }
 
+function isConnectionRefused(error: unknown): boolean {
+    const { code, cause } = error as { code?: unknown; cause?: { code?: unknown } };
+    return code === 'ECONNREFUSED' || cause?.code === 'ECONNREFUSED';
+}
+
 /** A new table with string keys `PK` and `SK` and TTL on `expiresAt`, named so that tests never share a table. */
-export async function createTable(): Promise<LocalTable> {
-    if (dynamoDbLocalEndpoint === undefined) throw new Error('DYNAMODB_ENDPOINT is not set, so there is no DynamoDB Local to test against.');
-    const raw = new DynamoDBClient({ endpoint: dynamoDbLocalEndpoint, region: 'us-west-2', credentials: { accessKeyId: 'local', secretAccessKey: 'local' } });
+export async function createTable(endpoint: string = dynamoDbLocalEndpoint): Promise<LocalTable> {
+    const raw = new DynamoDBClient({ endpoint, region: 'us-west-2', credentials: { accessKeyId: 'local', secretAccessKey: 'local' } });
     const tableName = `test-${randomUUID()}`;
-    await raw.send(
-        new CreateTableCommand({
-            TableName: tableName,
-            BillingMode: 'PAY_PER_REQUEST',
-            AttributeDefinitions: [
-                { AttributeName: 'PK', AttributeType: 'S' },
-                { AttributeName: 'SK', AttributeType: 'S' }
-            ],
-            KeySchema: [
-                { AttributeName: 'PK', KeyType: 'HASH' },
-                { AttributeName: 'SK', KeyType: 'RANGE' }
-            ]
-        })
-    );
+    try {
+        await raw.send(
+            new CreateTableCommand({
+                TableName: tableName,
+                BillingMode: 'PAY_PER_REQUEST',
+                AttributeDefinitions: [
+                    { AttributeName: 'PK', AttributeType: 'S' },
+                    { AttributeName: 'SK', AttributeType: 'S' }
+                ],
+                KeySchema: [
+                    { AttributeName: 'PK', KeyType: 'HASH' },
+                    { AttributeName: 'SK', KeyType: 'RANGE' }
+                ]
+            })
+        );
+    } catch (error) {
+        if (isConnectionRefused(error)) {
+            throw new Error(`There is no DynamoDB Local at ${endpoint}. Start it with "docker compose up --detach --wait" (docker-compose.yaml), or set DYNAMODB_ENDPOINT.`, { cause: error });
+        }
+        throw error;
+    }
     await raw.send(new UpdateTimeToLiveCommand({ TableName: tableName, TimeToLiveSpecification: { AttributeName: 'expiresAt', Enabled: true } }));
     return {
         client: DynamoDBDocumentClient.from(raw),

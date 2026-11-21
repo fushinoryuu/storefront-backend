@@ -2,7 +2,7 @@ import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { GetCommand, type DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createIdempotency, idempotencyTtlAttribute } from '../src/index';
-import { createTable, needsDynamoDbLocal, type LocalTable } from './support/dynamodb-local';
+import { createTable, type LocalTable } from './support/dynamodb-local';
 
 describe('createIdempotency without a database', () => {
     const failing = (error: unknown) => ({ send: vi.fn().mockRejectedValue(error) }) as unknown as DynamoDBDocumentClient;
@@ -24,7 +24,7 @@ describe('createIdempotency without a database', () => {
     });
 });
 
-describe.skipIf(!needsDynamoDbLocal)('createIdempotency against DynamoDB Local', () => {
+describe('createIdempotency against DynamoDB Local', () => {
     const start = Date.UTC(2026, 10, 10, 12, 0, 0);
     let table: LocalTable;
     let clock = start;
