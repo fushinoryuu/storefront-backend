@@ -63,7 +63,7 @@ npm run synth
 
 ## Dependencies
 
-Dependabot (`.github/dependabot.yml`) checks the npm packages and the GitHub Actions every Monday. It opens one pull request for all the minor and patch updates of an ecosystem, and one pull request for each major update, with at most five open per ecosystem. It also raises an alert for each advisory that affects a locked version.
+Dependabot (`.github/dependabot.yml`) checks the npm packages and the GitHub Actions every Monday. It opens one pull request for `vitest` and its coverage provider (every update type, major included), one for all the other minor and patch updates of an ecosystem, and one for each other major update, with at most five open per ecosystem. It also raises an alert for each advisory that affects a locked version.
 
 - A Dependabot branch and pull request have no Jira key, and their title and commit message are Dependabot's (`Bump x from a to b`). The rules for keys in branches and titles do not apply to them (see [Branches](#branches)). Nothing is merged automatically: a person reviews each one like any other pull request.
 - Dependencies use a `^` range, and the lockfile fixes the version that is installed. Two are pinned to an exact version, each for a reason:
