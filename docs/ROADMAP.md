@@ -118,7 +118,7 @@ The orders service calls the customers API to validate a customer when an order 
   - [x] Built, tested and deployed to `dev` on 2026-11-18, with the SSM values listed and the alarm email confirmed. The `prod` deploy comes with the hello service check.
 - [x] Script to retrieve key values after deploy
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
-  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` (routes under `/v<N>` with an API key, usage plans, access logs, base URL, built-in health and version routes, 5xx, 4xx and latency alarms), with tests and cdk-nag. `ServiceFunction` and `ServiceApi` require the alarm topic
+  - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` (routes under `/v<N>` with an API key, usage plans, access logs, base URL, built-in health and version routes, 5xx, 4xx and latency alarms), with tests and cdk-nag. `ServiceFunction`, `EventConsumer` and `ServiceApi` require the alarm topic
   - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag and customized gateway responses)
 - [x] API Gateway logging role: the account-wide role that access logs need, in its own stack that belongs to no stage (`Storefront-ApiGatewayAccount`). Deployed on 2026-11-20, and `aws apigateway get-account` shows its role
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency

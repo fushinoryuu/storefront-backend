@@ -83,7 +83,7 @@ Wraps a REST API.
 
 - [x] An EventBridge rule on the custom bus, an SQS queue as the target, a dead-letter queue with a redrive policy, and a Lambda event source with partial batch failure reporting. It takes a `ServiceFunction` and the source and detail types of the events (`infra/lib/constructs/event-consumer.ts`). A message is parked after 5 receives, which is what Lambda's documentation recommends at least, so a throttled function does not park a good message.
 - [x] Queue visibility timeout set relative to the function timeout: 6 times it, the minimum that Lambda's documentation recommends (checked on 2026-11-19). The construct has no batching window, so nothing is added to it.
-- [x] Alarms on DLQ depth (one message or more) and age of the oldest message (a day or more). A failed message stays 14 days in the dead-letter queue, the most SQS allows, and the age alarm is the second notice for one that nobody dealt with.
+- [x] Alarms on DLQ depth (one message or more) and age of the oldest message (a day or more). A failed message stays 14 days in the dead-letter queue, the most SQS allows, and the age alarm is the second notice for one that nobody dealt with. Both notify the alarm topic, which the construct requires.
 
 ### Others
 
