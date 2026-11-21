@@ -16,13 +16,17 @@ const entry = 'infra/test/fixtures/handler.ts';
 /** Bundling is skipped, because esbuild is slow and the template does not depend on it. */
 const newApp = () => new App({ context: { 'aws:cdk:bundling-stacks': [] } });
 
+/** The topic of the function, which a function must have. It is not the topic of the consumer, so a test can tell them apart. */
+const functionAlarmTopicArn = 'arn:aws:sns:us-west-2:111111111111:function-alarms';
+const functionAlarmTopic = (stack: Stack) => Topic.fromTopicArn(stack, 'FunctionAlarmTopic', functionAlarmTopicArn);
+
 /** A stack with one function and one consumer of it, the way a service stack uses them. It does not synthesize, so cdk-nag can still be added to the app. */
 function build(stage: StageName, options: { timeout?: Duration; overrides?: Partial<Omit<EventConsumerProps, 'config' | 'function' | 'eventBus'>>; tags?: boolean; app?: App } = {}) {
     const stack = new Stack(options.app ?? newApp(), 'Demo');
     if (options.tags) applyStandardTags(stack, stages[stage], 'Shipping');
     const config = stages[stage];
     const eventBus = new EventBus(stack, 'Bus');
-    const fn = new ServiceFunction(stack, 'OnOrderPlaced', { config, service: 'Shipping', entry, timeout: options.timeout ?? Duration.seconds(30), eventBusName: eventBus.eventBusName });
+    const fn = new ServiceFunction(stack, 'OnOrderPlaced', { config, service: 'Shipping', entry, timeout: options.timeout ?? Duration.seconds(30), eventBusName: eventBus.eventBusName, alarmTopic: functionAlarmTopic(stack) });
     const consumer = new EventConsumer(stack, 'OrderPlaced', { config, function: fn, eventBus, source: 'storefront.orders', detailTypes: ['OrderPlaced'], ...options.overrides });
     return { stack, consumer };
 }
@@ -197,22 +201,24 @@ describe('EventConsumer props', () => {
         expect(() => setup('dev', { overrides: { detailTypes: [] } })).toThrow(/at least one detail type/);
     });
 
-    it('sends its two alarms to the alarm topic it is given, and leaves the alarms of the function as they are', () => {
+    it('sends its two alarms to the alarm topic it is given, and leaves the alarms of the function with the topic of the function', () => {
         const stack = new Stack(newApp(), 'Demo');
         const alarmTopic = Topic.fromTopicArn(stack, 'AlarmTopic', 'arn:aws:sns:us-west-2:111111111111:alarms');
         const eventBus = new EventBus(stack, 'Bus');
-        const fn = new ServiceFunction(stack, 'Fn', { config: stages.dev, service: 'Shipping', entry, timeout: Duration.seconds(30), eventBusName: 'bus' });
+        const fn = new ServiceFunction(stack, 'Fn', { config: stages.dev, service: 'Shipping', entry, timeout: Duration.seconds(30), eventBusName: 'bus', alarmTopic: functionAlarmTopic(stack) });
         new EventConsumer(stack, 'Consumer', { config: stages.dev, function: fn, eventBus, source: 'storefront.orders', detailTypes: ['OrderPlaced'], alarmTopic });
         const alarms = Object.values(Template.fromStack(stack).findResources('AWS::CloudWatch::Alarm'));
 
         expect(alarms.filter((alarm) => alarm.Properties.Namespace === 'AWS/SQS').map((alarm) => alarm.Properties.AlarmActions)).toEqual([['arn:aws:sns:us-west-2:111111111111:alarms'], ['arn:aws:sns:us-west-2:111111111111:alarms']]);
-        expect(alarms.filter((alarm) => alarm.Properties.Namespace === 'AWS/Lambda').every((alarm) => alarm.Properties.AlarmActions === undefined)).toBe(true);
+        expect(alarms.filter((alarm) => alarm.Properties.Namespace === 'AWS/Lambda').every((alarm) => JSON.stringify(alarm.Properties.AlarmActions) === JSON.stringify([functionAlarmTopicArn]))).toBe(true);
     });
 
-    it('leaves the alarms without an action when there is no alarm topic', () => {
+    it('leaves its own two alarms without an action when there is no alarm topic, as the function has its own', () => {
         const { template } = setup('dev');
+        const alarms = Object.values(template.findResources('AWS::CloudWatch::Alarm'));
 
-        for (const alarm of Object.values(template.findResources('AWS::CloudWatch::Alarm'))) {
+        expect(alarms.filter((alarm) => alarm.Properties.Namespace === 'AWS/SQS')).toHaveLength(2);
+        for (const alarm of alarms.filter((each) => each.Properties.Namespace === 'AWS/SQS')) {
             expect(alarm.Properties.AlarmActions).toBeUndefined();
         }
     });

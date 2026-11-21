@@ -1,7 +1,9 @@
 import { App, Duration, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { EventBus } from 'aws-cdk-lib/aws-events';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Topic } from 'aws-cdk-lib/aws-sns';
+import type { ITopic } from 'aws-cdk-lib/aws-sns';
+import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { applyStandardTags } from '../lib/aspects/standard-tags';
 import { stageNames, stages } from '../lib/config/stages';
 import type { StageName } from '../lib/config/stages';
@@ -14,6 +16,7 @@ import { applyNag } from '../lib/nag';
 const entry = 'infra/test/fixtures/handler.ts';
 const specVersions = { v0: '0.2.0', v1: '0.3.0', v2: '0.1.0' };
 const buildId = 'abc1234';
+const alarmTopicArn = 'arn:aws:sns:us-west-2:111111111111:alarms';
 
 /** Bundling is skipped, because esbuild is slow and the template does not depend on it. */
 const newApp = () => new App({ context: { 'aws:cdk:bundling-stacks': [] } });
@@ -27,8 +30,9 @@ function build(stage: StageName, options: { overrides?: Partial<ServiceApiProps>
     if (options.tags) applyStandardTags(stack, stages[stage], 'Customers');
     const config = stages[stage];
     const eventBus = new EventBus(stack, 'Bus');
-    const handler = new ServiceFunction(stack, 'GetCustomer', { config, service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: eventBus.eventBusName });
-    const serviceApi = new ServiceApi(stack, 'Api', { config, service: 'Customers', specVersions, keyKinds: apiKeyKinds, buildId, ...options.overrides });
+    const alarmTopic = Topic.fromTopicArn(stack, 'AlarmTopic', alarmTopicArn);
+    const handler = new ServiceFunction(stack, 'GetCustomer', { config, service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: eventBus.eventBusName, alarmTopic });
+    const serviceApi = new ServiceApi(stack, 'Api', { config, service: 'Customers', specVersions, keyKinds: apiKeyKinds, alarmTopic, buildId, ...options.overrides });
     (options.routes ?? ((api, fn) => api.addRoute('GET', '/customers/{customerId}', fn)))(serviceApi, handler);
     return { stack, serviceApi, handler };
 }
@@ -177,9 +181,32 @@ describe.each(stageNames)('ServiceApi in %s', (stage) => {
         expect(actions.filter((action) => action === '*' || action.endsWith(':*'))).toEqual([]);
     });
 
+    it('has the 5xx, 4xx and latency alarms of its stage, which notify the alarm topic', () => {
+        const stageId = Object.keys(template.findResources('AWS::ApiGateway::Stage'))[0];
+        const alarms = Object.values(template.findResources('AWS::CloudWatch::Alarm')).filter(({ Properties }) => Properties.Namespace === 'AWS/ApiGateway');
+
+        expect(alarms.map(({ Properties }) => Properties.MetricName).sort()).toEqual(['4XXError', '5XXError', 'Latency']);
+        for (const { Properties } of alarms) {
+            expect(Properties.Dimensions).toEqual(expect.arrayContaining([{ Name: 'Stage', Value: { Ref: stageId } }]));
+            expect(Properties.AlarmActions).toEqual([alarmTopicArn]);
+        }
+    });
+
+    it('notifies the alarm topic from every alarm it makes, including those of the functions', () => {
+        const alarms = Object.values(template.findResources('AWS::CloudWatch::Alarm'));
+
+        expect(alarms).toHaveLength(9); // three each for the function of the route, the function of health and version, and the API
+        for (const { Properties } of alarms) expect(Properties.AlarmActions).toEqual([alarmTopicArn]);
+    });
+
+    it('requires the alarm topic (checked by the compiler: an optional prop would also allow undefined)', () => {
+        expectTypeOf<ServiceApiProps['alarmTopic']>().toEqualTypeOf<ITopic>();
+    });
+
     it('exposes the pieces for other constructs', () => {
         expect(serviceApi.usagePlans.tests).toBeDefined();
         expect(Object.keys(serviceApi.usagePlans).sort()).toEqual(['admin', 'services', 'tests']);
+        expect(serviceApi.alarms.serverErrors).toBeDefined();
     });
 });
 
@@ -305,6 +332,7 @@ describe('ServiceApi operational routes', () => {
         const policies = Object.values(template.findResources('AWS::IAM::Policy')).filter((policy) => JSON.stringify(policy.Properties.Roles).includes('OperationsRole'));
 
         expect(alarms).toHaveLength(3);
+        for (const { Properties } of alarms) expect(Properties.AlarmActions).toEqual([alarmTopicArn]);
         expect(policies).toHaveLength(1);
         for (const { Action, Resource } of policies[0]!.Properties.PolicyDocument.Statement as Statement[]) {
             const actions = Array.isArray(Action) ? Action : [Action];
