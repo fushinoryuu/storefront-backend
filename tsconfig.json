@@ -15,6 +15,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["infra", "services", "packages", "scripts", "vitest.config.ts"],
+  "include": ["infra", "services", "packages", "scripts"],
   "exclude": ["**/node_modules", "**/cdk.out"]
 }
