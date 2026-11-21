@@ -116,17 +116,14 @@ if (!(await flagClient.isEnabled('shipment-simulation'))) return notFound(); // 
 
 ## Tests that need DynamoDB Local
 
-The idempotency tests run against DynamoDB Local, and `npm test` starts it for them. The test run (`scripts/dynamodb-local.ts`, set up in `vitest.config.ts`) runs `docker compose up --wait` for the `dynamodb` service of `docker-compose.yaml`, and `docker compose down` when the run ends, whether it passed, failed or was interrupted. `docker-compose.yaml` is the one place that names the image and its version, CI reads it too, and Dependabot proposes new versions of it. The container listens on `127.0.0.1:8000`, so nothing else on the machine may use that port while the tests run.
-
-- **A container runtime with docker compose is installed** (Docker Desktop, OrbStack or Colima, and running): nothing to do. The first run pulls the image.
-- **The container is already running** (you ran `docker compose up`): the tests use it, and leave it running.
-- **`DYNAMODB_ENDPOINT` is set**: the tests use that endpoint, and no container is started.
-- **No container runtime**: the tests are skipped, and the run prints what to install and the command that starts the container by hand. In CI (`CI=true`) the run fails instead, because a skipped test is a check nobody sees.
-
-To start the container yourself and point the tests at it:
+The idempotency tests run against DynamoDB Local, which `docker-compose.yaml` defines. Start it before `npm test`, and stop it when you are done:
 
 ```
 docker compose up --detach --wait
-DYNAMODB_ENDPOINT=http://localhost:8000 npm test
+npm test
 docker compose down
 ```
+
+It listens on `127.0.0.1:8000`, so nothing else on the machine may use that port. Without it the tests fail with a message that says how to start it. They are not skipped, because a skipped test is a check nobody sees. `DYNAMODB_ENDPOINT` points them at another DynamoDB Local instead.
+
+`docker-compose.yaml` is the one place that names the image and its version. CI reads it too, starts the container in its workflow, and Dependabot proposes new versions of it.
