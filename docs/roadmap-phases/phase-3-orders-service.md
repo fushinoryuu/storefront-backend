@@ -128,7 +128,7 @@ The change in the table is the source of truth, and events are derived from it, 
 ### 8. Tests
 
 - [ ] **Unit:** pricing, state machine (table-driven), validation, idempotency decisions, event envelope building.
-- [ ] **Repository tests** against DynamoDB Local (a container started by the test run): access patterns, conditional writes, the transaction, TTL attribute shape.
+- [ ] **Repository tests** against DynamoDB Local (a container from `docker-compose.yaml`, started with `docker compose up`): access patterns, conditional writes, the transaction, TTL attribute shape.
 - [ ] **Handler tests** with fake events, with the customers API client replaced by a fake that can return success, 404, timeout, and 5xx. Every response is validated against the spec.
 - [ ] **Consumer tests:** duplicate delivery, out-of-order events, unknown order, malformed payload.
 - [ ] **CDK tests:** stream enabled, pipe filter pattern present, DLQ present, API key required on protected methods, least-privilege table grants.
