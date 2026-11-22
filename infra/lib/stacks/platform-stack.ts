@@ -1,6 +1,7 @@
 import { Duration, Stack } from 'aws-cdk-lib';
 import { ApiKey } from 'aws-cdk-lib/aws-apigateway';
 import { EventBus } from 'aws-cdk-lib/aws-events';
+import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
@@ -14,7 +15,7 @@ import { removalPolicyFor } from '../removal-policy';
  * The resources every service shares, one set per stage (decision 0002): the event bus with its archive, the alarm topic and the three API keys
  * (decision 0005). The bus name, the ARN of the alarm topic and the key ids, which other stacks and outside tools need, are published to SSM, and no key value is.
  * The topic emails `alarmRecipients`, which come from the environment and not from the stage config (`parseAlarmRecipients`), so no address is in a file.
- * With none, the topic has no subscription.
+ * With none, the topic has no subscription. The topic refuses requests that are not over TLS, and lets the CloudWatch alarms of the account publish to it.
  */
 export class PlatformStack extends Stack {
     constructor(scope: Construct, config: StageConfig, alarmRecipients: readonly string[] = []) {
@@ -38,6 +39,20 @@ export class PlatformStack extends Stack {
         for (const recipient of alarmRecipients) {
             alarmTopic.addSubscription(new EmailSubscription(recipient));
         }
+        // The policy that `enforceSSL` adds holds only a deny, so nothing lets CloudWatch publish. `SnsAction` adds no permission, and could not on the topic that a service stack imports.
+        // The statement is the one in the CloudWatch documentation for alarm notifications, limited to the alarms of this account and region.
+        alarmTopic.addToResourcePolicy(
+            new PolicyStatement({
+                sid: 'AllowCloudWatchAlarmsToPublish',
+                principals: [new ServicePrincipal('cloudwatch.amazonaws.com')],
+                actions: ['sns:Publish'],
+                resources: [alarmTopic.topicArn],
+                conditions: {
+                    StringEquals: { 'aws:SourceAccount': this.account },
+                    ArnLike: { 'aws:SourceArn': `arn:${this.partition}:cloudwatch:${this.region}:${this.account}:alarm:*` }
+                }
+            })
+        );
         new StringParameter(this, 'AlarmTopicArnParameter', { parameterName: alarmTopicArnParameterName(config), stringValue: alarmTopic.topicArn });
 
         for (const kind of apiKeyKinds) {

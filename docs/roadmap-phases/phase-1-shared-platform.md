@@ -42,7 +42,7 @@ Everything the three services have in common, built once: the event bus, authent
   - [x] Done: the LaunchDarkly SDK keys. The `Storefront-Secrets` stack creates one empty secret per stage, and the owner puts the value in (decision 0011).
   - [ ] Remaining: the key retrieval script writes the API key values to a local file only. The copy in Secrets Manager, and any other secret a service needs, is still open.
 - [x] **Alarm topic:** an SNS topic that sends alarms to email.
-  - [x] Done: the topic requires TLS and emails the addresses in `ALARM_RECIPIENTS` (`docs/aws-setup.md`). With none set it has no subscription. Deployed to `dev` with an address on 2026-11-18, and the subscription is confirmed. The alarms of every function and every API notify it (a service stack builds it from the SSM parameter that holds its ARN).
+  - [x] Done: the topic requires TLS and emails the addresses in `ALARM_RECIPIENTS` (`docs/aws-setup.md`). With none set it has no subscription. Deployed to `dev` with an address on 2026-11-18, and the subscription is confirmed. The alarms of every function and every API notify it (a service stack builds it from the SSM parameter that holds its ARN). Its policy lets the CloudWatch alarms of the account and region publish to it, as the CloudWatch documentation shows, and a template test checks the statement. That an alarm really reaches the topic is not seen yet: it comes with the alarm fired on purpose in `dev`.
 
 ## Reusable constructs
 

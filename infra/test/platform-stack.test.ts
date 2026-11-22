@@ -39,6 +39,29 @@ describe.each(stageNames)('PlatformStack in %s', (stage) => {
         });
     });
 
+    it('lets the CloudWatch alarms of this account and region publish to the alarm topic, and no one else', () => {
+        const [topicId] = Object.keys(template.findResources('AWS::SNS::Topic'));
+        const [policy] = Object.values(template.findResources('AWS::SNS::TopicPolicy'));
+        const statements = policy!.Properties.PolicyDocument.Statement as { Effect: string }[];
+        const allowed = statements.filter(({ Effect }) => Effect === 'Allow');
+
+        expect(allowed).toEqual([
+            {
+                Sid: 'AllowCloudWatchAlarmsToPublish',
+                Effect: 'Allow',
+                Principal: { Service: 'cloudwatch.amazonaws.com' },
+                Action: 'sns:Publish',
+                Resource: { Ref: topicId },
+                Condition: {
+                    StringEquals: { 'aws:SourceAccount': { Ref: 'AWS::AccountId' } },
+                    ArnLike: { 'aws:SourceArn': { 'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, ':cloudwatch:', { Ref: 'AWS::Region' }, ':', { Ref: 'AWS::AccountId' }, ':alarm:*']] } }
+                }
+            }
+        ]);
+        // The deny for requests that are not over TLS is still there, next to the allow.
+        expect(statements.filter(({ Effect }) => Effect === 'Deny')).toHaveLength(1);
+    });
+
     it('publishes the ARN of the alarm topic to SSM, for the service stacks that pass it to their functions and APIs', () => {
         const [topicId] = Object.keys(template.findResources('AWS::SNS::Topic'));
 
