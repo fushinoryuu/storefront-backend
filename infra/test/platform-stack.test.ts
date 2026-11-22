@@ -26,6 +26,10 @@ describe.each(stageNames)('PlatformStack in %s', (stage) => {
         });
     });
 
+    it('names the event bus for the stage, so the two stages can share an account and region', () => {
+        template.hasResourceProperties('AWS::Events::EventBus', { Name: `storefront-${stage}-platform-bus` });
+    });
+
     it('publishes the event bus name to SSM', () => {
         template.hasResourceProperties('AWS::SSM::Parameter', { Name: `/storefront/${stage}/platform/event-bus-name`, Value: Match.anyValue() });
     });
@@ -98,5 +102,19 @@ describe('PlatformStack alarm recipients', () => {
 
         template.resourceCountIs('AWS::SNS::Subscription', 2);
         template.hasResourceProperties('AWS::SNS::Subscription', { Protocol: 'email', Endpoint: 'two@example.com' });
+    });
+});
+
+describe('PlatformStack in both stages', () => {
+    // `dev` and `prod` share one account and region, so a fixed physical name must not be the same in the two stages (a name that CDK builds from the construct path has no stage in it).
+    const fixedNames = (stage: (typeof stageNames)[number]) => {
+        const resources = Template.fromStack(new PlatformStack(new App(), stages[stage])).toJSON().Resources as Record<string, { Properties?: Record<string, unknown> }>;
+        return Object.values(resources).flatMap((resource) => ['Name', 'TopicName', 'ArchiveName'].map((key) => resource.Properties?.[key]).filter((value): value is string => typeof value === 'string'));
+    };
+
+    it('has no fixed physical name that the stages share', () => {
+        const dev = fixedNames('dev');
+        expect(dev.length).toBeGreaterThan(0);
+        expect(fixedNames('prod').filter((name) => dev.includes(name))).toEqual([]);
     });
 });
