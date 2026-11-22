@@ -13,7 +13,7 @@ Guidance for Claude Code in this repo. The rules themselves are in `docs/`; this
 ## How to work
 
 - Every change belongs to a Jira ticket in project BEP. Work on a branch from `main` whose name starts with the ticket key, never on `main`.
-- One ticket is one pull request. If a change will pass about 500 changed lines (lockfiles do not count), say so and ask how to split it before building it.
+- One ticket is one pull request. If a change will pass about 500 changed lines (lockfiles do not count), say so before building it and ask whether to split it. The limit is the maintainer's own choice, so if they say to go over it, go over it.
 - Do not create, edit or transition Jira tickets unless asked.
 - Keep to the ticket's scope. Mention related work instead of doing it. If a pull request does change something the ticket does not cover, list it in the description with the reason.
 - Tick a roadmap checkbox only when the work behind it is finished and true. For work that is partly done, leave the box unticked and add sub-bullets that list what is done and what remains.
@@ -36,7 +36,7 @@ When the work for a ticket is built, give the maintainer:
 - A pull request title that starts with the ticket key, and a description that follows `.github/pull_request_template.md`.
   - It starts with the link to the ticket.
   - It does not repeat the acceptance criteria. They live in the ticket.
-  - It lists everything the pull request changes, states its size, and says what has not been verified.
+  - It lists everything the pull request changes and says what has not been verified. It does not state the number of changed lines.
   - Update it when the branch changes, so the numbers and the list stay true.
 
 A reviewer's findings are posted as a Jira comment. The fixes go on the same branch as new commits.
