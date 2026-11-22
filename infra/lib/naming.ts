@@ -39,3 +39,8 @@ export function apiKeyIdParameterName(config: StageConfig, kind: ApiKeyKind): st
 export function eventBusNameParameterName(config: StageConfig): string {
     return ssmParameterName(config, 'Platform', 'event-bus-name');
 }
+
+/** SSM parameter that holds the ARN of the stage's alarm topic, which every service stack passes to its functions and APIs. */
+export function alarmTopicArnParameterName(config: StageConfig): string {
+    return ssmParameterName(config, 'Platform', 'alarm-topic-arn');
+}

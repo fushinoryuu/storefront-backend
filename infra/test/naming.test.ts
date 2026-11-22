@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { stages } from '../lib/config/stages';
-import { apiKeyIdParameterName, databaseStackName, eventBusNameParameterName, launchDarklySdkKeySecretName, sharedStackName, ssmParameterName, stackName } from '../lib/naming';
+import { alarmTopicArnParameterName, apiKeyIdParameterName, databaseStackName, eventBusNameParameterName, launchDarklySdkKeySecretName, sharedStackName, ssmParameterName, stackName } from '../lib/naming';
 
 describe('stackName', () => {
     it('builds Storefront-<stage>-<Service>', () => {
@@ -39,6 +39,7 @@ describe('ssmParameterName', () => {
 
     it('names the event bus and API key id parameters of the platform stack', () => {
         expect(eventBusNameParameterName(stages.dev)).toBe('/storefront/dev/platform/event-bus-name');
+        expect(alarmTopicArnParameterName(stages.prod)).toBe('/storefront/prod/platform/alarm-topic-arn');
         expect(apiKeyIdParameterName(stages.prod, 'admin')).toBe('/storefront/prod/platform/admin-api-key-id');
     });
 });

@@ -33,8 +33,8 @@ export interface ServiceFunctionProps {
     readonly logLevel?: LogLevel;
     /** The variables of this function. The standard ones below win over a variable with the same name. */
     readonly environment?: Readonly<Record<string, string>>;
-    /** The alarm topic of the platform stack. Without one the alarms exist and notify nobody. */
-    readonly alarmTopic?: ITopic;
+    /** The alarm topic of the platform stack, which the three alarms of the function notify. It is required, so no function has alarms that notify nobody. */
+    readonly alarmTopic: ITopic;
 }
 
 /**
@@ -42,7 +42,7 @@ export interface ServiceFunctionProps {
  * arm64 on Node.js 24, bundled by esbuild with source maps, X-Ray tracing on, and its own log group with the retention of the stage (conventions: Logs).
  * The bundler is the `esbuild` of the repo's `devDependencies`, pinned to an exact version. `allowScripts` in `package.json` names the same version, so a bump changes both.
  * It gets these environment variables: `STAGE`, `SERVICE_NAME` (lowercase), `EVENT_BUS_NAME` (when `eventBusName` is given), `POWERTOOLS_SERVICE_NAME` and `POWERTOOLS_LOG_LEVEL` for the logger, and `NODE_OPTIONS` so that stack traces use the source maps.
- * It also gets the three alarms of `LambdaAlarms`, as `alarms`.
+ * It also gets the three alarms of `LambdaAlarms`, as `alarms`, which notify `alarmTopic`.
  *
  * It is a `NodejsFunction`, so permissions are given the CDK way and stay as narrow as the resource: `table.grantReadData(fn)`, `secret.grantRead(fn)`, `bus.grantPutEventsTo(fn)`.
  * Never add a policy statement with a wildcard. The one wildcard it has is X-Ray's, which does not support a resource (acknowledged in this construct).

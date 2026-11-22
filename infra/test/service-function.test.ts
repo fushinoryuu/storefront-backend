@@ -5,7 +5,8 @@ import { Template } from 'aws-cdk-lib/assertions';
 import { EventBus } from 'aws-cdk-lib/aws-events';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Topic } from 'aws-cdk-lib/aws-sns';
-import { describe, expect, it } from 'vitest';
+import type { ITopic } from 'aws-cdk-lib/aws-sns';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { applyStandardTags } from '../lib/aspects/standard-tags';
 import { stageNames, stages } from '../lib/config/stages';
 import type { StageName } from '../lib/config/stages';
@@ -18,9 +19,12 @@ const entry = 'infra/test/fixtures/handler.ts';
 /** Bundling is skipped, because esbuild is slow and the template does not depend on it. One test below bundles for real. */
 const newApp = () => new App({ context: { 'aws:cdk:bundling-stacks': [] } });
 
+const alarmTopicArn = 'arn:aws:sns:us-west-2:111111111111:alarms';
+const topicIn = (stack: Stack) => Topic.fromTopicArn(stack, 'AlarmTopic', alarmTopicArn);
+
 function build(stage: StageName, overrides: Partial<ServiceFunctionProps> = {}, grant?: (fn: ServiceFunction, stack: Stack) => void) {
     const stack = new Stack(newApp(), 'Demo');
-    const fn = new ServiceFunction(stack, 'Hello', { config: stages[stage], service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: 'storefront-bus', ...overrides });
+    const fn = new ServiceFunction(stack, 'Hello', { config: stages[stage], service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: 'storefront-bus', alarmTopic: topicIn(stack), ...overrides });
     grant?.(fn, stack);
     return Template.fromStack(stack);
 }
@@ -112,12 +116,17 @@ describe('ServiceFunction props', () => {
         expect(fn!.Properties.Environment.Variables).not.toHaveProperty('EVENT_BUS_NAME');
     });
 
-    it('sends its alarms to the alarm topic it is given', () => {
-        const template = build('dev', { alarmTopic: Topic.fromTopicArn(new Stack(newApp(), 'Other'), 'AlarmTopic', 'arn:aws:sns:us-west-2:111111111111:alarms') });
+    it('sends each of its three alarms to the alarm topic it is given', () => {
+        const alarms = Object.values(build('dev').findResources('AWS::CloudWatch::Alarm'));
 
-        for (const alarm of Object.values(template.findResources('AWS::CloudWatch::Alarm'))) {
-            expect(alarm.Properties.AlarmActions).toEqual(['arn:aws:sns:us-west-2:111111111111:alarms']);
+        expect(alarms).toHaveLength(3);
+        for (const alarm of alarms) {
+            expect(alarm.Properties.AlarmActions).toEqual([alarmTopicArn]);
         }
+    });
+
+    it('requires the alarm topic, so no function has alarms that notify nobody (checked by the compiler: an optional prop would also allow undefined)', () => {
+        expectTypeOf<ServiceFunctionProps['alarmTopic']>().toEqualTypeOf<ITopic>();
     });
 });
 
@@ -125,7 +134,7 @@ describe('ServiceFunction tags', () => {
     it('has the standard tags on the function and its log group, from the tags of its stack', () => {
         const stack = new Stack(newApp(), 'Demo');
         applyStandardTags(stack, stages.dev, 'Customers');
-        new ServiceFunction(stack, 'Hello', { config: stages.dev, service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: 'storefront-bus' });
+        new ServiceFunction(stack, 'Hello', { config: stages.dev, service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: 'storefront-bus', alarmTopic: topicIn(stack) });
         const template = Template.fromStack(stack);
 
         const tags = [
@@ -185,8 +194,7 @@ describe('ServiceFunction and cdk-nag', () => {
         (stage) => {
             const app = newApp();
             const stack = new Stack(app, 'Demo');
-            const alarmTopic = Topic.fromTopicArn(stack, 'AlarmTopic', 'arn:aws:sns:us-west-2:111111111111:alarms');
-            new ServiceFunction(stack, 'Hello', { config: stages[stage], service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: 'storefront-bus', alarmTopic });
+            new ServiceFunction(stack, 'Hello', { config: stages[stage], service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: 'storefront-bus', alarmTopic: topicIn(stack) });
             applyNag(app, []);
 
             expect(() => app.synth()).not.toThrow();
@@ -198,7 +206,8 @@ describe('ServiceFunction and cdk-nag', () => {
 describe('ServiceFunction bundling', () => {
     it('bundles the handler with esbuild and writes a source map next to it', () => {
         const app = new App();
-        new ServiceFunction(new Stack(app, 'Demo'), 'Hello', { config: stages.dev, service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: 'storefront-bus' });
+        const stack = new Stack(app, 'Demo');
+        new ServiceFunction(stack, 'Hello', { config: stages.dev, service: 'Customers', entry, timeout: Duration.seconds(10), eventBusName: 'storefront-bus', alarmTopic: topicIn(stack) });
         const { directory } = app.synth();
 
         const bundles = readdirSync(directory).filter((name) => name.startsWith('asset.') && existsSync(join(directory, name, 'index.js')));

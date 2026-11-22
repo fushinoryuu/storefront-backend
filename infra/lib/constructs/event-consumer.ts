@@ -37,8 +37,8 @@ export interface EventConsumerProps {
     readonly source: string;
     /** The events it reacts to, as PascalCase names: `OrderPlaced`. At least one. */
     readonly detailTypes: readonly string[];
-    /** Where the two dead-letter alarms notify. Without one, the alarms exist and notify nobody. */
-    readonly alarmTopic?: ITopic;
+    /** The alarm topic of the platform stack, which the two dead-letter alarms notify. It is required, so no alarm notifies nobody. */
+    readonly alarmTopic: ITopic;
     /** Defaults to 5. */
     readonly maxReceiveCount?: number;
     /** Defaults to 10. */
@@ -47,7 +47,7 @@ export interface EventConsumerProps {
 
 /**
  * How a service reacts to events: a rule on the custom bus, a queue as its target, a dead-letter queue, and the function reading the queue.
- * A message that fails is retried, and after `maxReceiveCount` receives it is parked in the dead-letter queue instead of lost. Two alarms watch the dead-letter queue.
+ * A message that fails is retried, and after `maxReceiveCount` receives it is parked in the dead-letter queue instead of lost. Two alarms watch the dead-letter queue, and both notify the alarm topic.
  *
  * The handler reports the messages that failed (`batchItemFailures`), and the ones that worked are deleted, so one bad message does not hold back the others.
  * The message body is the whole event from EventBridge, and the envelope of `packages/events` is its `detail`: `parseEventOfType('OrderPlaced', JSON.parse(record.body).detail)`.
@@ -125,10 +125,8 @@ export class EventConsumer extends Construct {
             comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
             treatMissingData: TreatMissingData.NOT_BREACHING
         });
-        if (props.alarmTopic) {
-            for (const alarm of [this.deadLetterDepthAlarm, this.deadLetterAgeAlarm]) {
-                alarm.addAlarmAction(new SnsAction(props.alarmTopic));
-            }
+        for (const alarm of [this.deadLetterDepthAlarm, this.deadLetterAgeAlarm]) {
+            alarm.addAlarmAction(new SnsAction(props.alarmTopic));
         }
     }
 }

@@ -4,6 +4,7 @@ import { AccessLogField, AccessLogFormat, ApiKey, EndpointType, LambdaIntegratio
 import type { Method, UsagePlan } from 'aws-cdk-lib/aws-apigateway';
 import type { IFunction } from 'aws-cdk-lib/aws-lambda';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
+import type { ITopic } from 'aws-cdk-lib/aws-sns';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import type { ServiceName, StageConfig } from '../config/stages';
@@ -12,6 +13,7 @@ import type { ApiKeyKind } from '../naming';
 import { removalPolicyFor } from '../removal-policy';
 import { resolveBuildId } from '../config/build-id';
 import { operationsEnvironment } from '../../../packages/shared/src/operations';
+import { ApiAlarms } from './api-alarms';
 import { ServiceFunction } from './service-function';
 
 /** The services that expose an API. The platform and the database do not. */
@@ -43,6 +45,11 @@ export interface ServiceApiProps {
      * It is the list of versions that `addRoute` accepts, and what `GET /v0/version` reports.
      */
     readonly specVersions: Readonly<Record<string, string>>;
+    /**
+     * The alarm topic of the platform stack: the alarms of the API and of its health and version function notify it. A service stack builds it from the SSM parameter
+     * that the platform stack publishes (`alarmTopicArnParameterName`), with `Topic.fromTopicArn` and the value read at deploy.
+     */
+    readonly alarmTopic: ITopic;
     /** What `GET /v0/version` reports as `buildId`. Defaults to `resolveBuildId()`: the `BUILD_ID` variable, else the short git commit (with `-dirty` when the working tree has changes), else `local`. */
     readonly buildId?: string;
 }
@@ -66,16 +73,17 @@ export interface AddRouteOptions {
  * - The base URL, with the stage and no trailing slash, is published to SSM at `/storefront/<stage>/<service>/base-url`.
  * - `GET /v0/health` and `GET /v0/version` are added once, so a service does not write them. They are the only methods that need no API key, and one function (`ServiceFunction`, from `packages/shared`) answers both.
  *   The build id and the `specVersions` are read when the app is built, so they are in the template and the function looks nothing up.
- *   The function has alarms (those of `ServiceFunction`), and no topic to notify until the API gets one.
+ *   The function has the alarms of `ServiceFunction`, which notify the alarm topic like the rest.
+ * - Three alarms on the stage, all notifying the alarm topic (`ApiAlarms`): 5xx, 4xx and latency. Its doc comment has the thresholds.
  *
  * It does not create the account-wide role that API Gateway needs to write access logs (`cloudWatchRole` is off). That role is set once for the account and region by its own stack,
  * and an API with access logs does not deploy until it exists.
- * It adds no alarms of its own and no gateway responses.
+ * It adds no gateway responses.
  *
  * A route works the CDK way: the handler is in the same stack, and the integration gets permission to invoke that function from this API and nothing else.
  *
  * @example
- * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0' }, keyKinds: ['tests', 'services'] });
+ * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0' }, keyKinds: ['tests', 'services'], alarmTopic });
  * api.addRoute('GET', '/customers/{customerId}', getCustomer); // GET /v1/customers/{customerId}
  * api.addRoute('POST', '/customers', createCustomer, { version: 'v2' }); // POST /v2/customers
  */
@@ -89,6 +97,8 @@ export class ServiceApi extends Construct {
     readonly baseUrlParameter: StringParameter;
     /** The function behind the two operational routes. */
     readonly operationsFunction: ServiceFunction;
+    /** The 5xx, 4xx and latency alarms of the API. The alarms of `operationsFunction` are its own (`operationsFunction.alarms`). */
+    readonly alarms: ApiAlarms;
     private readonly versions: ReadonlySet<string>;
 
     constructor(scope: Construct, id: string, props: ServiceApiProps) {
@@ -152,12 +162,15 @@ export class ServiceApi extends Construct {
             service,
             entry: operationsEntry,
             timeout: Duration.seconds(5),
+            alarmTopic: props.alarmTopic,
             environment: { [operationsEnvironment.buildId]: props.buildId ?? resolveBuildId(), [operationsEnvironment.specVersions]: JSON.stringify(specVersions) }
         });
         // The only two methods with no API key, so a probe and the setup of a test run work without one (decision 0005).
         for (const route of ['health', 'version']) {
             this.api.root.resourceForPath(`/${operationalApiVersion}/${route}`).addMethod('GET', new LambdaIntegration(this.operationsFunction, { allowTestInvoke: false }), { apiKeyRequired: false });
         }
+
+        this.alarms = new ApiAlarms(this, 'Alarms', { stage: this.api.deploymentStage, alarmTopic: props.alarmTopic });
 
         // Findings that every service API has, acknowledged here once and not in every stack (as `ServiceFunction` does).
         // Each is a finding that cdk-nag reports for this construct, so a new one fails the test of the construct, and one that is no longer reported shows up in review.
