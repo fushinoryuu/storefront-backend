@@ -68,7 +68,11 @@ Not built yet: the `adminOnly` flag, and customized gateway responses, so API Ga
 
 ## ApiAlarms
 
-One 5xx in five minutes, 100 or more 4xx in two of three windows, and a p95 latency of 5 seconds or more in two of three windows, all on the stage of the API. `ServiceApi` adds them itself. The numbers are a starting point that the delivery and operations phase tunes.
+One 5xx in five minutes, 100 or more 4xx in two of three windows, and a p95 latency of 5 seconds or more in two of three windows, all on the stage of the API. `ServiceApi` adds them itself. The numbers are a starting point that the delivery and operations phase tunes. They take the stage of an API that exists, so they are used alone only for an API that is not a `ServiceApi`:
+
+```ts
+new ApiAlarms(this, 'Alarms', { stage: restApi.deploymentStage, alarmTopic });
+```
 
 ## EventConsumer
 
