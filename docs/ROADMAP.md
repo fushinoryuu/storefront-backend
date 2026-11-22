@@ -115,7 +115,7 @@ The orders service calls the customers API to validate a customer when an order 
 ### Phase 1: Shared platform
 
 - [x] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
-  - [x] Built, tested and deployed to `dev` on 2026-11-18, with the SSM values listed and the alarm email confirmed. The `prod` deploy comes with the hello service check.
+  - [x] Built, tested and deployed to `dev` on 2026-11-18, with the SSM values listed and the alarm email confirmed. Deployed to `prod` on 2026-11-22, with its SSM values read.
 - [x] Script to retrieve key values after deploy
 - [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
   - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` (routes under `/v<N>` with an API key, usage plans, access logs, base URL, built-in health and version routes, 5xx, 4xx and latency alarms), with tests and cdk-nag. `ServiceFunction`, `EventConsumer` and `ServiceApi` require the alarm topic
@@ -123,13 +123,14 @@ The orders service calls the customers API to validate a customer when an order 
   - [ ] Remaining: the gateway responses and an admin-only route seen on a deployed API (the hello service check): how API Gateway answers a function that throws or times out, and the correlation id header
 - [x] API Gateway logging role: the account-wide role that access logs need, in its own stack that belongs to no stage (`Storefront-ApiGatewayAccount`). Deployed on 2026-11-20, and `aws apigateway get-account` shows its role
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
-- [ ] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
+- [x] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
   - [x] Done: the client with its in-code defaults, and the decision record (decision 0011)
-  - [ ] Remaining: the service connections a Lambda uses, measured on `dev` with the hello service and recorded in the decision record
-- [ ] Every API exposes `GET /v0/health` and `GET /v0/version`, and `ServiceApi` serves several versions under one API
+  - [x] Done: the bundle size and cold start with and without the SDK, measured on `dev` on 2026-11-22 and recorded in the decision record
+  - [x] Done: the service connections read from LaunchDarkly's usage page on 2026-11-22 (0.001 after about 9 flag reads) and recorded in the decision record
+- [x] Every API exposes `GET /v0/health` and `GET /v0/version`, and `ServiceApi` serves several versions under one API
   - [x] Done: `ServiceApi` serves `/v1` and `/v2` routes side by side under one API, and refuses `v0` and a version that its specs do not list
   - [x] Done: `ServiceApi` adds `GET /v0/health` and `GET /v0/version` with no API key, answered by one shared function, and tests check their responses against the `/v0` specs
-  - [ ] Remaining: both routes answering in `dev`, after the first deploy of an API
+  - [x] Done: both routes answered in `dev` with no key on 2026-11-22, from a throwaway service (`docs/platform.md`)
 - [x] CDK template tests and cdk-nag in the build
   - [x] Done: cdk-nag runs on every stack, and the platform stack, `ServiceFunction`, the Lambda alarms, `EventConsumer` and `ServiceApi` with its built-in routes and alarms have template tests
   - [x] Done: tests for the `adminOnly` flag and the gateway responses of `ServiceApi`
