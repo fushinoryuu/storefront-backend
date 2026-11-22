@@ -1,12 +1,12 @@
 import { Duration } from 'aws-cdk-lib';
 import { Alarm, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
-import type { IEventBus } from 'aws-cdk-lib/aws-events';
 import { Rule } from 'aws-cdk-lib/aws-events';
+import type { IEventBus } from 'aws-cdk-lib/aws-events';
 import { SqsQueue } from 'aws-cdk-lib/aws-events-targets';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
-import type { ITopic } from 'aws-cdk-lib/aws-sns';
 import { Queue, QueueEncryption } from 'aws-cdk-lib/aws-sqs';
+import type { ITopic } from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
 import type { StageConfig } from '../config/stages';
 import { removalPolicyFor } from '../removal-policy';
@@ -84,12 +84,9 @@ export class EventConsumer extends Construct {
 
     constructor(scope: Construct, id: string, props: EventConsumerProps) {
         super(scope, id);
-
         const timeout = props.function.timeout;
-
         if (timeout === undefined) throw new Error('The function of an EventConsumer needs a timeout, which sets the visibility timeout of its queue.');
         if (props.detailTypes.length === 0) throw new Error('An EventConsumer needs at least one detail type, or its rule matches nothing.');
-
         const maxReceiveCount = props.maxReceiveCount ?? defaultMaxReceiveCount;
         const batchSize = props.batchSize ?? defaultBatchSize;
         const removalPolicy = removalPolicyFor(props.config);
@@ -102,16 +99,16 @@ export class EventConsumer extends Construct {
             deadLetterQueue: { queue: this.deadLetterQueue, maxReceiveCount },
             removalPolicy
         });
+
         this.rule = new Rule(this, 'Rule', {
             description: `Sends ${props.detailTypes.join(', ')} from ${props.source} to the queue of ${props.function.node.id}.`,
             eventBus: props.eventBus,
             eventPattern: { source: [props.source], detailType: [...props.detailTypes] },
             targets: [new SqsQueue(this.queue)]
         });
-
         props.function.addEventSource(new SqsEventSource(this.queue, { batchSize, reportBatchItemFailures: true }));
-        const period = Duration.minutes(5);
 
+        const period = Duration.minutes(5);
         this.deadLetterDepthAlarm = new Alarm(this, 'DeadLetterDepth', {
             alarmDescription: 'A message failed every retry and is waiting in the dead-letter queue.',
             metric: this.deadLetterQueue.metricApproximateNumberOfMessagesVisible({ period, statistic: 'Maximum' }),
@@ -128,7 +125,6 @@ export class EventConsumer extends Construct {
             comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
             treatMissingData: TreatMissingData.NOT_BREACHING
         });
-
         for (const alarm of [this.deadLetterDepthAlarm, this.deadLetterAgeAlarm]) {
             alarm.addAlarmAction(new SnsAction(props.alarmTopic));
         }

@@ -1,14 +1,14 @@
 import { App, Duration, Stack } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { EventBus } from 'aws-cdk-lib/aws-events';
-import type { ITopic } from 'aws-cdk-lib/aws-sns';
 import { Topic } from 'aws-cdk-lib/aws-sns';
+import type { ITopic } from 'aws-cdk-lib/aws-sns';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { applyStandardTags } from '../lib/aspects/standard-tags';
-import type { StageName } from '../lib/config/stages';
 import { stageNames, stages } from '../lib/config/stages';
-import type { EventConsumerProps } from '../lib/constructs/event-consumer';
+import type { StageName } from '../lib/config/stages';
 import { EventConsumer, deadLetterAgeAlarmThreshold, deadLetterRetention, defaultBatchSize, defaultMaxReceiveCount, visibilityTimeoutMultiple } from '../lib/constructs/event-consumer';
+import type { EventConsumerProps } from '../lib/constructs/event-consumer';
 import { ServiceFunction } from '../lib/constructs/service-function';
 import { applyNag } from '../lib/nag';
 
@@ -25,22 +25,18 @@ const functionAlarmTopic = (stack: Stack) => Topic.fromTopicArn(stack, 'Function
 /** A stack with one function and one consumer of it, the way a service stack uses them. It does not synthesize, so cdk-nag can still be added to the app. */
 function build(stage: StageName, options: { timeout?: Duration; overrides?: Partial<Omit<EventConsumerProps, 'config' | 'function' | 'eventBus'>>; tags?: boolean; app?: App } = {}) {
     const stack = new Stack(options.app ?? newApp(), 'Demo');
-
     if (options.tags) applyStandardTags(stack, stages[stage], 'Shipping');
-
     const config = stages[stage];
     const eventBus = new EventBus(stack, 'Bus');
     const fn = new ServiceFunction(stack, 'OnOrderPlaced', { config, service: 'Shipping', entry, timeout: options.timeout ?? Duration.seconds(30), eventBusName: eventBus.eventBusName, alarmTopic: functionAlarmTopic(stack) });
     const alarmTopic = Topic.fromTopicArn(stack, 'AlarmTopic', alarmTopicArn);
     const consumer = new EventConsumer(stack, 'OrderPlaced', { config, function: fn, eventBus, source: 'storefront.orders', detailTypes: ['OrderPlaced'], alarmTopic, ...options.overrides });
-
     return { stack, consumer };
 }
 
 /** The same, with its template, which synthesizes the stack. */
 function setup(stage: StageName, options: Parameters<typeof build>[1] = {}) {
     const { stack, consumer } = build(stage, options);
-
     return { stack, consumer, template: Template.fromStack(stack) };
 }
 
@@ -68,7 +64,6 @@ describe.each(stageNames)('EventConsumer in %s', (stage) => {
     it('has a queue with a dead-letter queue and a redrive policy, and no other queue', () => {
         template.resourceCountIs('AWS::SQS::Queue', 2);
         template.hasResourceProperties('AWS::SQS::Queue', { RedrivePolicy: { deadLetterTargetArn: { 'Fn::GetAtt': [deadLetterQueueId(template), 'Arn'] }, maxReceiveCount: defaultMaxReceiveCount } });
-
         expect(queues(template)[deadLetterQueueId(template)]!.Properties.RedrivePolicy).toBeUndefined();
     });
 
@@ -139,11 +134,8 @@ describe.each(stageNames)('EventConsumer in %s', (stage) => {
         for (const queue of Object.values(queues(template))) {
             expect(queue.Properties.SqsManagedSseEnabled).toBe(true);
         }
-
         const denied = allStatements(template).filter(({ Effect, Action }) => Effect === 'Deny' && asList(Action).includes('sqs:*'));
-
         expect(denied).toHaveLength(2);
-
         for (const statement of denied) {
             expect(JSON.stringify(statement)).toContain('"aws:SecureTransport":"false"');
         }
@@ -165,7 +157,6 @@ describe('EventConsumer permissions', () => {
         for (const { Action, Resource, Principal } of allowed) {
             expect(asList(Action).filter((action) => action.includes('*'))).toEqual([]);
             expect(JSON.stringify(Principal ?? {})).not.toContain('"*"');
-
             if (Resource === '*') expect(asList(Action).every((action) => action.startsWith('xray:'))).toBe(true);
         }
         expect(allowed.filter(({ Resource }) => Resource === '*')).toHaveLength(1);
@@ -239,7 +230,6 @@ describe('EventConsumer tags', () => {
         for (const queue of Object.values(queues(template))) {
             expect(queue.Properties.Tags).toEqual(tags);
         }
-
         expect(Object.keys(queues(template))).toHaveLength(2);
     });
 });
@@ -249,7 +239,6 @@ describe('EventConsumer and cdk-nag', () => {
         'passes the AWS Solutions rules in %s, with no acknowledgement from the stack',
         (stage) => {
             const app = newApp();
-
             build(stage, { app });
             applyNag(app, []);
 
