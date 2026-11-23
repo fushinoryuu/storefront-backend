@@ -94,7 +94,7 @@ export interface AddRouteOptions {
  * A route works the CDK way: the handler is in the same stack, and the integration gets permission to invoke that function from this API and nothing else.
  *
  * @example
- * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0' }, keyKinds: ['tests', 'services'], alarmTopic });
+ * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0', v2: '0.1.0' }, keyKinds: ['tests', 'services'], alarmTopic });
  * api.addRoute('GET', '/customers/{customerId}', getCustomer); // GET /v1/customers/{customerId}
  * api.addRoute('POST', '/customers', createCustomer, { version: 'v2' }); // POST /v2/customers
  * api.addRoute('POST', '/shipments/{shipmentId}/advance', advanceShipment, { adminOnly: true }); // needs `admin` in keyKinds
