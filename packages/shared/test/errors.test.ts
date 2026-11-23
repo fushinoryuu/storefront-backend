@@ -16,6 +16,7 @@ const specResponses: [string, ProblemKind][] = [
     ['Forbidden', problemKinds.forbidden],
     ['NotFound', problemKinds.notFound],
     ['Conflict', problemKinds.conflict],
+    ['TooManyRequests', problemKinds.tooManyRequests],
     ['InternalError', problemKinds.internalError],
     ['ServiceUnavailable', problemKinds.serviceUnavailable]
 ];

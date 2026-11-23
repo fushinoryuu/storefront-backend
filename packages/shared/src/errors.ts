@@ -30,6 +30,8 @@ export const problemKinds = {
     forbidden: { slug: 'forbidden', title: 'Forbidden', status: 403 },
     notFound: { slug: 'not-found', title: 'Not found', status: 404 },
     conflict: { slug: 'conflict', title: 'Conflict', status: 409 },
+    // Produced by API Gateway (the gateway responses of `ServiceApi`) and not thrown by a handler, so it has no error class.
+    tooManyRequests: { slug: 'too-many-requests', title: 'Too many requests', status: 429 },
     serviceUnavailable: { slug: 'service-unavailable', title: 'Service unavailable', status: 503 },
     internalError: { slug: 'internal-error', title: 'Internal server error', status: 500 }
 } as const satisfies Record<string, ProblemKind>;
