@@ -161,13 +161,13 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
   - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in health and version routes and its alarms, with template tests and cdk-nag.
   - [x] Done: the rest of `ServiceApi`, the `adminOnly` flag and the customized gateway responses.
 - [x] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
-- [ ] Add a throwaway "hello" service using the constructs to prove they work, deploy it, call it with the `tests` API key, then delete it.
+- [x] Add a throwaway "hello" service using the constructs to prove they work, deploy it, call it with the `tests` API key, then delete it.
   - [x] Done: built from the constructs, deployed to `dev` and called with the `tests` key on 2026-11-22 (`docs/platform.md` has the results).
   - [x] Done: the flag value that LaunchDarkly holds for `dev` is the one the function logs (the flag was on, its default in code is off), and a function without access to the secret logs the default and the fallback instead of failing the request.
   - [x] Done: the platform stack deployed to `prod` on 2026-11-22, and its SSM parameters read (bus name, alarm topic ARN and the three key ids).
   - [x] Done: the throwaway service was destroyed on 2026-11-22, and was never on `main`.
   - [x] Done: the throwaway service was deployed again with the gateway responses and an admin-only route, and the checks ran on 2026-11-22: the `tests` key is refused on the admin-only route, a throttled request is a 429 `Problem`, and a failing function is a 503 `Problem` (`docs/platform.md`).
-  - [ ] Remaining: the second throwaway service destroyed.
+  - [x] Done: the second throwaway service was destroyed on 2026-11-22, and neither was ever on `main`.
 - [x] Document the constructs in `docs/platform.md` with a short usage example each.
   - [x] Done: a usage example for each construct and the results of the checks in `dev`, with and without the gateway responses.
 
