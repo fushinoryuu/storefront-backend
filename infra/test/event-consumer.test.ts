@@ -141,9 +141,9 @@ describe.each(stageNames)('EventConsumer in %s', (stage) => {
         }
     });
 
-    it('keeps the queues in a persistent stage only, because a failed message is evidence', () => {
+    it('deletes the queues with the stack', () => {
         for (const queue of Object.values(queues(template))) {
-            expect(queue.DeletionPolicy).toBe(stage === 'prod' ? 'Retain' : 'Delete');
+            expect(queue.DeletionPolicy).toBe('Delete');
         }
     });
 });

@@ -103,8 +103,8 @@ describe.each(stageNames)('ServiceApi in %s', (stage) => {
         expect(format).not.toContain('$context.path');
     });
 
-    it('keeps the access logs in a persistent stage only', () => {
-        expect(template.findResources('AWS::Logs::LogGroup')[accessLogGroupId(template)]!.DeletionPolicy).toBe(stage === 'prod' ? 'Retain' : 'Delete');
+    it('deletes the access logs with the stack', () => {
+        expect(template.findResources('AWS::Logs::LogGroup')[accessLogGroupId(template)]!.DeletionPolicy).toBe('Delete');
     });
 
     it('requires an API key on every method, except GET /v0/health and GET /v0/version, which are the only two without one', () => {

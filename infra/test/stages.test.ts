@@ -9,7 +9,7 @@ describe('stage config', () => {
         }
     });
 
-    it('destroys every dev stack after a run and keeps every prod stack', () => {
+    it('destroys every dev stack after a run and leaves every prod stack up', () => {
         for (const service of serviceNames) {
             expect(stages.dev.stacks[service]).toBe(service === 'Database' ? 'external' : 'per-run');
             expect(stages.prod.stacks[service]).toBe('persistent');
@@ -26,11 +26,8 @@ describe('stage config', () => {
         }
     });
 
-    it('keeps dev destroyable and prod protected', () => {
-        expect(stages.dev.removalPolicy).toBe(RemovalPolicy.DESTROY);
-        expect(stages.dev.deletionProtection).toBe(false);
-        expect(stages.prod.deletionProtection).toBe(true);
-        expect(stages.prod.removalPolicy).not.toBe(RemovalPolicy.DESTROY);
+    it.each(stageNames)('destroys what a stack made together with the stack in %s', (name) => {
+        expect(stages[name].removalPolicy).toBe(RemovalPolicy.DESTROY);
     });
 
     it('keeps the carrier timings in order', () => {

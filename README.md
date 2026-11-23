@@ -30,6 +30,8 @@ Run these from the repo root:
 | `npm run destroy:secrets`             | Destroy the `Secrets` stack, which deletes both LaunchDarkly SDK key secrets. CDK asks for confirmation first                                                                                                                                     |
 | `npm run deploy:api-gateway-account`  | Deploy the `ApiGatewayAccount` stack, the account-wide API Gateway logging role, with the `storefront` profile (`docs/aws-setup.md`)                                                                                                              |
 | `npm run destroy:api-gateway-account` | Destroy the `ApiGatewayAccount` stack, which deletes the logging role. It has termination protection, which must be turned off first (`docs/aws-setup.md`)                                                                                        |
+| `npm run deploy:platform`             | Deploy the `Platform` stack of a stage with the `storefront` profile (`-- -c stage=dev`, or `prod`). `ALARM_RECIPIENTS=you@example.com` in front subscribes the alarm topic (`docs/aws-setup.md`)                                                 |
+| `npm run destroy:platform`            | Destroy the `Platform` stack of a stage (`-- -c stage=dev`, or `prod`), with everything it made. CDK asks for confirmation first. The service stacks of the stage depend on it, so destroy them first                                             |
 
 The CDK app builds the stacks of a stage when it is given one: `npx cdk synth -c stage=dev` or `-c stage=prod`. Without a stage it builds only `Storefront-Secrets` and `Storefront-ApiGatewayAccount`, which belong to no stage.
 

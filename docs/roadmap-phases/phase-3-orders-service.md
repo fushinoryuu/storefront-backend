@@ -78,7 +78,7 @@ Tags: `orders` and `products`. The API accepts all three kinds of key, because `
 - [ ] DynamoDB table and the indexes from the access patterns, TTL attribute for idempotency records, streams enabled.
 - [ ] Lambda functions from the `ServiceFunction` construct, with only the table permissions each needs.
 - [ ] `ServiceApi` (REST API) routes with `apiKeyRequired` and the shared usage plans.
-- [ ] Stage-specific removal policy and point-in-time recovery setting.
+- [ ] Point-in-time recovery setting, with the table destroyed with its stack in every stage (decision 0002).
 - [ ] Alarms: Lambda errors, API 5xx, DynamoDB throttles and system errors, Pipes failures.
 
 ### 3. Order placement
