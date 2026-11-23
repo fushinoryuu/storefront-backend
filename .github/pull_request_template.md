@@ -14,7 +14,14 @@
 
 ## Checks
 
-- [ ] TODO
+- [ ] `npm run lint`
+- [ ] `npm run format:check`
+- [ ] `npm run typecheck`
+- [ ] `npm test` (start DynamoDB Local first with `docker compose up --detach --wait`)
+- [ ] `npm run lint:specs`
+- [ ] `npm run bundle:specs -- --check`
+- [ ] `npm run synth`
+- [ ] CI on this pull request
 
 ## Not in this PR
 
