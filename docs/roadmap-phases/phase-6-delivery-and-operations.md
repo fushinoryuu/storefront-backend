@@ -2,6 +2,8 @@
 
 Make the system deployable by a pipeline instead of by hand, observable when it misbehaves, safe by default, and cheap to leave running. This is the phase that makes the project look like something a team could operate.
 
+Slice E pulls the pull request run forward (see Slices in [ROADMAP.md](../ROADMAP.md)): task 2, the deployment role, and the pull request parts of task 3. The rest of this phase comes after the slices.
+
 ## Goals
 
 - Pull request runs that deploy to `dev`, test and tear down, and an automated deployment of `prod` on merge to `main`, so a production-like stage is always up.
