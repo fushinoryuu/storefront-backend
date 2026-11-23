@@ -56,7 +56,7 @@ The orders service calls the customers API to validate a customer when an order 
 - Routes set `apiKeyRequired`. `GET /v0/health` and `GET /v0/version` stay open so probes and test setup work without a key.
 - Usage plans apply per API stage, not per route, so admin-only routes are enforced in the handler by comparing the caller's key id (API Gateway passes it in the request context) with the admin key id.
 - A key's value is not available as a CloudFormation output. Let CDK generate the keys, then retrieve the values after deploy with a small script and store them in Secrets Manager or an untracked local file. Never hard-code a key value, because it would end up in the template and the repo.
-- API Gateway rejects a missing or invalid key with its own 403 response, and throttling returns 429, both outside your error shape. Customize the gateway responses so clients see the shared error shape.
+- API Gateway rejects a missing or invalid key with its own 403 response, and throttling returns 429, both outside the shared error shape. `ServiceApi` customizes these gateway responses so clients see the shared error shape (`docs/platform.md`).
 - Rotation: create a new key, attach it to the usage plans, move callers over, delete the old one.
 - Say plainly in the README that API keys are not a full authentication system, and name what you would use in production (for example Cognito or IAM authorization).
 - REST APIs cost more per request than HTTP APIs. This is minor at demo volumes.
@@ -134,6 +134,9 @@ The orders service calls the customers API to validate a customer when an order 
 - [x] CDK template tests and cdk-nag in the build
   - [x] Done: cdk-nag runs on every stack, and the platform stack, `ServiceFunction`, the Lambda alarms, `EventConsumer` and `ServiceApi` with its built-in routes and alarms have template tests
   - [x] Done: tests for the `adminOnly` flag and the gateway responses of `ServiceApi`
+- [x] A throwaway "hello" service built from the constructs, deployed to `dev`, called with the `tests` key and destroyed
+  - [x] Done: deployed twice to `dev` on 2026-11-22, once without and once with the gateway responses and an admin-only route, and destroyed both times. Neither was ever on `main`.
+- [x] The constructs documented in `docs/platform.md`, with a usage example each and the results of the checks in `dev`
 - [ ] Dependabot version updates and security alerts
   - [x] Done: the configuration for npm and GitHub Actions, the conventions for its pull requests, and the lockfile updates an update can fix
   - [ ] Remaining: the first run and its CI check, and the alerts open on the first day, each fixed or dismissed with a reason
