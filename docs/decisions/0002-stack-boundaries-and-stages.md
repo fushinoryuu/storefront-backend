@@ -1,6 +1,6 @@
 # 0002: Stack boundaries and stages
 
-Status: accepted on 2026-11-03. Amended on 2026-11-11: a sixth stack, `Secrets`, which belongs to no stage and holds the secrets that must outlive a run (decision 0011). Amended on 2026-11-20: a seventh stack, `ApiGatewayAccount`, which belongs to no stage and holds the account-wide API Gateway logging role.
+Status: accepted on 2026-11-03. Amended on 2026-11-11: a sixth stack, `Secrets`, which belongs to no stage and holds the secrets that must outlive a run (decision 0011). Amended on 2026-11-20: a seventh stack, `ApiGatewayAccount`, which belongs to no stage and holds the account-wide API Gateway logging role. Amended on 2026-11-23: every stack deploys and destroys with one command in both stages. `prod` is `DESTROY` like `dev`, the stage config has no deletion protection, and a stack has termination protection only when destroying it by accident would break others or lose data.
 
 ## Context
 
@@ -25,10 +25,12 @@ Pull request runs have to deploy, test and tear down everything they create, qui
 - `Platform` (event bus, API keys, shared parameters, alarm topic) and `Database` deploy first. The service stacks depend on them.
 - Two stages, `dev` and `prod`, both in the same account and region and configured in `infra/lib/config/stages.ts`. Each stack is marked `persistent`, `per-run` or `external` (owned by another stage):
 
-| Stage  | Used for                                    | Stacks                                                | Removal policy and protection     | Log retention |
-| ------ | ------------------------------------------- | ----------------------------------------------------- | --------------------------------- | ------------- |
-| `dev`  | Pull request runs: deploy, test, tear down  | All `per-run`, except `Database`, which is `external` | `DESTROY`, no deletion protection | One week      |
-| `prod` | Deployed from `main`, up for ad hoc testing | All `persistent`                                      | `RETAIN`, deletion protection     | One month     |
+| Stage  | Used for                                    | Stacks                                                | Removal policy | Log retention |
+| ------ | ------------------------------------------- | ----------------------------------------------------- | -------------- | ------------- |
+| `dev`  | Pull request runs: deploy, test, tear down  | All `per-run`, except `Database`, which is `external` | `DESTROY`      | One week      |
+| `prod` | Deployed from `main`, up for ad hoc testing | All `persistent`                                      | `DESTROY`      | One month     |
+
+- **Every stack deploys and destroys with one command, in both stages, and leaves nothing behind to delete by hand.** A stack has CloudFormation termination protection only when destroying it by accident would break others or lose data: `ApiGatewayAccount` (every API of the account depends on it) and `Database` once it is built (the cluster holds the data). No other stack has it, and no stage config does: the stage config has no deletion protection setting. `persistent` means a test run does not destroy the stack. It does not mean the resources are kept when someone destroys it. A test synthesizes every stack of both stages and fails on a resource with a retain policy, and on termination protection on any stack except the ones named above. The ticket that builds `Database` decides what the cluster needs (decision 0007).
 
 - `prod` owns the one Aurora cluster, in `Storefront-prod-Database` with CloudFormation termination protection on. The cluster holds the `main` schema for `prod` and one schema per pull request run. `dev` reads its connection details and has no database stack of its own. ADR 0006 and 0007 cover how the schemas, users and scaling work.
 - A test run deploys to `dev`, runs the tests, drops its schema and destroys the `per-run` stacks. The teardown script lists those stacks explicitly and never runs `cdk destroy --all`, so it leaves `Secrets` and `ApiGatewayAccount` alone. The secrets of `Secrets` are deleted with their stack, whatever the stage's removal policy, because their value can be copied again and a secret left behind bills.
