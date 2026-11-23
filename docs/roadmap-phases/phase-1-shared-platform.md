@@ -166,9 +166,9 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
   - [x] Done: the flag value that LaunchDarkly holds for `dev` is the one the function logs (the flag was on, its default in code is off), and a function without access to the secret logs the default and the fallback instead of failing the request.
   - [x] Done: the platform stack deployed to `prod` on 2026-11-22, and its SSM parameters read (bus name, alarm topic ARN and the three key ids).
   - [x] Done: the throwaway service was destroyed on 2026-11-22, and was never on `main`.
-  - [ ] Remaining: an admin-only route rejecting the `tests` key and a throttled key, which need the rest of `ServiceApi`. They are checked against a deployed API when it is built.
+  - [ ] Remaining: the gateway responses, an admin-only route rejecting the `tests` key and a throttled key, seen on a deployed API. The `adminOnly` flag and the gateway responses are built, so this needs the hello stack deployed again.
 - [x] Document the constructs in `docs/platform.md` with a short usage example each.
-  - [x] Done: a usage example for each construct and the results of the checks in `dev`. The results of the two checks that wait for the rest of `ServiceApi` are added with them.
+  - [x] Done: a usage example for each construct and the results of the checks in `dev`. The results of the checks that need the gateway responses and the `adminOnly` flag on a deployed API are added when they are run.
 
 ## Acceptance criteria
 

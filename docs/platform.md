@@ -62,9 +62,14 @@ It adds `GET /v0/health` and `GET /v0/version` itself, with no key, and every ro
 const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0', v2: '0.1.0' }, keyKinds: ['tests', 'services'], alarmTopic });
 api.addRoute('GET', '/customers/{customerId}', getCustomer); // GET /v1/customers/{customerId}
 api.addRoute('POST', '/customers', createCustomer, { version: 'v2' }); // POST /v2/customers
+api.addRoute('POST', '/shipments/{shipmentId}/advance', advanceShipment, { adminOnly: true }); // needs `admin` in keyKinds
 ```
 
-Not built yet: the `adminOnly` flag, and customized gateway responses, so API Gateway's own error bodies reach callers for now (see what was seen below).
+The answers that API Gateway makes itself are `Problem`s of the shared spec, with the request id of the gateway as the correlation id: 403 for a missing or unknown key, 429 for throttling and a used-up quota, 404 for a route that does not exist, 503 with `Retry-After` when the gateway cannot reach the function, and 500 for every other error that API Gateway makes (`infra/lib/constructs/gateway-responses.ts` has the list and the reasons).
+
+An `adminOnly` route needs `admin` in `keyKinds`, and its handler calls `requireAdminKey` from `packages/shared`, because a usage plan covers the whole stage and so cannot let one key call one route. The README of the shared package shows how a function gets the id of the admin key.
+
+Both are built and tested, and not seen on a deployed API yet (see below). What API Gateway answered in `dev` before the gateway responses existed is under "What was seen in dev".
 
 ## ApiAlarms
 
@@ -128,7 +133,7 @@ On 2026-11-22, in `dev`, a route whose function has a 3 second timeout and sleep
 - Body: `{"message": "Internal server error"}`.
 - It does not match `Problem`: it has no `type`, `title`, `status` or `correlationId`.
 
-The 502 is not a 503 or a 504, so the warm-up retry of the library project (503 and 504 only) would not retry it. A function that throws gets the same response. The customers spec has to document this response until a customized gateway response replaces it, and that work is planned with the other gateway responses.
+The 502 is not a 503 or a 504, so the warm-up retry of the library project (503 and 504 only) would not retry it. A function that throws gets the same response. This is what API Gateway answered before the gateway responses were added to `ServiceApi`. They answer a 500 `Problem` for every error that has no response of its own, but whether that includes this 502 is not verified: the documentation of the response types does not say which one a Lambda timeout or error uses. It is checked on a deployed API, and until then the customers spec has to document the 502 as seen above.
 
 ### Bundle size and cold start
 
@@ -143,4 +148,5 @@ The SDK adds about 575 kB and about 180 ms to a cold start. The first flag evalu
 
 ### Not seen yet
 
-- An admin-only route rejecting the `tests` key, and a throttled key. Neither exists yet.
+- The gateway responses on a deployed API: a missing or wrong key as a 403 `Problem`, an unknown route as a 404, a function that throws or times out as a 500 (or still the 502 above), and the `x-correlation-id` header taking the request id of the gateway.
+- An admin-only route rejecting the `tests` key, with the handler seeing the key id of a real request, and a throttled key as a 429 `Problem`.
