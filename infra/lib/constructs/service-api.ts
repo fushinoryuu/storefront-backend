@@ -87,7 +87,7 @@ export interface AddRouteOptions {
  *
  * The answers that API Gateway makes itself are `Problem`s of the shared spec, with the request id of the gateway as the correlation id (`gateway-responses.ts` has the list and the reasons):
  * a missing or unknown key is a 403, a rate or quota used up is a 429, a route that does not exist is a 404, and a gateway that cannot reach the function is a 503 with `Retry-After`.
- * Every other error that API Gateway makes is a 500. Whether that includes the 502 that a function which throws or times out gets is not verified (see `gatewayResponses`).
+ * A function that throws, runs past its timeout or is throttled by Lambda is the same 503 as a gateway that cannot reach it (seen in `dev`), and every other error that API Gateway makes is a 500 (see `gatewayResponses`).
  *
  * An `adminOnly` route needs `admin` in `keyKinds` and a handler that calls `requireAdminKey` with the id of the platform stack's admin key (see the README of `packages/shared`).
  *

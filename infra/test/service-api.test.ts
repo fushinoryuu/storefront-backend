@@ -442,6 +442,13 @@ describe('ServiceApi gateway responses', () => {
         expect(detailOf('INVALID_API_KEY')).toBe('The API key is missing or not allowed.');
     });
 
+    it('does not blame the API key for throttling, because the throttle of the stage also answers a route that needs no key', () => {
+        const detail = (JSON.parse(responses.find((candidate) => candidate.ResponseType === 'THROTTLED')!.ResponseTemplates['application/json']!.replaceAll('$context.requestId', 'id')) as { detail: string }).detail;
+
+        expect(detail).toBe('The request rate limit was reached. Try again in a moment.');
+        expect(detail).not.toMatch(/key/i);
+    });
+
     it('is the same in prod', () => {
         const prod = Object.values(setup('prod').template.findResources('AWS::ApiGateway::GatewayResponse')).map((resource) => resource.Properties);
 
