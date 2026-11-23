@@ -8,7 +8,7 @@ import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import type { Construct } from 'constructs';
 import { applyStandardTags } from '../aspects/standard-tags';
 import type { StageConfig } from '../config/stages';
-import { alarmTopicArnParameterName, apiKeyIdParameterName, apiKeyKinds, eventBusNameParameterName, stackName } from '../naming';
+import { alarmTopicArnParameterName, apiKeyIdParameterName, apiKeyKinds, eventBusName, eventBusNameParameterName, stackName } from '../naming';
 import { removalPolicyFor } from '../removal-policy';
 
 /**
@@ -23,7 +23,7 @@ export class PlatformStack extends Stack {
         applyStandardTags(this, config, 'Platform');
         const removalPolicy = removalPolicyFor(config);
 
-        const bus = new EventBus(this, 'EventBus');
+        const bus = new EventBus(this, 'EventBus', { eventBusName: eventBusName(config) });
         bus.applyRemovalPolicy(removalPolicy);
         // An archive with no filter on the account keeps every event of the bus, so events can be replayed while debugging.
         const archive = bus.archive('EventArchive', {

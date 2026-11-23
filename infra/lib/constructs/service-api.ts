@@ -87,14 +87,14 @@ export interface AddRouteOptions {
  *
  * The answers that API Gateway makes itself are `Problem`s of the shared spec, with the request id of the gateway as the correlation id (`gateway-responses.ts` has the list and the reasons):
  * a missing or unknown key is a 403, a rate or quota used up is a 429, a route that does not exist is a 404, and a gateway that cannot reach the function is a 503 with `Retry-After`.
- * Every other error that API Gateway makes is a 500. Whether that includes the 502 that a function which throws or times out gets is not verified (see `gatewayResponses`).
+ * A function that throws, runs past its timeout or is throttled by Lambda is the same 503 as a gateway that cannot reach it (seen in `dev`), and every other error that API Gateway makes is a 500 (see `gatewayResponses`).
  *
  * An `adminOnly` route needs `admin` in `keyKinds` and a handler that calls `requireAdminKey` with the id of the platform stack's admin key (see the README of `packages/shared`).
  *
  * A route works the CDK way: the handler is in the same stack, and the integration gets permission to invoke that function from this API and nothing else.
  *
  * @example
- * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0' }, keyKinds: ['tests', 'services'], alarmTopic });
+ * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0', v2: '0.1.0' }, keyKinds: ['tests', 'services'], alarmTopic });
  * api.addRoute('GET', '/customers/{customerId}', getCustomer); // GET /v1/customers/{customerId}
  * api.addRoute('POST', '/customers', createCustomer, { version: 'v2' }); // POST /v2/customers
  * api.addRoute('POST', '/shipments/{shipmentId}/advance', advanceShipment, { adminOnly: true }); // needs `admin` in keyKinds

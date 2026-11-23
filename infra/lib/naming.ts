@@ -16,6 +16,14 @@ export function launchDarklySdkKeySecretName(stage: StageName): string {
     return `${projectStackPrefix.toLowerCase()}-${stage}-secrets-launchdarkly-sdk-key`;
 }
 
+/**
+ * Name of the stage's event bus, `storefront-<stage>-platform-bus`. A bus has a name that is fixed, because CDK builds one from the construct path when it is given none,
+ * and that path has no stage in it: `dev` and `prod` share the account and region, so the second stage to deploy would be refused the name.
+ */
+export function eventBusName(config: StageConfig): string {
+    return `${projectStackPrefix.toLowerCase()}-${config.name}-platform-bus`;
+}
+
 /** Name of the `Database` stack this stage uses, which another stage may own. */
 export function databaseStackName(config: StageConfig): string {
     return stackName(stages[config.databaseStage], 'Database');

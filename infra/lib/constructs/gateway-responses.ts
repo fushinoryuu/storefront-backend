@@ -29,14 +29,16 @@ export interface GatewayResponseSpec {
  * - `INVALID_API_KEY`: a key that is missing or not known is a 403 `forbidden`.
  * - `THROTTLED` and `QUOTA_EXCEEDED`: a rate or a daily quota used up is a 429 `too-many-requests`.
  * - `MISSING_AUTHENTICATION_TOKEN`: a route that does not exist, or a method that the route does not have, is a 404 `not-found`. API Gateway makes it a 403, which says the key is wrong when it is the address.
- * - `INTEGRATION_TIMEOUT` and `INTEGRATION_FAILURE`: the gateway gave up waiting for the function, or could not reach it, is a 503 `service-unavailable` with `Retry-After`. The library project retries a 503.
- * - `DEFAULT_5XX`: every other error that API Gateway makes, such as a function that throws or runs past its own timeout, is a 500 `internal-error`, the same answer as an error that a handler does not handle.
- *   Not verified: the documentation of the response types does not say which of them API Gateway uses when a Lambda function times out or throws. It answered 502 `Internal server error` in `dev`. Whether `DEFAULT_5XX` replaces that 502 is checked on a deployed API.
- *   `DEFAULT_5XX` sets the status of every 5xx that has no response of its own, which is why the two integration responses above are set on their own.
+ * - `INTEGRATION_TIMEOUT`: the gateway gave up waiting after its own 29 seconds, which is a 503 `service-unavailable` with `Retry-After`. The library project retries a 503.
+ * - `INTEGRATION_FAILURE`: seen in `dev` on 2026-11-22 for every failure of the Lambda integration: a function that runs past its own timeout, a function that throws, and a function that Lambda throttles
+ *   (this account allows 10 concurrent executions). API Gateway used to answer all of them with a 502 `Internal server error`. It is also a 503 `service-unavailable` with `Retry-After`, so a caller cannot tell a crash
+ *   from a timeout, and a function that throws is retried like one that is slow. A handler that catches its own errors answers a 500 itself and never reaches this response.
+ * - `DEFAULT_5XX`: every other error that API Gateway makes, such as a configuration error, is a 500 `internal-error`, the same answer as an error that a handler does not handle.
+ *   It was not seen in `dev`: the Lambda failures above do not use it. It sets the status of every 5xx that has no response of its own, which is why the two integration responses above are set on their own.
  */
 export const gatewayResponses: readonly GatewayResponseSpec[] = [
     { type: ResponseType.INVALID_API_KEY, kind: problemKinds.forbidden, detail: 'The API key is missing or not allowed.' },
-    { type: ResponseType.THROTTLED, kind: problemKinds.tooManyRequests, detail: 'The rate limit for this API key was reached.' },
+    { type: ResponseType.THROTTLED, kind: problemKinds.tooManyRequests, detail: 'The request rate limit was reached. Try again in a moment.' },
     { type: ResponseType.QUOTA_EXCEEDED, kind: problemKinds.tooManyRequests, detail: 'The daily quota for this API key was used up.' },
     { type: ResponseType.MISSING_AUTHENTICATION_TOKEN, kind: problemKinds.notFound, detail: 'There is no such route.' },
     { type: ResponseType.INTEGRATION_TIMEOUT, kind: problemKinds.serviceUnavailable, detail: 'The service did not answer in time.', headers: { 'retry-after': `'${retryAfterSeconds}'` } },
