@@ -35,7 +35,7 @@ Two stacks belong to no stage: `Storefront-Secrets` (the LaunchDarkly SDK key of
 
 ## ServiceFunction
 
-A Lambda function with what every service function needs: arm64 on Node.js 24, bundled by esbuild with source maps, X-Ray tracing on, its own role and its own log group with the retention of the stage, and the standard environment variables (`STAGE`, `SERVICE_NAME`, the log level, and `EVENT_BUS_NAME` when you pass the bus). It also gets the three alarms of `LambdaAlarms`.
+A Lambda function with what every service function needs: arm64 on Node.js 26, bundled by esbuild with source maps, X-Ray tracing on, its own role and its own log group with the retention of the stage, and the standard environment variables (`STAGE`, `SERVICE_NAME`, the log level, and `EVENT_BUS_NAME` when you pass the bus). It also gets the three alarms of `LambdaAlarms`.
 
 The timeout and the alarm topic are required, so every function has a timeout that someone chose and alarms that notify somebody. Permissions are given the CDK way and stay as narrow as the resource. Never add a wildcard.
 

@@ -1,6 +1,6 @@
 # 0010: Observability toolkit
 
-Status: accepted on 2026-11-04. Amended on 2026-11-10: the Node.js check is done, and the Logger supports the runtime (see Consequences). Amended on 2026-11-21: the Logger is a `^` range, no longer an exact version.
+Status: accepted on 2026-11-04. Amended on 2026-11-10: the Node.js check is done, and the Logger supports the runtime (see Consequences). Amended on 2026-11-21: the Logger is a `^` range, no longer an exact version. Amended on 2026-11-23: the project moved to Node.js 26 and the Logger was checked on it (see Consequences).
 
 ## Context
 
@@ -25,4 +25,5 @@ Use Powertools for the Logger, the Tracer and Metrics, installed as npm packages
 - The library adds to the bundle of every function. Measure the bundle size and cold start when the first function is deployed (the throwaway service in Phase 1).
 - Custom metrics are billed. Keep the list short: orders placed, orders cancelled, shipments created, transitions and end-to-end lag.
 - Node.js support, checked on 2026-11-10 when the Logger was installed: its `package.json` has no `engines` field, so the support is read from the project. The Powertools repository runs the unit tests of every package on Node.js 22 and 24 (`reusable-run-linting-check-and-unit-tests.yml`), its README badge lists 22 and 24, and its root `package.json` requires `>=22`. This repository runs Node.js 24 (`.nvmrc`), which Lambda offers as `nodejs24.x` until 30 April 2028. This was checked with `@aws-lambda-powertools/logger` 2.36.0. The dependency is a `^` range (`^2.36.0`), so the lockfile fixes the installed version and Dependabot proposes each new one. Check again when the Lambda runtime moves to a newer Node.js.
+- Checked again on 2026-11-23 for the move to Node.js 26 (`nodejs26.x`, offered by Lambda since 2026-11-20): release 2.36.0 ran its unit tests on Node.js 22 and 24 only, and release 2.37.0 added 26 to the matrix of `reusable-run-linting-check-and-unit-tests.yml` (22, 24 and 26). The README badge of the repository still lists 22 and 24, and the root `package.json` still requires `>=22`. The lockfile was updated from 2.36.0 to 2.37.0 for this reason, and the logger tests of this repository pass on Node.js 26. Check again when the Lambda runtime moves to a newer Node.js.
 - Source: [Powertools for AWS Lambda (TypeScript)](https://docs.aws.amazon.com/powertools/typescript/latest/).

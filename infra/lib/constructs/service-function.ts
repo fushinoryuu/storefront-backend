@@ -39,14 +39,13 @@ export interface ServiceFunctionProps {
 
 /**
  * A Lambda function with what every service function needs, so a stack only says what is different about its own:
- * arm64 on Node.js 24, bundled by esbuild with source maps, X-Ray tracing on, and its own log group with the retention of the stage (conventions: Logs).
+ * arm64 on Node.js 26, bundled by esbuild with source maps, X-Ray tracing on, and its own log group with the retention of the stage (conventions: Logs).
  * The bundler is the `esbuild` of the repo's `devDependencies`, pinned to an exact version. `allowScripts` in `package.json` names the same version, so a bump changes both.
  * It gets these environment variables: `STAGE`, `SERVICE_NAME` (lowercase), `EVENT_BUS_NAME` (when `eventBusName` is given), `POWERTOOLS_SERVICE_NAME` and `POWERTOOLS_LOG_LEVEL` for the logger, and `NODE_OPTIONS` so that stack traces use the source maps.
  * It also gets the three alarms of `LambdaAlarms`, as `alarms`, which notify `alarmTopic`.
  *
  * It is a `NodejsFunction`, so permissions are given the CDK way and stay as narrow as the resource: `table.grantReadData(fn)`, `secret.grantRead(fn)`, `bus.grantPutEventsTo(fn)`.
  * Never add a policy statement with a wildcard. The one wildcard it has is X-Ray's, which does not support a resource (acknowledged in this construct).
- * The other acknowledgement is the cdk-nag rule for the latest runtime: it stays until the project moves to a newer Node.js (see the comment where it is made).
  *
  * @example
  * const hello = new ServiceFunction(this, 'Hello', {
@@ -78,7 +77,7 @@ export class ServiceFunction extends NodejsFunction {
         super(scope, id, {
             entry: props.entry,
             handler: props.handler,
-            runtime: Runtime.NODEJS_24_X,
+            runtime: Runtime.NODEJS_26_X,
             architecture: Architecture.ARM_64,
             memorySize: props.memorySize ?? defaultMemorySize,
             timeout: props.timeout,
@@ -96,12 +95,6 @@ export class ServiceFunction extends NodejsFunction {
                 // Node ignores the source maps unless it is told to use them, and then a stack trace would point into the bundle.
                 NODE_OPTIONS: '--enable-source-maps'
             }
-        });
-        // cdk-nag asks for the newest runtime that `aws-cdk-lib` knows, and a release of the library that adds one makes this finding appear on every function.
-        // Node.js 24 is the newest runtime that Lambda offers for production: the Node.js 26 runtime was in preview on 2026-11-19, without the Lambda SLA or support.
-        Validations.of(this).acknowledge({
-            id: 'AwsSolutions::AwsSolutions-L1',
-            reason: 'Node.js 24 is the runtime of the project, and the newer runtime of aws-cdk-lib is not for production yet: Lambda has the Node.js 26 runtime in preview, without its SLA or support. Remove this acknowledgement in the change that moves the project to Node.js 26.'
         });
         this.alarms = new LambdaAlarms(this, 'Alarms', { function: this, timeout: props.timeout, alarmTopic: props.alarmTopic });
     }

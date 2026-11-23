@@ -76,8 +76,7 @@ Dependabot (`.github/dependabot.yml`) checks the npm packages and the GitHub Act
   - runs the seven commands under [Pull requests](#pull-requests). CI runs them too, and the reviewer reads the result.
 - A grouped pull request holds many packages, so the reviewer reads the list of packages in it.
 - TypeScript stays on 6.x (decision 0004), and the `ignore` rule in `dependabot.yml` keeps Dependabot from proposing 7. It names when to remove the rule.
-- `@types/node` stays on the major of the Node.js version the code runs on (`.nvmrc`, `engines` and the Lambda runtime), because a newer major lets code use APIs that the runtime does not have while the type check passes. A rule in `dependabot.yml` ignores its major updates, and the change that moves the project to a newer Node.js removes the rule.
-- A new release of `aws-cdk-lib` can add a Lambda runtime, and cdk-nag then fails a function for not using the newest one. The fix is to move to that runtime when Lambda offers it for production. Until then, `ServiceFunction` acknowledges the rule with the reason written next to it, and the move removes the acknowledgement.
+- `@types/node` stays on the major of the Node.js version the code runs on (`.nvmrc`, `engines` and the Lambda runtime), because a newer major lets code use APIs that the runtime does not have while the type check passes. A rule in `dependabot.yml` ignores its major updates, and it stays: the change that moves the project to a newer Node.js moves `@types/node` by hand, in the same change.
 - Fix an alert by updating the package. When no update exists, or the package is a dev tool that reads only our own files, dismiss the alert with a written reason, so the list of open alerts stays short and every entry in it needs a decision.
 
 ## Repository settings

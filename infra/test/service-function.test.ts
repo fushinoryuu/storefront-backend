@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { App, Duration, Stack } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
@@ -45,7 +45,7 @@ describe.each(stageNames)('ServiceFunction in %s', (stage) => {
     const template = build(stage);
 
     it('runs on arm64 and a current Node.js, with a modest amount of memory', () => {
-        template.hasResourceProperties('AWS::Lambda::Function', { Architectures: ['arm64'], Runtime: 'nodejs24.x', MemorySize: 256, Handler: 'index.handler' });
+        template.hasResourceProperties('AWS::Lambda::Function', { Architectures: ['arm64'], Runtime: 'nodejs26.x', MemorySize: 256, Handler: 'index.handler' });
     });
 
     it('has X-Ray tracing on', () => {
@@ -213,5 +213,17 @@ describe('ServiceFunction bundling', () => {
         const bundles = readdirSync(directory).filter((name) => name.startsWith('asset.') && existsSync(join(directory, name, 'index.js')));
         expect(bundles).toHaveLength(1);
         expect(existsSync(join(directory, bundles[0]!, 'index.js.map'))).toBe(true);
+    }, 60000);
+
+    it('bundles for Node.js 26, the runtime of the function: esbuild keeps `using`, which it rewrites for an older target', () => {
+        const app = new App();
+        const stack = new Stack(app, 'Demo');
+        new ServiceFunction(stack, 'Hello', { config: stages.dev, service: 'Customers', entry: 'infra/test/fixtures/disposable-handler.js', timeout: Duration.seconds(10), alarmTopic: topicIn(stack) });
+        const { directory } = app.synth();
+
+        const [bundle] = readdirSync(directory).filter((name) => name.startsWith('asset.') && existsSync(join(directory, name, 'index.js')));
+        const code = readFileSync(join(directory, bundle!, 'index.js'), 'utf8');
+        expect(code).toContain('using resource');
+        expect(code).not.toContain('__using');
     }, 60000);
 });

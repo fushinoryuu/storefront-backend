@@ -6,7 +6,7 @@ The plan, decisions and phases are in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Requirements
 
-- Node.js 24 (the version in `.nvmrc`)
+- Node.js 26 (the version in `.nvmrc`)
 - npm 11 or newer
 
 ## Commands
