@@ -9,7 +9,7 @@ import { LambdaAlarms, durationAlarmShareOfTimeout } from '../lib/constructs/lam
 function build(options: { withTopic: boolean; timeout?: Duration }) {
     const stack = new Stack(new App());
     const timeout = options.timeout ?? Duration.seconds(10);
-    const fn = new LambdaFunction(stack, 'Fn', { runtime: Runtime.NODEJS_24_X, handler: 'index.handler', code: Code.fromInline('exports.handler = async () => {};'), timeout });
+    const fn = new LambdaFunction(stack, 'Fn', { runtime: Runtime.NODEJS_26_X, handler: 'index.handler', code: Code.fromInline('exports.handler = async () => {};'), timeout });
     const alarmTopic = options.withTopic ? new Topic(stack, 'Topic') : undefined;
     new LambdaAlarms(stack, 'Alarms', { function: fn, timeout, alarmTopic });
     return Template.fromStack(stack);
