@@ -2,6 +2,8 @@
 
 The orders service is where DynamoDB design, idempotency, concurrency control, and event publishing come together. It also shows both communication styles: a synchronous call to the customers API, and asynchronous events to and from shipping.
 
+Built in four slices (see Slices in [ROADMAP.md](../ROADMAP.md)). Slice A takes tasks 1 and 2 and the placement of task 3 without the customer check, with their tests. Slice B adds the customer check. Slice C adds the outbox of task 5. Slice D adds tasks 4 and 6, and releases the spec (task 7) as v1.0.0. Task 8 grows with each slice.
+
 ## Goals
 
 - A DynamoDB table design driven by access patterns, not by entities.

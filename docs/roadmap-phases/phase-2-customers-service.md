@@ -2,6 +2,8 @@
 
 A relational service: customer profiles with addresses, backed by Aurora PostgreSQL Serverless v2. Relational data is the point. Unique emails, foreign keys, and transactions are reasons to use a relational database here, and the service should show them.
 
+Built in slice B, after the orders skeleton, so that the customers API is deployed and called in `dev` before shipping starts. It takes tasks 1 to 5, 7 and 8. Task 6 (optional) is taken when something needs it. See Slices in [ROADMAP.md](../ROADMAP.md).
+
 ## Goals
 
 - A well-designed schema with migrations that run automatically on deploy.

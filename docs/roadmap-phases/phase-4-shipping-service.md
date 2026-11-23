@@ -2,6 +2,8 @@
 
 The shipping service has almost no request-driven behavior. It reacts to orders, runs a simulated shipment lifecycle on its own, and reports progress back through events. This is where reliable messaging practices matter: idempotency, dead-letter queues, ordering, and observability.
 
+Built in slices C and D (see Slices in [ROADMAP.md](../ROADMAP.md)). Slice C takes tasks 1, 2 (the `OrderPlaced` consumer only) and the read endpoints of task 5. Slice D takes the rest.
+
 ## Goals
 
 - A consumer that turns `OrderPlaced` events into shipments, safely, even with duplicate or poisoned messages.

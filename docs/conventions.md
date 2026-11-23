@@ -47,7 +47,7 @@ Every error response from every service has the shape of the `Problem` schema in
 
 ## Pull requests
 
-- One ticket is one pull request, and it stays reviewable: roughly 500 changed lines or fewer, not counting lockfiles.
+- One ticket is one pull request, and it stays reviewable. About 500 changed lines, not counting lockfiles, is the guide: a change that will pass it is raised before it is built, and the maintainer decides whether to split it or go over. The description lists what the pull request changes and does not state its size.
 - The title starts with the Jira key: `BEP-15: Add spec foundations`. The description starts with a link to the ticket and follows `.github/pull_request_template.md`.
 - Before opening it, run what CI runs:
 

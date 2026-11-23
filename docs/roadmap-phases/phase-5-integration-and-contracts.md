@@ -2,6 +2,8 @@
 
 Each service is tested on its own. This phase proves they work together, proves each one honors its published contract, and prepares the handoff to the library project, whose generated clients are only as good as the specs published here.
 
+The end-to-end suite is not written in one go here. It starts in slice A and grows with every slice, so tasks 1 and 2 are built slice by slice (see Slices in [ROADMAP.md](../ROADMAP.md)), and a box is ticked when its test exists and passes against `dev`. Tasks 3 to 7 come after the slices.
+
 ## Goals
 
 - End-to-end flows across all three services, including failure cases.
