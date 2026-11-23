@@ -67,10 +67,12 @@ Wraps a REST API.
 - [ ] Access logging to a log group, throttling set low by default, and a stage per deployment stage.
   - [x] Done: the construct sets all three, with tests and cdk-nag. The log group keeps logs for the retention of the stage, a line holds the declared route and the API key id and never the real path (so no id is logged), the stage throttles every method at the `api.defaultThrottle` of the stage config, and the endpoint is Regional, set explicitly (decision 0003).
   - [ ] Remaining: after the first deploy of an API, a log line seen in its log group in `dev`. The account role that API Gateway writes with is deployed (see the API Gateway logging role item under Others).
-- [ ] A helper to add a route with a Lambda integration in one call, with an `adminOnly` flag and an API version option (default `v1`) that puts the route under `/v<N>`. One API serves several versions side by side, so `/v1` and `/v2` routes can coexist. Usage plans apply per stage, not per route, so admin-only routes are enforced in the handler by comparing the caller's key id from the request context with the admin key id.
+- [x] A helper to add a route with a Lambda integration in one call, with an `adminOnly` flag and an API version option (default `v1`) that puts the route under `/v<N>`. One API serves several versions side by side, so `/v1` and `/v2` routes can coexist. Usage plans apply per stage, not per route, so admin-only routes are enforced in the handler by comparing the caller's key id from the request context with the admin key id.
   - [x] Done: `addRoute(method, path, handler, { version })`, which puts the route under `/v<N>`, gives the integration permission to invoke that function from this API only, and refuses `v0`, a version that the specs do not list, and a path that is malformed or already has a version.
-  - [ ] Remaining: the `adminOnly` flag.
+  - [x] Done: the `adminOnly` flag. It refuses an admin-only route on an API that does not accept the `admin` key, and `requireAdminKey` in `packages/shared` makes the handler refuse every other key id (403 in the shared error shape) and a request with none. Tests cover the admin key, the `tests` and `services` keys, no key id, and a route without the flag. The shared README says how a function gets the admin key id.
+  - [ ] Remaining: that the handler sees the key id of a real request, and that the `tests` key is refused on a deployed admin-only route (the hello service check).
 - [ ] Customized gateway responses so missing or invalid keys (403) and throttling (429) use the shared error shape (`Problem`).
+  - [x] Done: `ServiceApi` makes seven gateway responses, each a `Problem` of the shared spec with the request id of the gateway as the correlation id: 403 for a missing or unknown key, 429 for throttling and for a used-up quota, 404 for a route that does not exist, 503 with `Retry-After` for a gateway that cannot reach the function, and 500 for every other error API Gateway makes. A test checks each body template against the generated `Problem` schema. The list and the reasons are in `infra/lib/constructs/gateway-responses.ts`.
 - [ ] Built-in `GET /v0/health` (unauthenticated, no dependencies) and `GET /v0/version` (build id, stage, and `specVersions` listing every prefix the API serves). Their response shapes come from the shared spec components.
   - [x] Done: `ServiceApi` adds both routes with no API key, and one function from `packages/shared` (`operations.ts`, an extra `ServiceFunction` per API) answers them. Its answers are tested against the schemas generated from the three `/v0` specs. The build id is the `BUILD_ID` variable, else the short git commit (with `-dirty` when the working tree has changes), else `local`. It is read when the app is built, and a deploy workflow is to set `BUILD_ID`. The function has the alarms of `ServiceFunction`, which notify the alarm topic of the API.
   - [ ] Remaining: both routes answering in `dev`, after the first deploy of an API (the hello service check).
@@ -131,15 +133,15 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 
 ## Quality gates
 
-- [ ] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
+- [x] CDK template tests with the assertions module, using a small sample stack for each construct: assert the important properties (tracing on, retention set, DLQ present, API key required on protected methods) rather than snapshotting everything.
   - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in routes and its alarms, including cdk-nag.
-  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag and gateway responses), as it is built.
+  - [x] Done: the gateway responses and the `adminOnly` flag of `ServiceApi`.
 - [ ] Optionally a snapshot test per stack to make unintended infrastructure changes visible in review.
 - [x] cdk-nag runs in the test suite and fails on unsuppressed findings (`infra/test/nag.test.ts`, and every `createApp` test synthesizes with the pack on).
-- [ ] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
+- [x] A test that error responses (including the customized gateway responses) and the health and version responses validate against the schemas in the shared spec components.
   - [x] Done: the error kinds of `packages/shared` are checked against the `Problem` schema and the response examples of the shared spec components.
   - [x] Done: the health and version responses (`packages/shared/test/operations.test.ts`).
-  - [ ] Remaining: the customized gateway responses (with `ServiceApi`).
+  - [x] Done: the customized gateway responses (`infra/test/service-api.test.ts`).
 - [x] Unit tests for the shared packages, including the error mapping, the envelope validation, the idempotency helper, the HTTP client's key handling and timeout behavior, and the flag client's defaults.
 - [x] A template test that `ServiceApi` can serve `/v1` and `/v2` routes side by side under one API.
 
@@ -152,9 +154,9 @@ LaunchDarkly, on its free Developer plan, instead of AWS AppConfig (it is the mo
 ## Tasks summary
 
 - [x] Build the platform stack and deploy it to `dev`.
-- [ ] Build each construct with tests.
+- [x] Build each construct with tests.
   - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` with its built-in health and version routes and its alarms, with template tests and cdk-nag.
-  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag and customized gateway responses).
+  - [x] Done: the rest of `ServiceApi`, the `adminOnly` flag and the customized gateway responses.
 - [ ] Build `shared` and `events` packages with tests, including the feature flag client and its decision record.
   - [x] Done: both packages with their tests, the flag client, and the decision record.
   - [ ] Remaining: the service connections measurement on `dev` that the decision record waits for (see Feature flags above).

@@ -117,9 +117,9 @@ The orders service calls the customers API to validate a customer when an order 
 - [x] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
   - [x] Built, tested and deployed to `dev` on 2026-11-18, with the SSM values listed and the alarm email confirmed. The `prod` deploy comes with the hello service check.
 - [x] Script to retrieve key values after deploy
-- [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
+- [x] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
   - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` (routes under `/v<N>` with an API key, usage plans, access logs, base URL, built-in health and version routes, 5xx, 4xx and latency alarms), with tests and cdk-nag. `ServiceFunction`, `EventConsumer` and `ServiceApi` require the alarm topic
-  - [ ] Remaining: the rest of `ServiceApi` (the `adminOnly` flag and customized gateway responses)
+  - [x] Done: the rest of `ServiceApi`: the `adminOnly` flag, and gateway responses that answer with the shared error shape. How API Gateway answers a function that throws or times out, and the header of the correlation id, are checked on a deployed API (the hello service check)
 - [x] API Gateway logging role: the account-wide role that access logs need, in its own stack that belongs to no stage (`Storefront-ApiGatewayAccount`). Deployed on 2026-11-20, and `aws apigateway get-account` shows its role
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
 - [ ] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
@@ -129,9 +129,9 @@ The orders service calls the customers API to validate a customer when an order 
   - [x] Done: `ServiceApi` serves `/v1` and `/v2` routes side by side under one API, and refuses `v0` and a version that its specs do not list
   - [x] Done: `ServiceApi` adds `GET /v0/health` and `GET /v0/version` with no API key, answered by one shared function, and tests check their responses against the `/v0` specs
   - [ ] Remaining: both routes answering in `dev`, after the first deploy of an API
-- [ ] CDK template tests and cdk-nag in the build
+- [x] CDK template tests and cdk-nag in the build
   - [x] Done: cdk-nag runs on every stack, and the platform stack, `ServiceFunction`, the Lambda alarms, `EventConsumer` and `ServiceApi` with its built-in routes and alarms have template tests
-  - [ ] Remaining: tests for the rest of `ServiceApi` (the `adminOnly` flag and gateway responses), as it is built
+  - [x] Done: tests for the `adminOnly` flag and the gateway responses of `ServiceApi`
 - [ ] Dependabot version updates and security alerts
   - [x] Done: the configuration for npm and GitHub Actions, the conventions for its pull requests, and the lockfile updates an update can fix
   - [ ] Remaining: the first run and its CI check, and the alerts open on the first day, each fixed or dismissed with a reason
