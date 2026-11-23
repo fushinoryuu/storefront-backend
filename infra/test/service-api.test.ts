@@ -4,6 +4,7 @@ import { EventBus } from 'aws-cdk-lib/aws-events';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import type { ITopic } from 'aws-cdk-lib/aws-sns';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { zProblem } from '../../generated/customers-service-v0/zod.gen';
 import { applyStandardTags } from '../lib/aspects/standard-tags';
 import { stageNames, stages } from '../lib/config/stages';
 import type { StageName } from '../lib/config/stages';
@@ -11,6 +12,7 @@ import { ServiceApi, defaultApiVersion } from '../lib/constructs/service-api';
 import type { ServiceApiProps } from '../lib/constructs/service-api';
 import { ServiceFunction } from '../lib/constructs/service-function';
 import { apiKeyIdParameterName, apiKeyKinds, ssmParameterName } from '../lib/naming';
+import type { ApiKeyKind } from '../lib/naming';
 import { applyNag } from '../lib/nag';
 
 const entry = 'infra/test/fixtures/handler.ts';
@@ -381,5 +383,98 @@ describe('ServiceApi and cdk-nag', () => {
         applyNag(app, []);
 
         expect(() => app.synth()).not.toThrow();
+    });
+});
+
+describe('ServiceApi gateway responses', () => {
+    // What API Gateway answers by itself, and what the shared spec says each answer is (specs/shared/components.yaml). Written out here, so a change in `gatewayResponses` shows up as a failure.
+    const expected: [string, number, string][] = [
+        ['INVALID_API_KEY', 403, 'forbidden'],
+        ['THROTTLED', 429, 'too-many-requests'],
+        ['QUOTA_EXCEEDED', 429, 'too-many-requests'],
+        ['MISSING_AUTHENTICATION_TOKEN', 404, 'not-found'],
+        ['INTEGRATION_TIMEOUT', 503, 'service-unavailable'],
+        ['INTEGRATION_FAILURE', 503, 'service-unavailable'],
+        ['DEFAULT_5XX', 500, 'internal-error']
+    ];
+    const { template } = setup('dev');
+    const responses = Object.values(template.findResources('AWS::ApiGateway::GatewayResponse')).map((resource) => resource.Properties as GatewayResponseProperties);
+    const sampleRequestId = '6f0d6b1c-0c46-4d4c-b0b5-0c8d1f3f8f11';
+
+    interface GatewayResponseProperties {
+        ResponseType: string;
+        StatusCode: string;
+        ResponseParameters: Record<string, string>;
+        ResponseTemplates: Record<string, string>;
+    }
+
+    it('has exactly these responses, once each', () => {
+        expect(responses.map((response) => response.ResponseType).sort()).toEqual(expected.map(([type]) => type).sort());
+    });
+
+    it.each(expected)('answers %s with %i and a body that is a Problem of kind %s, whose correlation id is the request id of the gateway', (type, status, slug) => {
+        const response = responses.find((candidate) => candidate.ResponseType === type)!;
+        const template = response.ResponseTemplates['application/json']!;
+        // API Gateway replaces the variable with the request id before it answers, so the test does the same.
+        const body = JSON.parse(template.replaceAll('$context.requestId', sampleRequestId)) as unknown;
+
+        expect(response.StatusCode).toBe(String(status));
+        expect(template).toContain('"correlationId":"$context.requestId"');
+        expect(zProblem.parse(body)).toMatchObject({ type: `https://storefront.example/problems/${slug}`, status, correlationId: sampleRequestId });
+    });
+
+    it('gives the correlation id header the same value as the body, on every response', () => {
+        for (const response of responses) expect(response.ResponseParameters['gatewayresponse.header.x-correlation-id'], response.ResponseType).toBe('context.requestId');
+    });
+
+    it('tells the caller when to try again after a 503, and after no other response', () => {
+        for (const response of responses) {
+            const retryAfter = response.ResponseParameters['gatewayresponse.header.retry-after'];
+            if (response.StatusCode === '503') expect(retryAfter, response.ResponseType).toBe("'5'");
+            else expect(retryAfter, response.ResponseType).toBeUndefined();
+        }
+    });
+
+    it('gives the 500 and the 403 no detail that shows how the service works inside, only the spec wording', () => {
+        const detailOf = (type: string) => (JSON.parse(responses.find((candidate) => candidate.ResponseType === type)!.ResponseTemplates['application/json']!.replaceAll('$context.requestId', 'id')) as { detail?: string }).detail;
+
+        expect(detailOf('DEFAULT_5XX')).toBeUndefined(); // as the InternalError response of the shared spec
+        expect(detailOf('INVALID_API_KEY')).toBe('The API key is missing or not allowed.');
+    });
+
+    it('is the same in prod', () => {
+        const prod = Object.values(setup('prod').template.findResources('AWS::ApiGateway::GatewayResponse')).map((resource) => resource.Properties);
+
+        expect(prod).toEqual(responses);
+    });
+});
+
+describe('ServiceApi adminOnly routes', () => {
+    const adminRoute = (api: ServiceApi, fn: ServiceFunction) => api.addRoute('POST', '/shipments/{shipmentId}/advance', fn, { adminOnly: true });
+
+    it('adds the route when the API accepts the admin key, and the route still needs an API key', () => {
+        const { template } = setup('dev', { routes: adminRoute });
+
+        expect(methodsOf(template)['POST /v1/shipments/{shipmentId}/advance']).toBe(true);
+    });
+
+    it('is refused when the API does not accept the admin key, and added when it does', () => {
+        const attempt = (keyKinds: readonly ApiKeyKind[]) => () => build('dev', { overrides: { keyKinds }, routes: adminRoute });
+
+        expect(attempt(['tests', 'services'])).toThrow(/does not accept the admin key/);
+        expect(attempt(['tests'])).toThrow(/does not accept the admin key/);
+        expect(attempt(['admin'])).not.toThrow();
+        expect(attempt(['tests', 'services', 'admin'])).not.toThrow();
+    });
+
+    it('leaves a route without the flag as it was, whether the flag is absent or false', () => {
+        const plain = (api: ServiceApi, fn: ServiceFunction) => api.addRoute('POST', '/customers', fn);
+        const withFalse = (api: ServiceApi, fn: ServiceFunction) => api.addRoute('POST', '/customers', fn, { adminOnly: false });
+
+        expect(setup('dev', { routes: withFalse }).template.toJSON()).toEqual(setup('dev', { routes: plain }).template.toJSON());
+    });
+
+    it('lets a route without the flag be added to an API that does not accept the admin key', () => {
+        expect(() => build('dev', { overrides: { keyKinds: ['tests'] }, routes: (api, fn) => api.addRoute('GET', '/customers', fn) })).not.toThrow();
     });
 });

@@ -46,7 +46,31 @@ The error body is the `Problem` schema of `specs/shared/components.yaml`, and a 
 | `ServiceUnavailableError(detail, retryAfterSeconds?)` | 503    | `service-unavailable` (with `Retry-After`) |
 | anything else, including a plain `Error`              | 500    | `internal-error`                           |
 
-A kind of problem that only one service has is a `DomainError` with its own `ProblemKind`, for example `new DomainError({ slug: 'unknown-customer', title: 'Unknown customer', status: 422 }, 'There is no customer with this id.')` in orders. The 429 for a throttled key is produced by API Gateway, so there is no class for it here. An error that is not a `DomainError` is answered with a 500 and no detail, so its message does not reach the caller, and it should be logged before it is returned.
+A kind of problem that only one service has is a `DomainError` with its own `ProblemKind`, for example `new DomainError({ slug: 'unknown-customer', title: 'Unknown customer', status: 422 }, 'There is no customer with this id.')` in orders. The 429 for a throttled key is produced by API Gateway (`ServiceApi` customizes its gateway responses to `Problem`s, with the request id of the gateway as the correlation id), so there is no class for it here, only the `tooManyRequests` kind. An error that is not a `DomainError` is answered with a 500 and no detail, so its message does not reach the caller, and it should be logged before it is returned.
+
+## Admin-only routes
+
+API Gateway cannot let only one key call one route, because a usage plan covers the whole stage (decision 0005). A route added with `addRoute(..., { adminOnly: true })` on a `ServiceApi` that lists `admin` in `keyKinds` therefore checks the key itself. Call `requireAdminKey` first in its handler. It compares the id of the key in the request context with the id of the platform stack's `admin` key, and throws `ForbiddenError` (403) for any other key id, or for none:
+
+```ts
+import { requireAdminKey } from '../../../packages/shared/src'; // relative to a file in services/<service>/src
+
+export async function handler(event: APIGatewayProxyEvent, context: Context) {
+  requireAdminKey(event, process.env.ADMIN_API_KEY_ID); // inside the try of the handler, so problemResponse answers it
+  // ...
+}
+```
+
+The function gets the id from the SSM parameter of the platform stack, as an environment variable that the service stack sets when it is deployed. It is the id of the key and never the value:
+
+```ts
+new ServiceFunction(this, 'AdvanceShipment', {
+  // ...
+  environment: { ADMIN_API_KEY_ID: StringParameter.valueForStringParameter(this, apiKeyIdParameterName(config, 'admin')) }
+});
+```
+
+A platform stack that is destroyed and deployed again has a new admin key, so deploy the service stack again after it. An `ADMIN_API_KEY_ID` that is missing is a mistake of the service, so `requireAdminKey` throws a plain `Error` (a 500 without detail) and does not let a request with no key id match it.
 
 ## Health and version
 

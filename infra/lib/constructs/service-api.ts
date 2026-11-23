@@ -14,6 +14,7 @@ import { removalPolicyFor } from '../removal-policy';
 import { resolveBuildId } from '../config/build-id';
 import { operationsEnvironment } from '../../../packages/shared/src/operations';
 import { ApiAlarms } from './api-alarms';
+import { addGatewayResponses } from './gateway-responses';
 import { ServiceFunction } from './service-function';
 
 /** The services that expose an API. The platform and the database do not. */
@@ -57,6 +58,11 @@ export interface ServiceApiProps {
 export interface AddRouteOptions {
     /** The prefix the route goes under, `v1` or `v2`. Defaults to `v1`. It must be one of the `specVersions` of the API. */
     readonly version?: string;
+    /**
+     * The route is for the `admin` key only. API Gateway cannot enforce that (usage plans apply to the whole stage), so the handler must call `requireAdminKey` from `packages/shared`.
+     * The flag makes sure the handler can see the key: the API must list `admin` in `keyKinds`, or the gateway refuses that key before the handler runs, and `addRoute` throws.
+     */
+    readonly adminOnly?: boolean;
 }
 
 /**
@@ -78,7 +84,12 @@ export interface AddRouteOptions {
  *
  * It does not create the account-wide role that API Gateway needs to write access logs (`cloudWatchRole` is off). That role is set once for the account and region by its own stack,
  * and an API with access logs does not deploy until it exists.
- * It adds no gateway responses.
+ *
+ * The answers that API Gateway makes itself are `Problem`s of the shared spec, with the request id of the gateway as the correlation id (`gateway-responses.ts` has the list and the reasons):
+ * a missing or unknown key is a 403, a rate or quota used up is a 429, a route that does not exist is a 404, and a gateway that cannot reach the function is a 503 with `Retry-After`.
+ * Every other error that API Gateway makes is a 500. Whether that includes the 502 that a function which throws or times out gets is not verified (see `gatewayResponses`).
+ *
+ * An `adminOnly` route needs `admin` in `keyKinds` and a handler that calls `requireAdminKey` with the id of the platform stack's admin key (see the README of `packages/shared`).
  *
  * A route works the CDK way: the handler is in the same stack, and the integration gets permission to invoke that function from this API and nothing else.
  *
@@ -86,6 +97,7 @@ export interface AddRouteOptions {
  * const api = new ServiceApi(this, 'Api', { config, service: 'Customers', specVersions: { v0: '0.2.0', v1: '0.3.0' }, keyKinds: ['tests', 'services'], alarmTopic });
  * api.addRoute('GET', '/customers/{customerId}', getCustomer); // GET /v1/customers/{customerId}
  * api.addRoute('POST', '/customers', createCustomer, { version: 'v2' }); // POST /v2/customers
+ * api.addRoute('POST', '/shipments/{shipmentId}/advance', advanceShipment, { adminOnly: true }); // needs `admin` in keyKinds
  */
 export class ServiceApi extends Construct {
     readonly api: RestApi;
@@ -100,6 +112,7 @@ export class ServiceApi extends Construct {
     /** The 5xx, 4xx and latency alarms of the API. The alarms of `operationsFunction` are its own (`operationsFunction.alarms`). */
     readonly alarms: ApiAlarms;
     private readonly versions: ReadonlySet<string>;
+    private readonly keyKinds: ReadonlySet<ApiKeyKind>;
 
     constructor(scope: Construct, id: string, props: ServiceApiProps) {
         super(scope, id);
@@ -116,6 +129,7 @@ export class ServiceApi extends Construct {
             if (!/^v\d+$/.test(prefix)) throw new Error(`The spec version prefix "${prefix}" must look like v1: a "v" and a number.`);
         }
         this.versions = new Set(prefixes);
+        this.keyKinds = new Set(keyKinds);
 
         this.accessLogGroup = new LogGroup(this, 'AccessLogs', { retention: config.logRetention, removalPolicy: removalPolicyFor(config) });
         this.api = new RestApi(this, 'Api', {
@@ -172,6 +186,8 @@ export class ServiceApi extends Construct {
 
         this.alarms = new ApiAlarms(this, 'Alarms', { stage: this.api.deploymentStage, alarmTopic: props.alarmTopic });
 
+        addGatewayResponses(this.api);
+
         // Findings that every service API has, acknowledged here once and not in every stack (as `ServiceFunction` does).
         // Each is a finding that cdk-nag reports for this construct, so a new one fails the test of the construct, and one that is no longer reported shows up in review.
         const authorization = 'Callers are identified by an API key and limited by a usage plan (decision 0005), because the project has no user identity system to authorize against.';
@@ -195,7 +211,8 @@ export class ServiceApi extends Construct {
 
     /**
      * Adds a method with a Lambda integration under `/v<N>`, and requires an API key on it. `path` has no version: `/customers/{customerId}`.
-     * Throws when the version is not one of the `specVersions` of the API, or is `v0`, and when `path` is not a path or already starts with a version.
+     * Throws when the version is not one of the `specVersions` of the API, or is `v0`, when `path` is not a path or already starts with a version,
+     * and when the route is `adminOnly` and the API does not accept the `admin` key (see `AddRouteOptions.adminOnly`).
      */
     addRoute(method: HttpMethod, path: string, handler: IFunction, options: AddRouteOptions = {}): Method {
         const version = options.version ?? defaultApiVersion;
@@ -203,6 +220,7 @@ export class ServiceApi extends Construct {
         if (!this.versions.has(version)) throw new Error(`The API serves ${[...this.versions].join(', ')} and not ${version}. Add the version to specVersions first.`);
         if (!path.startsWith('/') || path.length === 1) throw new Error(`The path "${path}" must start with / and name a resource, for example /customers.`);
         if (/^\/v\d+(\/|$)/.test(path)) throw new Error(`The path "${path}" starts with a version. Pass the version as an option and leave it out of the path.`);
+        if (options.adminOnly && !this.keyKinds.has('admin')) throw new Error(`The route ${method} ${path} is adminOnly, but this API does not accept the admin key, so the gateway would refuse it before the handler ran. Add 'admin' to keyKinds.`);
         const resource = this.api.root.resourceForPath(`/${version}${path}`);
         return resource.addMethod(method, new LambdaIntegration(handler, { allowTestInvoke: false }), { apiKeyRequired: true });
     }
