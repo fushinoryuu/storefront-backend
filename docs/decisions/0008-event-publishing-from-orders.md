@@ -1,6 +1,6 @@
 # 0008: Event publishing from orders
 
-Status: accepted on 2026-11-04.
+Status: accepted on 2026-11-04. The Pipes price was looked up later: see `docs/cost.md`.
 
 ## Context
 
