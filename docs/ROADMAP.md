@@ -89,11 +89,33 @@ The orders service calls the customers API to validate a customer when an order 
 | 2     | [Customers service](roadmap-phases/phase-2-customers-service.md)                 | Aurora-backed REST API                                               |
 | 3     | [Orders service](roadmap-phases/phase-3-orders-service.md)                       | DynamoDB-backed REST API that publishes and consumes events          |
 | 4     | [Shipping service](roadmap-phases/phase-4-shipping-service.md)                   | Event-driven shipment lifecycle                                      |
-| 5     | [Integration and contracts](roadmap-phases/phase-5-integration-and-contracts.md) | End-to-end flows, contract tests, published specs                    |
+| 5     | [Integration and contracts](roadmap-phases/phase-5-integration-and-contracts.md) | Conformance and contract tests, published specs, v1.1.0 and `/v2`    |
 | 6     | [Delivery and operations](roadmap-phases/phase-6-delivery-and-operations.md)     | CI/CD, observability, security, cost, runbooks                       |
 | 7     | [Polish](roadmap-phases/phase-7-polish.md)                                       | README, diagrams, demo, resume material                              |
 
+## Slices
+
+The work is built in vertical slices, not one phase at a time. A slice ends with something deployed to `dev` and a test that calls it. Until slice E, a person runs the test by hand: deploy the stacks to `dev`, run the suite, destroy them. The phase docs stay the detailed list of what each service needs. A slice takes the tasks it needs from them and ticks each box when that part is finished and true, with sub-bullets for a task that is only partly done.
+
+| Slice | Ends with, in `dev`                                                                                                                                              | Test it allows                                                                                                                                     | Tasks it takes                                                                                                                                                                                               |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A     | **Orders skeleton.** `POST /v1/orders` (idempotency key, prices from the catalog) and `GET /v1/orders/{orderId}`, with no customer check yet                     | Place an order, read it back, and repeat the key to get the same order. The first test in `tests/e2e/`, with plain `fetch` and the `tests` key     | Phase 3 tasks 1, 2 (without the pipe alarm) and 3 (without the customer check), and their tests (task 8). Phase 5 task 1 (the helper for base URLs and keys, the polling helper, run ids)                    |
+| B     | **Customers on Aurora.** The Database stack and the customers API. Orders checks the customer through the shared HTTP client                                     | Create a customer and an address, then place an order for it. An unknown customer (404). Customers unavailable (503). The first call after a pause | Phase 2 tasks 1 to 5, 7 and 8. The customer check of Phase 3 task 3. The warm-up step of Phase 5 task 1, and the end-to-end flows for an unknown customer, customers unavailable and a cold database         |
+| C     | **Order events and shipments.** `OrderPlaced` reaches the bus through the table stream and Pipes. Shipping consumes it and creates one shipment, with a read API | Place an order and a shipment appears. A duplicate and a malformed event on the bus                                                                | Phase 3 task 5. Phase 4 tasks 1, 2 (the `OrderPlaced` consumer only) and the read endpoints of 5. The end-to-end flow for duplicate and poison events                                                        |
+| D     | **The loop back.** The simulated carrier, the simulation endpoint, shipment events consumed by orders, and cancellation with optimistic locking                  | An order through `SHIPPED` and `DELIVERED`. Cancel before and after a shipment. Late and duplicate shipment events                                 | Phase 3 tasks 4, 6 and 7. Phase 4 tasks 2 (`OrderCancelled`), 3, 4, the rest of 5, and 6 to 9. The happy path and the cancel flows of Phase 5 task 2                                                         |
+| E     | **CI runs the suite.** Every pull request deploys the per-run stacks to `dev`, runs the suite, and destroys them, even when a test fails                         | The same tests, with no one running them                                                                                                           | Phase 6 task 2 (the deployment role) and the pull request parts of task 3 (deploy and tear down, one concurrency group, the schema from the branch name, a teardown that always runs, the scheduled cleanup) |
+
+What is left after slice E stays in its phase: the conformance and event contract tests, the seed and reset scripts, publishing the specs, v1.1.0 and `/v2` (Phase 5), the deploy of `prod` on merge, drift checks, observability, the reviews and the runbooks (Phase 6), and Phase 7.
+
+- **Why this order.** Orders has no VPC and no database stack, so it gives the first deployed test soonest. Customers comes next so that Aurora surprises (the resume wait, Flyway in the VPC, the Data API) show up after one slice and not after three. Shipping follows because it needs orders to publish events.
+- **A temporary gap.** Until slice B, orders accepts any customer id. That is acceptable in `dev` only. The customer check box of Phase 3 stays unticked, and a spec is released as v1.0.0 only when its service is complete (slice B for customers, slice D for orders and shipping).
+- **Before slice B.** The open choices about the Database stack are settled in decision records first, so slice B does not start blocked.
+- **Concurrency limit.** The account allows 10 concurrent Lambda executions (`docs/platform.md`), so the suite sends one request at a time until the limit is raised.
+- **A slice is not one pull request.** Each ticket is still one pull request, and a slice is as many tickets as it needs.
+
 ## Checklist
+
+The boxes are ticked slice by slice (see [Slices](#slices)): a box is ticked when its work is finished, whichever slice finishes it.
 
 ### Phase 0: Foundations and decisions
 
@@ -168,14 +190,14 @@ The orders service calls the customers API to validate a customer when an order 
 
 ### Phase 5: Integration and contracts
 
-- [ ] End-to-end flows, including failure cases
+- [ ] End-to-end flows, including failure cases (built slice by slice, from slice A)
 - [ ] API conformance tests against the specs
 - [ ] Event contract tests for producers and consumers
 - [ ] Stage manifest, spec versioning process and CI artifact for the library project, the planned v1.1.0 change, and a real `/v2` served next to `/v1`
 
 ### Phase 6: Delivery and operations
 
-- [ ] CI/CD with OIDC, PR runs deploy to `dev` and tear down, a merge to `main` deploys `prod` (optionally behind an approval), and a deploy-test-destroy mode that leaves `prod` and its database alone
+- [ ] CI/CD with OIDC, PR runs deploy to `dev` and tear down, a merge to `main` deploys `prod` (optionally behind an approval), and a deploy-test-destroy mode that leaves `prod` and its database alone (the pull request run comes first, in slice E)
 - [ ] Dashboards, alarms, tracing
 - [ ] Security and cost review, teardown tested
 - [ ] Runbooks
