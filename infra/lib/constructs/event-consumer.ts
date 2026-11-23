@@ -55,7 +55,7 @@ export interface EventConsumerProps {
  * Delivery is at least once, so the handler must be idempotent (`packages/shared`).
  *
  * The queue's visibility timeout is 6 times the timeout of the function. There is no batching window, so nothing is added to it.
- * Both queues are encrypted with an SQS managed key and refuse requests that do not use TLS. A queue in a persistent stage (`prod`) is kept when the stack is deleted, because a failed message is evidence.
+ * Both queues are encrypted with an SQS managed key and refuse requests that do not use TLS. They are deleted with the stack in every stage, so a message in the dead-letter queue that is still needed has to be read before a destroy.
  *
  * Permissions are given the CDK way and stay narrow: the function can read this queue, and only this rule can send to it. There is no wildcard.
  * One consumer can take several event types, which then share the queue and the function. Events that need different handling get an `EventConsumer` each, with a queue and a dead-letter queue of their own.

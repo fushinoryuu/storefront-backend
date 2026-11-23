@@ -58,9 +58,9 @@ describe.each(stageNames)('ServiceFunction in %s', (stage) => {
         template.hasResourceProperties('AWS::Lambda::Function', { LoggingConfig: { LogGroup: { Ref: Object.keys(template.findResources('AWS::Logs::LogGroup'))[0] } } });
     });
 
-    it('keeps its logs in a persistent stage only', () => {
+    it('deletes its logs with the stack', () => {
         for (const group of Object.values(template.findResources('AWS::Logs::LogGroup'))) {
-            expect(group.DeletionPolicy).toBe(stage === 'prod' ? 'Retain' : 'Delete');
+            expect(group.DeletionPolicy).toBe('Delete');
         }
     });
 

@@ -46,8 +46,8 @@ export interface StageConfig {
     readonly name: StageName;
     /** First part of every stack name: `<stackPrefix>-<stage>-<Service>`. */
     readonly stackPrefix: string;
+    /** `DESTROY` in every stage: a stack is deleted with everything it made (decision 0002). Termination protection is not a stage setting, only a stack that would break others or lose data has it. */
     readonly removalPolicy: RemovalPolicy;
-    readonly deletionProtection: boolean;
     readonly logRetention: RetentionDays;
     /** How many days the archive of the event bus keeps events for replay. Archived events cost $0.10 per GB, then $0.023 per GB-month (docs/cost.md). */
     readonly eventArchiveRetentionDays: number;
@@ -94,7 +94,6 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         name: 'dev',
         stackPrefix: projectStackPrefix,
         removalPolicy: RemovalPolicy.DESTROY,
-        deletionProtection: false,
         logRetention: RetentionDays.ONE_WEEK,
         eventArchiveRetentionDays: 7,
         databaseStage: 'prod',
@@ -115,8 +114,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
     prod: {
         name: 'prod',
         stackPrefix: projectStackPrefix,
-        removalPolicy: RemovalPolicy.RETAIN,
-        deletionProtection: true,
+        removalPolicy: RemovalPolicy.DESTROY,
         logRetention: RetentionDays.ONE_MONTH,
         eventArchiveRetentionDays: 30,
         databaseStage: 'prod',

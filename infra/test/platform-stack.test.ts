@@ -82,11 +82,12 @@ describe.each(stageNames)('PlatformStack in %s', (stage) => {
         }
     });
 
-    it('keeps the bus, the archive and the topic in a persistent stage only', () => {
-        const expected = stage === 'prod' ? 'Retain' : 'Delete';
+    it('deletes the bus, the archive and the topic with the stack', () => {
         for (const type of ['AWS::Events::EventBus', 'AWS::Events::Archive', 'AWS::SNS::Topic']) {
-            for (const resource of Object.values(template.findResources(type))) {
-                expect(resource.DeletionPolicy).toBe(expected);
+            const resources = Object.values(template.findResources(type));
+            expect(resources.length).toBeGreaterThan(0);
+            for (const resource of resources) {
+                expect(resource.DeletionPolicy).toBe('Delete');
             }
         }
     });
