@@ -117,9 +117,10 @@ The orders service calls the customers API to validate a customer when an order 
 - [x] Platform stack: custom event bus, API keys for `tests`, `services`, `admin`, shared parameters, alarm topic
   - [x] Built, tested and deployed to `dev` on 2026-11-18, with the SSM values listed and the alarm email confirmed. The `prod` deploy comes with the hello service check.
 - [x] Script to retrieve key values after deploy
-- [x] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
+- [ ] Constructs: `ServiceFunction`, `ServiceApi`, `EventConsumer`, alarms, tagging
   - [x] Done: `ServiceFunction`, the Lambda alarms, `EventConsumer`, and `ServiceApi` (routes under `/v<N>` with an API key, usage plans, access logs, base URL, built-in health and version routes, 5xx, 4xx and latency alarms), with tests and cdk-nag. `ServiceFunction`, `EventConsumer` and `ServiceApi` require the alarm topic
-  - [x] Done: the rest of `ServiceApi`: the `adminOnly` flag, and gateway responses that answer with the shared error shape. How API Gateway answers a function that throws or times out, and the header of the correlation id, are checked on a deployed API (the hello service check)
+  - [x] Done: the rest of `ServiceApi`: the `adminOnly` flag, and gateway responses that answer with the shared error shape, with tests
+  - [ ] Remaining: the gateway responses and an admin-only route seen on a deployed API (the hello service check): how API Gateway answers a function that throws or times out, and the correlation id header
 - [x] API Gateway logging role: the account-wide role that access logs need, in its own stack that belongs to no stage (`Storefront-ApiGatewayAccount`). Deployed on 2026-11-20, and `aws apigateway get-account` shows its role
 - [x] Shared packages: logger, correlation id, error shape, event envelope, idempotency
 - [ ] Feature flag client (LaunchDarkly) with in-code defaults, and its decision record
