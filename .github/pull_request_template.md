@@ -21,7 +21,6 @@
 - [ ] `npm run lint:specs`
 - [ ] `npm run bundle:specs -- --check`
 - [ ] `npm run synth`
-- [ ] CI on this pull request
 
 ## Not in this PR
 
