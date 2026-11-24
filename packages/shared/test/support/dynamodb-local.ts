@@ -27,8 +27,15 @@ function isConnectionRefused(error: unknown): boolean {
     return code === 'ECONNREFUSED' || cause?.code === 'ECONNREFUSED';
 }
 
-/** A new table with string keys `PK` and `SK` and TTL on `expiresAt`, named so that tests never share a table. */
-export async function createTable(endpoint: string = dynamoDbLocalEndpoint): Promise<LocalTable> {
+/** A global secondary index with string keys, which projects every attribute. */
+export interface LocalIndex {
+    readonly name: string;
+    readonly partitionKey: string;
+    readonly sortKey: string;
+}
+
+/** A new table with string keys `PK` and `SK` and TTL on `expiresAt`, named so that tests never share a table. `indexes` adds global secondary indexes. */
+export async function createTable(endpoint: string = dynamoDbLocalEndpoint, indexes: readonly LocalIndex[] = []): Promise<LocalTable> {
     const raw = new DynamoDBClient({ endpoint, region: 'us-west-2', credentials: { accessKeyId: 'local', secretAccessKey: 'local' } });
     const tableName = `test-${randomUUID()}`;
     try {
@@ -36,14 +43,21 @@ export async function createTable(endpoint: string = dynamoDbLocalEndpoint): Pro
             new CreateTableCommand({
                 TableName: tableName,
                 BillingMode: 'PAY_PER_REQUEST',
-                AttributeDefinitions: [
-                    { AttributeName: 'PK', AttributeType: 'S' },
-                    { AttributeName: 'SK', AttributeType: 'S' }
-                ],
+                AttributeDefinitions: [...new Set(['PK', 'SK', ...indexes.flatMap(({ partitionKey, sortKey }) => [partitionKey, sortKey])])].map((AttributeName) => ({ AttributeName, AttributeType: 'S' as const })),
                 KeySchema: [
                     { AttributeName: 'PK', KeyType: 'HASH' },
                     { AttributeName: 'SK', KeyType: 'RANGE' }
-                ]
+                ],
+                ...(indexes.length > 0 && {
+                    GlobalSecondaryIndexes: indexes.map(({ name, partitionKey, sortKey }) => ({
+                        IndexName: name,
+                        KeySchema: [
+                            { AttributeName: partitionKey, KeyType: 'HASH' as const },
+                            { AttributeName: sortKey, KeyType: 'RANGE' as const }
+                        ],
+                        Projection: { ProjectionType: 'ALL' as const }
+                    }))
+                })
             })
         );
     } catch (error) {
