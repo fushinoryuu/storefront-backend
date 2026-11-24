@@ -2,7 +2,7 @@
 
 A relational service: customer profiles with addresses, backed by Aurora PostgreSQL Serverless v2. Relational data is the point. Unique emails, foreign keys, and transactions are reasons to use a relational database here, and the service should show them.
 
-Built in slice B, after the orders skeleton, so that the customers API is deployed and called in `dev` before shipping starts. It takes tasks 1 to 5, 7 and 8. Task 6 (optional) is taken when something needs it. See Slices in [ROADMAP.md](../ROADMAP.md).
+Built in slice B, after the orders skeleton, so that the customers API is deployed and called in `dev` before shipping starts. It takes tasks 1 to 5, 7 and 8. Task 6 (events) is in no slice. It is built after slice D, in its own ticket, because it publishes through the shared publisher that slice D builds. See Slices in [ROADMAP.md](../ROADMAP.md).
 
 ## Goals
 
@@ -105,7 +105,7 @@ Scale to zero means the first request after idle waits for the database to resum
 - [ ] Access control: API key required on every method except `GET /v0/health` and `GET /v0/version`. `GET /v0/health/ready` requires a key. Both the `tests` and `services` keys may read and write customers, and the API accepts no other kind, so the `admin` key is refused at the gateway. Any admin-only behavior is checked in the handler against the caller's key id.
 - [ ] Correlation id on logs and responses.
 
-### 6. Events (optional but useful)
+### 6. Events
 
 - [ ] Publish `CustomerCreated`, `CustomerUpdated`, `CustomerDeleted` to the event bus after a successful commit, using the envelope from Phase 1.
 - [ ] Note the limitation: publishing after commit can lose an event if the function fails in between. Decision 0008 records it, and it stays a known tradeoff for a demo (a transactional outbox table with a poller is the robust alternative).
