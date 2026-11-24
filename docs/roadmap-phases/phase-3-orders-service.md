@@ -70,10 +70,14 @@ Tags: `orders` and `products`. The API accepts all three kinds of key, because `
 
 ### 1. Catalog and pricing
 
-- [ ] A small static catalog (a dozen fake products with id, name, price in minor units, currency).
+- [x] A small static catalog (a dozen fake products with id, name, price in minor units, currency). It is `services/orders/data/products.json`, and the service checks it against the `Product` schema of the spec when a function starts.
 - [ ] Prices are always taken from the catalog on the server. A client-supplied price is ignored or rejected. This is a deliberate test target.
-- [ ] Totals computed in integer minor units to avoid floating-point issues.
+  - [x] Done: a line has no price to read, and a body with a field that the spec does not list (a `unitPrice`) is a 400, as the spec says. The generated schema drops such a field, so the handler uses a strict copy of it. Handler and unit tests show it.
+  - [ ] Remaining: the deployed check.
+- [x] Totals computed in integer minor units to avoid floating-point issues.
 - [ ] Unknown product ids and invalid quantities return 400 with the shared error shape.
+  - [x] Done: `errors[]` names the line (`items[1].productId`), a product on two lines and a mix of currencies are refused too, and the handler tests check the answer against the `Problem` schema.
+  - [ ] Remaining: the deployed check.
 
 ### 2. Table and infrastructure
 
@@ -88,11 +92,21 @@ Tags: `orders` and `products`. The API accepts all three kinds of key, because `
 `POST /v1/orders` should do, in order:
 
 - [ ] Validate the body and the `Idempotency-Key` header (required, length and charset limits).
+  - [x] Done: in the handler, from the schemas of the spec, with handler tests for each limit.
+  - [ ] Remaining: the deployed check.
 - [ ] Return the stored response for a repeated key with the same body, and a 409 for a repeated key with a different body.
+  - [x] Done: the record of the key holds a hash of the request and the order, expires after 24 hours, and is written in the same transaction as the order. Handler, repository and unit tests show a repeat, a different body, a key that expired and simultaneous requests.
+  - [ ] Remaining: the deployed check.
 - [ ] Validate that the customer exists by calling the customers API with the `services` API key and the correlation id. Use a short timeout, no retry on this path beyond a single attempt, and map failures clearly: unknown customer is a 422, customers unavailable is a 503 (not a 500).
 - [ ] Price the items from the catalog.
+  - [x] Done: `priceItems`, with unit tests.
+  - [ ] Remaining: the deployed check.
 - [ ] Write the order item and the idempotency record in one `TransactWriteItems` call.
+  - [x] Done: the repository does it, and the tests run it against DynamoDB Local.
+  - [ ] Remaining: the deployed check.
 - [ ] Return 201 with the order and a `Location` header.
+  - [x] Done: the handler does it, and a test checks the body against the `Order` schema of the spec.
+  - [ ] Remaining: the deployed check.
 - [ ] Do not publish the event here. The outbox (below) does it from the table change.
 
 Decision 0009 records the synchronous call to customers, and what you would do at larger scale (keep a local customer projection updated by `CustomerCreated` and `CustomerUpdated` events, accepting eventual consistency).
@@ -130,8 +144,14 @@ The change in the table is the source of truth, and events are derived from it, 
 ### 8. Tests
 
 - [ ] **Unit:** pricing, state machine (table-driven), validation, idempotency decisions, event envelope building.
+  - [x] Done: pricing, the catalog, the body of the request, and the idempotency decisions.
+  - [ ] Remaining: the state machine (slice D) and the event envelope (slice C).
 - [ ] **Repository tests** against DynamoDB Local (a container from `docker-compose.yaml`, started with `docker compose up`): access patterns, conditional writes, the transaction, TTL attribute shape.
+  - [x] Done: the transaction, the keys of both indexes, the TTL attribute, and simultaneous requests.
+  - [ ] Remaining: the queries of the list routes and the conditional updates (slice D).
 - [ ] **Handler tests** with fake events, with the customers API client replaced by a fake that can return success, 404, timeout, and 5xx. Every response is validated against the spec.
+  - [x] Done: `listProducts`, `createOrder` and `getOrder`, with every response checked against the generated schemas, and the three Lambda entries.
+  - [ ] Remaining: the customers fake (slice B) and the other routes (slice D).
 - [ ] **Consumer tests:** duplicate delivery, out-of-order events, unknown order, malformed payload.
 - [ ] **CDK tests:** stream enabled, pipe filter pattern present, DLQ present, API key required on protected methods, least-privilege table grants.
 - [ ] **Deployed checks:** place an order in `dev` and see the `OrderPlaced` event arrive (for example by a temporary rule that logs it, or the shipping service in Phase 4).
