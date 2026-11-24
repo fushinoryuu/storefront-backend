@@ -23,6 +23,7 @@
     "synth:prod": "cdk synth -c stage=prod --output cdk.out/prod --quiet",
     "get-api-keys": "tsx scripts/get-api-keys.ts",
     "aws:login": "aws sso login --profile storefront && aws sts get-caller-identity --profile storefront",
+    "deploy:all": "cdk deploy --profile storefront --all",
     "deploy:secrets": "cdk deploy --profile storefront Secrets",
     "destroy:secrets": "cdk destroy --profile storefront Secrets",
     "deploy:api-gateway-account": "cdk deploy --profile storefront ApiGatewayAccount",
