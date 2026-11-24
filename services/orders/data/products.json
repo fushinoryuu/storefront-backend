@@ -1,0 +1,14 @@
+[
+  { "productId": "prd_3a7f1c", "name": "Desk lamp", "unitPrice": 2499, "currency": "USD" },
+  { "productId": "prd_9d2e4b", "name": "Notebook", "unitPrice": 1299, "currency": "USD" },
+  { "productId": "prd_1b4c7e", "name": "Ballpoint pen", "unitPrice": 349, "currency": "USD" },
+  { "productId": "prd_5e8a20", "name": "Desk organizer", "unitPrice": 1899, "currency": "USD" },
+  { "productId": "prd_7c3d91", "name": "Wireless mouse", "unitPrice": 2999, "currency": "USD" },
+  { "productId": "prd_2f6b84", "name": "Mechanical keyboard", "unitPrice": 8999, "currency": "USD" },
+  { "productId": "prd_8a1e5d", "name": "USB-C cable", "unitPrice": 1199, "currency": "USD" },
+  { "productId": "prd_4d9c37", "name": "Monitor stand", "unitPrice": 3999, "currency": "USD" },
+  { "productId": "prd_6b2a0f", "name": "Laptop sleeve", "unitPrice": 2799, "currency": "USD" },
+  { "productId": "prd_0e7f43", "name": "Water bottle", "unitPrice": 1799, "currency": "USD" },
+  { "productId": "prd_a3c58e", "name": "Desk mat", "unitPrice": 2299, "currency": "USD" },
+  { "productId": "prd_c41d96", "name": "Webcam cover pack", "unitPrice": 599, "currency": "USD" }
+]
