@@ -82,6 +82,8 @@ Tags: `orders` and `products`. The API accepts all three kinds of key, because `
 ### 2. Table and infrastructure
 
 - [ ] DynamoDB table and the indexes from the access patterns, TTL attribute for idempotency records, streams enabled.
+  - [x] Done: the table design doc (`docs/services/orders-table-design.md`) and the shape in `services/orders/src/table.ts`, which the repository tests build a local table from.
+  - [ ] Remaining: the table in the orders stack.
 - [ ] Lambda functions from the `ServiceFunction` construct, with only the table permissions each needs.
 - [ ] `ServiceApi` (REST API) routes with `apiKeyRequired` and the shared usage plans.
 - [ ] Point-in-time recovery setting, with the table destroyed with its stack in every stage (decision 0002).
@@ -139,6 +141,8 @@ The change in the table is the source of truth, and events are derived from it, 
 - [ ] Start from the Phase 0.5 drafts (`openapi.yaml` under `/v1`, and `openapi-v0.yaml`). If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
 - [ ] Keep what the draft already has: the `Problem` schema on all error responses, an `apiKey` security scheme (header `x-api-key`), the `Idempotency-Key` header parameter, enums for status, examples.
 - [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
+  - [x] Done: for `listProducts`, `createOrder` and `getOrder`.
+  - [ ] Remaining: `listOrders` and `cancelOrder` (slice D).
 - [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 
 ### 8. Tests
@@ -148,7 +152,7 @@ The change in the table is the source of truth, and events are derived from it, 
   - [ ] Remaining: the state machine (slice D) and the event envelope (slice C).
 - [ ] **Repository tests** against DynamoDB Local (a container from `docker-compose.yaml`, started with `docker compose up`): access patterns, conditional writes, the transaction, TTL attribute shape.
   - [x] Done: the transaction, the keys of both indexes, the TTL attribute, and simultaneous requests.
-  - [ ] Remaining: the queries of the list routes and the conditional updates (slice D).
+  - [ ] Remaining: the list queries as repository methods and the conditional updates (slice D). The tests only query the two indexes to check their keys.
 - [ ] **Handler tests** with fake events, with the customers API client replaced by a fake that can return success, 404, timeout, and 5xx. Every response is validated against the spec.
   - [x] Done: `listProducts`, `createOrder` and `getOrder`, with every response checked against the generated schemas, and the three Lambda entries.
   - [ ] Remaining: the customers fake (slice B) and the other routes (slice D).
