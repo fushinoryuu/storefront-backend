@@ -30,6 +30,11 @@ describe('stage config', () => {
         expect(stages[name].removalPolicy).toBe(RemovalPolicy.DESTROY);
     });
 
+    it('keeps point-in-time recovery for the tables of prod and not for the short-lived tables of dev', () => {
+        expect(stages.dev.pointInTimeRecovery).toBe(false);
+        expect(stages.prod.pointInTimeRecovery).toBe(true);
+    });
+
     it('keeps the carrier timings in order', () => {
         for (const name of stageNames) {
             const { pickedAfterSeconds, shippedAfterSeconds, deliveredAfterSeconds } = stages[name].carrierTimings;
