@@ -80,9 +80,7 @@ Tags: `orders` and `products`. The API accepts all three kinds of key, because `
 - [x] DynamoDB table and the indexes from the access patterns, TTL attribute for idempotency records, streams enabled. The table design doc (`docs/services/orders-table-design.md`) and the shape in `services/orders/src/table.ts` come first, and the stack builds the table from that shape. The `dev` table has both indexes, TTL on `expiresAt` and the stream (`docs/services/orders.md`).
 - [x] Lambda functions from the `ServiceFunction` construct, with only the table permissions each needs. `createOrder` has `GetItem` and `PutItem`, `getOrder` has `GetItem`, `listProducts` has none, all on the table and not its indexes. Template tests check them.
 - [x] `ServiceApi` (REST API) routes with `apiKeyRequired` and the shared usage plans. The API accepts the `tests` and `services` keys, and `admin` is added with `listOrders` (slice D). The check on `dev` used the `tests` key.
-- [ ] Point-in-time recovery setting, with the table destroyed with its stack in every stage (decision 0002).
-  - [x] Done: the stage setting `pointInTimeRecovery` (on in `prod`, off in `dev`), and template tests for both stages that also check that nothing is retained.
-  - [ ] Remaining: `npm run destroy:orders` has not been run against AWS, and the `prod` table has not been deployed.
+- [x] Point-in-time recovery setting, with the table destroyed with its stack in every stage (decision 0002). The stage setting `pointInTimeRecovery` is on in `prod` and off in `dev`, template tests for both stages check that nothing is retained, and `npm run destroy:orders` removed the `dev` stack with its table. The recovery of a deployed `prod` table is tracked in the Phase 0 box.
 - [ ] Alarms: Lambda errors, API 5xx, DynamoDB throttles and system errors, Pipes failures.
   - [x] Done: every function and the API have their alarms from the constructs, and the table has two (throttled requests and system errors). All 17 alarms of the `dev` stack exist and were in `OK` after the check.
   - [ ] Remaining: the Pipes alarm (slice C).

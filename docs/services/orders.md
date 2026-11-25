@@ -30,7 +30,7 @@ npm run deploy:orders -- -c stage=dev
 npm run destroy:orders -- -c stage=dev
 ```
 
-`deploy:orders` deploys that stack alone, so it never changes `Platform`. A destroy of `Orders` deletes its table and every order in it.
+`deploy:orders` deploys that stack alone, so it never changes `Platform`. A destroy of `Orders` deletes its table and every order in it (seen on `dev`, below).
 
 ## The check on `dev`
 
@@ -46,14 +46,14 @@ Seen:
 - The log line of a refused request has the level, the `service`, the `stage`, the `correlationId`, the `requestId` and the X-Ray trace id, and the status and type of the error. It has no body and no customer id. The access log has one JSON line per request with the declared route (`/v1/orders`), not the real path.
 - The stack has 17 alarms (12 of the four functions, 3 of the API, 2 of the table), all `OK` after the check. The table is on demand with the stream and both indexes, TTL is on `expiresAt`, and point-in-time recovery is off, as `dev` says. The log groups keep logs for 7 days.
 - `cdk diff` against the deployed stack showed no difference after the check.
+- `npm run destroy:orders` removed the stack (`DELETE_COMPLETE`). No table, no log group and no `base-url` parameter of `Orders` was left, and the `Platform` stacks were not touched.
 
 Not seen:
 
-- `npm run destroy:orders` against AWS, and that no stack of the check is left. The stack was left up for the maintainer to destroy.
 - The `services` key (only `tests` was used), the quotas and the throttles of the usage plans, and what happens above the account's limit of 10 concurrent executions.
 - A cold start: the time of the first request after the functions were created was not measured.
 - Any alarm firing, and the email of an alarm (the `dev` alarm topic has no subscriber unless `ALARM_RECIPIENTS` was set).
 - The `prod` stack, and point-in-time recovery on a deployed table.
 - Two requests with the same key at the same moment. The repository tests run that case against DynamoDB Local, and `place-order.test.ts` covers the answers after it.
 
-Two findings, not changed here. The 400 for a missing `Idempotency-Key` says "Invalid input: expected string, received undefined", which is the validator's text and does not tell a caller that the header is required. The check also placed two orders in `dev`, which are in the table until the stack is destroyed or their time passes (only the key records expire, so the orders stay).
+One finding, not changed here: the 400 for a missing `Idempotency-Key` says "Invalid input: expected string, received undefined", which is the validator's text and does not tell a caller that the header is required.
