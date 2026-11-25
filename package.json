@@ -29,7 +29,9 @@
     "deploy:api-gateway-account": "cdk deploy --profile storefront ApiGatewayAccount",
     "destroy:api-gateway-account": "cdk destroy --profile storefront ApiGatewayAccount",
     "deploy:platform": "cdk deploy --profile storefront Platform",
-    "destroy:platform": "cdk destroy --profile storefront Platform"
+    "destroy:platform": "cdk destroy --profile storefront Platform",
+    "deploy:orders": "cdk deploy --profile storefront --exclusively Orders",
+    "destroy:orders": "cdk destroy --profile storefront Orders"
   },
   "devDependencies": {
     "@aws-sdk/client-api-gateway": "^3.1174.0",

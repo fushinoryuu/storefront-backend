@@ -33,6 +33,8 @@ Run these from the repo root:
 | `npm run destroy:api-gateway-account` | Destroy the `ApiGatewayAccount` stack, which deletes the logging role. It has termination protection, which must be turned off first (`docs/aws-setup.md`)                                                                                        |
 | `npm run deploy:platform`             | Deploy the `Platform` stack of a stage with the `storefront` profile (`-- -c stage=dev`, or `prod`). `ALARM_RECIPIENTS=you@example.com` in front subscribes the alarm topic (`docs/aws-setup.md`)                                                 |
 | `npm run destroy:platform`            | Destroy the `Platform` stack of a stage (`-- -c stage=dev`, or `prod`), with everything it made. CDK asks for confirmation first. The service stacks of the stage depend on it, so destroy them first                                             |
+| `npm run deploy:orders`               | Deploy the `Orders` stack of a stage with the `storefront` profile (`-- -c stage=dev`, or `prod`). It deploys that stack alone, so deploy `Platform` first, and it never changes `Platform`                                                       |
+| `npm run destroy:orders`              | Destroy the `Orders` stack of a stage (`-- -c stage=dev`, or `prod`), with its table and every order in it. CDK asks for confirmation first                                                                                                       |
 
 The CDK app builds the stacks of a stage when it is given one: `npx cdk synth -c stage=dev` or `-c stage=prod`. Without a stage it builds only `Storefront-Secrets` and `Storefront-ApiGatewayAccount`, which belong to no stage.
 
