@@ -21,7 +21,8 @@ const body = {
     ]
 };
 
-let clock = Date.UTC(2026, 10, 23, 10, 0, 0);
+// DynamoDB Local may remove items whose `expiresAt` is in the real past (it seems to have done so once in CI), so a fake clock must stay far ahead of the real one: an item written with a past expiry can vanish between a write and its read-back.
+let clock = Date.UTC(2100, 0, 1, 10, 0, 0);
 let counter = 0;
 const logged: { level: string; message: string; fields: Record<string, unknown> }[] = [];
 const record =

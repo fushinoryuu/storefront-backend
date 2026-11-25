@@ -25,7 +25,8 @@ describe('createIdempotency without a database', () => {
 });
 
 describe('createIdempotency against DynamoDB Local', () => {
-    const start = Date.UTC(2026, 10, 10, 12, 0, 0);
+    // DynamoDB Local may remove items whose `expiresAt` is in the real past (it seems to have done so once in CI), so a fake clock must stay far ahead of the real one: an item written with a past expiry can vanish between a write and its read-back.
+    const start = Date.UTC(2100, 0, 1, 12, 0, 0);
     let table: LocalTable;
     let clock = start;
 

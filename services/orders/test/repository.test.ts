@@ -13,7 +13,8 @@ import { ordersTable } from '../src/table';
 // These run against the DynamoDB Local of docker-compose.yaml (see packages/shared/README.md), with a table built from the shape of `ordersTable`.
 
 const customerId = '3f6c2a1e-8b1d-4c52-9a53-0f4f6d2b7a10';
-const now = 1_800_000_000;
+// DynamoDB Local may remove items whose `expiresAt` is in the real past (it seems to have done so once in CI), so the fake `now` must stay far ahead of the real one: an item written with a past expiry can vanish between a write and its read-back.
+const now = 4_102_444_800; // 2100-01-01
 const orderOf = (orderId: string, overrides: Partial<Order> = {}): Order => ({
     orderId,
     customerId,
