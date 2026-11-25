@@ -48,7 +48,7 @@ jobs:
       - run: npm test -- --coverage
 
       - name: Comment on the PR with the coverage report
-        uses: fushinoryuu/gha-workflows/.github/actions/code-coverage-pr-comment@BEP-56-code-coverage-pr-comment
+        uses: fushinoryuu/gha-workflows/.github/actions/code-coverage-pr-comment@main
         with:
           coverage-report-path: ./coverage/coverage-summary.json
 
