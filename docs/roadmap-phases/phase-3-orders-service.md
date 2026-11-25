@@ -141,7 +141,7 @@ The change in the table is the source of truth, and events are derived from it, 
 - [ ] Start from the Phase 0.5 drafts (`openapi.yaml` under `/v1`, and `openapi-v0.yaml`). If the implementation needs a change, edit the spec first and bump the version, and tell the library project while the spec is still 0.x.
 - [ ] Keep what the draft already has: the `Problem` schema on all error responses, an `apiKey` security scheme (header `x-api-key`), the `Idempotency-Key` header parameter, enums for status, examples.
 - [ ] Request validation uses the spec's schemas, and handler tests check responses against the spec (decision 0004).
-  - [x] Done: for `listProducts`, `createOrder` and `getOrder`.
+  - [x] Done: for `listProducts`, `createOrder` and `getOrder`. Building them changed the spec once: 0.3.0 says that a repeated key sent while the first request is still being processed answers 409 as well.
   - [ ] Remaining: `listOrders` and `cancelOrder` (slice D).
 - [ ] Release the spec as v1.0.0 once the implementation matches it. Lint and bundle it in CI.
 
