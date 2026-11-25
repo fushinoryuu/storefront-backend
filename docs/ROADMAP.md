@@ -175,11 +175,11 @@ The boxes are ticked slice by slice (see [Slices](#slices)): a box is ticked whe
 ### Phase 3: Orders (DynamoDB)
 
 - [ ] Access patterns, table design, indexes
-  - [x] Done: the design doc (`docs/services/orders-table-design.md`) and the shape of the table in code.
-  - [ ] Remaining: the table in the orders stack.
+  - [x] Done: the design doc (`docs/services/orders-table-design.md`), the shape of the table in code, and the table in the orders stack, deployed once to `dev`.
+  - [ ] Remaining: the list queries (slice D) and the stream reader (slice C).
 - [ ] Order API with idempotency key and optimistic locking
-  - [x] Done: the idempotency key, in the handler and the repository, with tests against DynamoDB Local.
-  - [ ] Remaining: the stack and the check on a deployed API (slice A), and optimistic locking (slice D).
+  - [x] Done: the idempotency key, in the handler and the repository, with tests against DynamoDB Local and a check on a deployed API in `dev` (`docs/services/orders.md`).
+  - [ ] Remaining: optimistic locking (slice D).
 - [ ] Customer validation through the customers API
 - [ ] Outbox: Streams to Pipes to EventBridge
 - [ ] Consumer for shipment events

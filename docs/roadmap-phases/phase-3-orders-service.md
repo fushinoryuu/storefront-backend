@@ -71,44 +71,32 @@ Tags: `orders` and `products`. The API accepts all three kinds of key, because `
 ### 1. Catalog and pricing
 
 - [x] A small static catalog (a dozen fake products with id, name, price in minor units, currency). It is `services/orders/data/products.json`, and the service checks it against the `Product` schema of the spec when a function starts.
-- [ ] Prices are always taken from the catalog on the server. A client-supplied price is ignored or rejected. This is a deliberate test target.
-  - [x] Done: a line has no price to read, and a body with a field that the spec does not list (a `unitPrice`) is a 400, as the spec says. The generated schema drops such a field, so the handler uses a strict copy of it. Handler and unit tests show it.
-  - [ ] Remaining: the deployed check.
+- [x] Prices are always taken from the catalog on the server. A client-supplied price is ignored or rejected. This is a deliberate test target. A line has no price to read, and a body with a field that the spec does not list (a `unitPrice`) is a 400, as the spec says. The generated schema drops such a field, so the handler uses a strict copy of it. Handler and unit tests show it, and so did the check on `dev` (`docs/services/orders.md`).
 - [x] Totals computed in integer minor units to avoid floating-point issues.
-- [ ] Unknown product ids and invalid quantities return 400 with the shared error shape.
-  - [x] Done: `errors[]` names the line (`items[1].productId`), a product on two lines and a mix of currencies are refused too, and the handler tests check the answer against the `Problem` schema.
-  - [ ] Remaining: the deployed check.
+- [x] Unknown product ids and invalid quantities return 400 with the shared error shape. `errors[]` names the line (`items[1].productId`), a product on two lines and a mix of currencies are refused too, and the handler tests check the answer against the `Problem` schema. The check on `dev` saw an unknown product and a quantity of 0.
 
 ### 2. Table and infrastructure
 
-- [ ] DynamoDB table and the indexes from the access patterns, TTL attribute for idempotency records, streams enabled.
-  - [x] Done: the table design doc (`docs/services/orders-table-design.md`) and the shape in `services/orders/src/table.ts`, which the repository tests build a local table from.
-  - [ ] Remaining: the table in the orders stack.
-- [ ] Lambda functions from the `ServiceFunction` construct, with only the table permissions each needs.
-- [ ] `ServiceApi` (REST API) routes with `apiKeyRequired` and the shared usage plans.
+- [x] DynamoDB table and the indexes from the access patterns, TTL attribute for idempotency records, streams enabled. The table design doc (`docs/services/orders-table-design.md`) and the shape in `services/orders/src/table.ts` come first, and the stack builds the table from that shape. The `dev` table has both indexes, TTL on `expiresAt` and the stream (`docs/services/orders.md`).
+- [x] Lambda functions from the `ServiceFunction` construct, with only the table permissions each needs. `createOrder` has `GetItem` and `PutItem`, `getOrder` has `GetItem`, `listProducts` has none, all on the table and not its indexes. Template tests check them.
+- [x] `ServiceApi` (REST API) routes with `apiKeyRequired` and the shared usage plans. The API accepts the `tests` and `services` keys, and `admin` is added with `listOrders` (slice D). The check on `dev` used the `tests` key.
 - [ ] Point-in-time recovery setting, with the table destroyed with its stack in every stage (decision 0002).
+  - [x] Done: the stage setting `pointInTimeRecovery` (on in `prod`, off in `dev`), and template tests for both stages that also check that nothing is retained.
+  - [ ] Remaining: `npm run destroy:orders` has not been run against AWS, and the `prod` table has not been deployed.
 - [ ] Alarms: Lambda errors, API 5xx, DynamoDB throttles and system errors, Pipes failures.
+  - [x] Done: every function and the API have their alarms from the constructs, and the table has two (throttled requests and system errors). All 17 alarms of the `dev` stack exist and were in `OK` after the check.
+  - [ ] Remaining: the Pipes alarm (slice C).
 
 ### 3. Order placement
 
 `POST /v1/orders` should do, in order:
 
-- [ ] Validate the body and the `Idempotency-Key` header (required, length and charset limits).
-  - [x] Done: in the handler, from the schemas of the spec, with handler tests for each limit.
-  - [ ] Remaining: the deployed check.
-- [ ] Return the stored response for a repeated key with the same body, and a 409 for a repeated key with a different body.
-  - [x] Done: the record of the key holds a hash of the request and the order, expires after 24 hours, and is written in the same transaction as the order. Handler, repository and unit tests show a repeat, a different body, a key that expired and simultaneous requests.
-  - [ ] Remaining: the deployed check.
+- [x] Validate the body and the `Idempotency-Key` header (required, length and charset limits). It is done in the handler, from the schemas of the spec, with handler tests for each limit. The check on `dev` saw a missing key refused.
+- [x] Return the stored response for a repeated key with the same body, and a 409 for a repeated key with a different body. The record of the key holds a hash of the request and the order, expires after 24 hours, and is written in the same transaction as the order. Handler, repository and unit tests show a repeat, a different body, a key that expired and simultaneous requests, and the check on `dev` saw a repeat and a different body.
 - [ ] Validate that the customer exists by calling the customers API with the `services` API key and the correlation id. Use a short timeout, no retry on this path beyond a single attempt, and map failures clearly: unknown customer is a 422, customers unavailable is a 503 (not a 500).
-- [ ] Price the items from the catalog.
-  - [x] Done: `priceItems`, with unit tests.
-  - [ ] Remaining: the deployed check.
-- [ ] Write the order item and the idempotency record in one `TransactWriteItems` call.
-  - [x] Done: the repository does it, and the tests run it against DynamoDB Local.
-  - [ ] Remaining: the deployed check.
-- [ ] Return 201 with the order and a `Location` header.
-  - [x] Done: the handler does it, and a test checks the body against the `Order` schema of the spec.
-  - [ ] Remaining: the deployed check.
+- [x] Price the items from the catalog. `priceItems`, with unit tests, and the total of the order placed on `dev` was the catalog's.
+- [x] Write the order item and the idempotency record in one `TransactWriteItems` call. The repository does it, and the tests run it against DynamoDB Local. The order placed on `dev` was read back, and the repeat of its key answered with it.
+- [x] Return 201 with the order and a `Location` header. The handler does it, and a test checks the body against the `Order` schema of the spec. The `dev` answer had both.
 - [ ] Do not publish the event here. The outbox (below) does it from the table change.
 
 Decision 0009 records the synchronous call to customers, and what you would do at larger scale (keep a local customer projection updated by `CustomerCreated` and `CustomerUpdated` events, accepting eventual consistency).
@@ -158,7 +146,11 @@ The change in the table is the source of truth, and events are derived from it, 
   - [ ] Remaining: the customers fake (slice B) and the other routes (slice D).
 - [ ] **Consumer tests:** duplicate delivery, out-of-order events, unknown order, malformed payload.
 - [ ] **CDK tests:** stream enabled, pipe filter pattern present, DLQ present, API key required on protected methods, least-privilege table grants.
+  - [x] Done: the stream, the indexes, the API key on every protected method, the table grants of each function, the alarms and nothing retained, in both stages.
+  - [ ] Remaining: the pipe filter pattern and the DLQ (slice C).
 - [ ] **Deployed checks:** place an order in `dev` and see the `OrderPlaced` event arrive (for example by a temporary rule that logs it, or the shipping service in Phase 4).
+  - [x] Done: an order was placed in `dev` and read back, a repeated key answered with the same order, and the refused requests were seen (`docs/services/orders.md`).
+  - [ ] Remaining: the `OrderPlaced` event (slice C).
 
 ## Acceptance criteria
 

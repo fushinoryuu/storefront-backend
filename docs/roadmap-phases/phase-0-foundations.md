@@ -75,6 +75,8 @@ Set up the repo and the AWS environment, put cost guardrails in place before any
   - [x] A test (`infra/test/destroyable-stacks.test.ts`) synthesizes every stack of both stages. None has a resource with a retain policy, and only `ApiGatewayAccount` has termination protection. The database stack adds itself to that list when it is built.
   - [ ] The database stack with the Aurora cluster and CloudFormation termination protection.
   - [ ] Point-in-time recovery on the DynamoDB table, with the orders stack.
+    - [x] Done: the stage setting `pointInTimeRecovery` (on in `prod`), and the orders stack uses it.
+    - [ ] Remaining: deploy the `prod` stack and see the setting on the table.
 - [ ] Both stages in the same account and region as separate stacks named `Storefront-<stage>-<Service>`. The one database stack is `Storefront-prod-Database`, and `dev` reads its connection details.
   - [x] Both stages share the one member account and region (`docs/aws-setup.md`), and `infra/lib/naming.ts` builds the stack names, including `Storefront-prod-Database`. The `Platform` stack already uses it. The stacks that belong to no stage, `Storefront-Secrets` and `Storefront-ApiGatewayAccount`, are the exception (decision 0002).
   - [ ] The database stack, and `dev` reading its connection details.
