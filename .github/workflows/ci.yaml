@@ -48,6 +48,7 @@ jobs:
       - run: npm test -- --coverage
 
       - name: Comment on the PR with the coverage report
+        if: github.event_name == 'pull_request'
         uses: fushinoryuu/gha-workflows/.github/actions/code-coverage-pr-comment@main
         with:
           coverage-report-path: ./coverage/coverage-summary.json
