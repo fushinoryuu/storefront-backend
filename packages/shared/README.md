@@ -107,7 +107,7 @@ try {
 }
 ```
 
-`claim` is one conditional put, so of many simultaneous calls with one key exactly one gets `true`. DynamoDB removes an expired item some time after `expiresAt`, so `claim` also accepts a key whose time has run out. It does not store a response or compare request bodies: the orders rules for a repeated key (the stored response, and a 409 for a different body) are for the orders service to add.
+`claim` is one conditional put, so of many simultaneous calls with one key exactly one gets `true`. DynamoDB removes an expired item some time after `expiresAt`, so `claim` also accepts a key whose time has run out. It does not store a response or compare request bodies: the orders rules for a repeated key (the stored response, and a 409 for a different body) are in the orders service (`services/orders/src/idempotency.ts`).
 
 ## HTTP client
 

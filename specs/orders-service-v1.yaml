@@ -3,7 +3,7 @@
 openapi: 3.0.3
 info:
   title: Orders service
-  version: 0.2.0
+  version: 0.3.0
   license:
     name: GPL-3.0-only
     url: https://www.gnu.org/licenses/gpl-3.0.html
@@ -83,7 +83,10 @@ paths:
         **Idempotency.** The `Idempotency-Key` header is required. Sending the
         same key with the same body again does not place a second order: the
         answer is the first answer, with the same order. The key is remembered
-        for 24 hours. Sending the same key with a different body answers 409.
+        for 24 hours. Sending the same key with a different body answers 409. So
+        does sending the same key and body while the first request is still
+        being processed: send it again after a moment, and once the first
+        request has finished the answer is its order.
 
 
         The answer is 422 when the customer does not exist or is deleted, and
