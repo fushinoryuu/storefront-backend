@@ -4,6 +4,7 @@ import { alarmRecipientsVariable, parseAlarmRecipients } from './config/alarm-re
 import { getStageConfig } from './config/stages';
 import { applyNag } from './nag';
 import { ApiGatewayAccountStack } from './stacks/api-gateway-account-stack';
+import { OrdersStack } from './stacks/orders-stack';
 import { PlatformStack } from './stacks/platform-stack';
 import { SecretsStack } from './stacks/secrets-stack';
 
@@ -17,7 +18,12 @@ import { SecretsStack } from './stacks/secrets-stack';
 export function createApp(props?: AppProps, env: NodeJS.ProcessEnv = process.env): App {
     const app = new App(props);
     const stage: unknown = app.node.tryGetContext('stage');
-    if (stage !== undefined) new PlatformStack(app, getStageConfig(stage), parseAlarmRecipients(env[alarmRecipientsVariable]));
+    if (stage !== undefined) {
+        const config = getStageConfig(stage);
+        const platform = new PlatformStack(app, config, parseAlarmRecipients(env[alarmRecipientsVariable]));
+        // Orders reads the alarm topic and the API keys of the platform stack from SSM, which CloudFormation does not see as a dependency, so it is stated here: `deploy --all` waits for Platform, and `destroy --all` removes Orders first.
+        new OrdersStack(app, config).addStackDependency(platform);
+    }
     new SecretsStack(app);
     new ApiGatewayAccountStack(app);
     applyNag(app);

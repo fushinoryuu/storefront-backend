@@ -8,7 +8,7 @@ describe('createApp', () => {
         'synthesizes for %s',
         (stage) => {
             const assembly = createApp({ context: { stage } }).synth();
-            expect(assembly.stacks.map((stack) => stack.stackName)).toEqual(['Storefront-ApiGatewayAccount', `Storefront-${stage}-Platform`, 'Storefront-Secrets']);
+            expect(assembly.stacks.map((stack) => stack.stackName)).toEqual(['Storefront-ApiGatewayAccount', `Storefront-${stage}-Platform`, 'Storefront-Secrets', `Storefront-${stage}-Orders`]);
         },
         30000
     );
@@ -18,7 +18,8 @@ describe('createApp', () => {
         expect(assembly.stacks.map((stack) => stack.tags)).toEqual([
             { project: 'storefront', stage: 'shared', service: 'ApiGatewayAccount', owner: stages[stage].owner },
             { project: 'storefront', stage, service: 'Platform', owner: stages[stage].owner },
-            { project: 'storefront', stage: 'shared', service: 'Secrets', owner: stages[stage].owner }
+            { project: 'storefront', stage: 'shared', service: 'Secrets', owner: stages[stage].owner },
+            { project: 'storefront', stage, service: 'Orders', owner: stages[stage].owner }
         ]);
     });
 
