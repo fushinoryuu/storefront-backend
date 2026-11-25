@@ -64,7 +64,7 @@ The draft spec from Phase 0.5 is authoritative. This table summarizes it.
 | `listOrders`   | `GET /v1/orders`                   | Filters: `customerId` (required unless admin), `status`, cursor pagination |
 | `cancelOrder`  | `POST /v1/orders/{orderId}/cancel` | 409 if the state does not allow it                                         |
 
-Tags: `orders` and `products`. The API accepts all three kinds of key, because `listOrders` has admin behavior that the handler checks. The health and version routes (`getHealth` and `getVersion`) are in the `/v0` spec under the shared `operations` tag. Keep `operationId` values stable.
+Tags: `orders` and `products`. The API accepts all three kinds of key, because `listOrders` has admin behavior that the handler checks. Until `listOrders` is built (slice D), the stack accepts the `tests` and `services` keys only. The health and version routes (`getHealth` and `getVersion`) are in the `/v0` spec under the shared `operations` tag. Keep `operationId` values stable.
 
 ## Tasks
 

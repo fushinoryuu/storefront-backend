@@ -128,7 +128,8 @@ The harder ones are settled in their records:
 - [ ] Avoid NAT gateways. They are a common source of surprise cost, and the default design does not need one.
 - [ ] DynamoDB in on-demand mode, short log retention, API throttling set low.
   - [x] Done: log retention is short and set by the stage (`ServiceFunction`, `ServiceApi`), and `ServiceApi` throttles every method at the `api.defaultThrottle` of the stage config.
-  - [ ] Remaining: DynamoDB in on-demand mode, with the orders and shipping tables (Phases 3 and 4).
+  - [x] Done: the orders table is on demand, and was deployed to `dev` on 2026-11-25.
+  - [ ] Remaining: DynamoDB in on-demand mode, with the shipping table (Phase 4).
 - [x] A documented `cdk destroy` order and a list of resources that survive destroy (log groups with retention, snapshots, secrets pending deletion). It is in `docs/cost.md`, and Phase 6 builds and rehearses it.
 - [ ] Test runs deploy to `dev`, test, then destroy every per-run stack. The `prod` stage stays up, including the shared database stack, because creating the cluster takes 10 to 15 minutes and a paused cluster costs storage only. `prod` also keeps its own Flyway runner and Secrets Manager interface endpoint (about $7 a month, see `docs/cost.md`) for as long as it is deployed. Pull request runs also drop their own database schema before the stacks are destroyed. Document the full teardown too, which first removes termination protection from the database stack.
 - [x] `docs/cost.md` records expected idle and active cost behavior in words, with a note to check current AWS pricing when you build, since prices change.
