@@ -9,7 +9,7 @@ export default defineConfig({
             include: ['infra/**/*.ts', 'packages/*/src/**/*.ts', 'services/*/src/**/*.ts', 'scripts/**/*.ts'],
             exclude: ['**/test/**', '**/*.test.ts', '**/node_modules/**', '**/cdk.out/**'],
             // The summary is for the log, the HTML report is for reading line by line, and lcov is the format other tools read.
-            reporter: ['text-summary', 'html', 'lcov'],
+            reporter: ['text-summary', 'html', 'lcov', 'json-summary'],
             reportsDirectory: 'coverage'
         }
     }

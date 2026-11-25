@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  pull-requests: write
 
 jobs:
   run-tests:
@@ -43,8 +45,13 @@ jobs:
       - name: Start DynamoDB Local
         run: docker compose up --detach --wait
 
-      # The summary of the coverage report is in the log of this step, and the full report (HTML and lcov) is the artifact below.
       - run: npm test -- --coverage
+
+      - name: Comment on the PR with the coverage report
+        if: github.event_name == 'pull_request'
+        uses: fushinoryuu/gha-workflows/.github/actions/code-coverage-pr-comment@main
+        with:
+          coverage-report-path: ./coverage/coverage-summary.json
 
       - name: Show the logs of DynamoDB Local
         if: failure()
