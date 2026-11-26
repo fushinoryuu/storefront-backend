@@ -4,7 +4,7 @@ The DynamoDB table of the orders service, designed from the five access patterns
 
 ## The table
 
-One table, on-demand capacity, with the keys `PK` and `SK` (strings). It has a stream with new and old images (nothing reads it yet), TTL on `expiresAt`, and point-in-time recovery in `prod` (Phase 0 plans it for that stage, and whether `dev` has it is settled when the stack is built). Like every stack, it is destroyed with its stack in every stage (decision 0002).
+One table, on-demand capacity, with the keys `PK` and `SK` (strings). It has a stream with new and old images (nothing reads it yet), TTL on `expiresAt`, and point-in-time recovery in `prod` only (the stage setting `pointInTimeRecovery`: a `dev` table lives for the minutes of a run, so there is nothing to restore). Like every stack, it is destroyed with its stack in every stage (decision 0002). One thing outlives a destroy of `prod`: when a table with point-in-time recovery is deleted, DynamoDB keeps a system backup of it named `<table>$DeletedTableBackup` for 35 days at no charge, and CloudFormation does not own it (AWS documentation, not tried on a real table). `dev` has no recovery, so a destroy there leaves nothing.
 
 | Item        | `PK`         | `SK`   | Other attributes that the keys and indexes read                                                     |
 | ----------- | ------------ | ------ | --------------------------------------------------------------------------------------------------- |

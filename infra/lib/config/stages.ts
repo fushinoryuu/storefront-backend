@@ -51,6 +51,8 @@ export interface StageConfig {
     readonly logRetention: RetentionDays;
     /** How many days the archive of the event bus keeps events for replay. Archived events cost $0.10 per GB, then $0.023 per GB-month (docs/cost.md). */
     readonly eventArchiveRetentionDays: number;
+    /** Whether DynamoDB tables keep point-in-time recovery. On in `prod` only: a `dev` table lives for the minutes of a run, and `prod` is the stage whose data is worth restoring (phase 0). It costs $0.20 per GB-month, which is next to nothing for a table this size. */
+    readonly pointInTimeRecovery: boolean;
     /** The stage whose `Database` stack holds the Aurora cluster this stage uses. */
     readonly databaseStage: StageName;
     /**
@@ -96,6 +98,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         removalPolicy: RemovalPolicy.DESTROY,
         logRetention: RetentionDays.ONE_WEEK,
         eventArchiveRetentionDays: 7,
+        pointInTimeRecovery: false,
         databaseStage: 'prod',
         aurora: null,
         api: apiLimits,
@@ -117,6 +120,7 @@ export const stages: Readonly<Record<StageName, StageConfig>> = {
         removalPolicy: RemovalPolicy.DESTROY,
         logRetention: RetentionDays.ONE_MONTH,
         eventArchiveRetentionDays: 30,
+        pointInTimeRecovery: true,
         databaseStage: 'prod',
         // ADR 0007: the cluster may pause. The maximum is low so a runaway test cannot scale it up.
         aurora: { minCapacity: 0, maxCapacity: 4 },
