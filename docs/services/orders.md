@@ -46,7 +46,8 @@ Seen:
 - The log line of a refused request has the level, the `service`, the `stage`, the `correlationId`, the `requestId` and the X-Ray trace id, and the status and type of the error. It has no body and no customer id. The access log has one JSON line per request with the declared route (`/v1/orders`), not the real path.
 - The stack has 17 alarms (12 of the four functions, 3 of the API, 2 of the table), all `OK` after the check. The table is on demand with the stream and both indexes, TTL is on `expiresAt`, and point-in-time recovery is off, as `dev` says. The log groups keep logs for 7 days.
 - `cdk diff` against the deployed stack showed no difference after the check.
-- `npm run destroy:orders` removed the stack (`DELETE_COMPLETE`). No table, no log group and no `base-url` parameter of `Orders` was left, and the `Platform` stacks were not touched.
+- `npm run destroy:orders` removed the stack (`DELETE_COMPLETE`). No table, no log group and no `base-url` parameter of `Orders` was left.
+- `Storefront-dev-Platform` was not made for this check: it had been deployed since 2026-11-19 (updated on 2026-11-23), and the check used its alarm topic and its `tests` key. `deploy:orders` leaves it alone. After the check the maintainer destroyed it too with `npm run destroy:platform -- -c stage=dev`, and it ended `DELETE_COMPLETE` on 2026-11-26. No event bus, archive, alarm topic, `dev` parameter or API key of it was left, so no stack of the `dev` stage is left. That was the first run of `destroy:platform` against AWS. `Storefront-prod-Platform`, `Storefront-Secrets` and `Storefront-ApiGatewayAccount` were not touched. The next deploy of `Platform` in `dev` makes new API keys, so run `npm run get-api-keys -- --stage dev` again.
 
 Not seen:
 
