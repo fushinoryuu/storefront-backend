@@ -23,6 +23,16 @@ describe('createApp', () => {
         ]);
     });
 
+    it.each(stageNames)(
+        'makes Orders depend on Platform in %s, which CloudFormation cannot see because they share only SSM parameters',
+        (stage) => {
+            const assembly = createApp({ context: { stage } }).synth();
+            expect(assembly.getStackByName(`Storefront-${stage}-Orders`).dependencies.map((dependency) => dependency.id)).toContain('Platform');
+            expect(assembly.getStackByName(`Storefront-${stage}-Platform`).dependencies.map((dependency) => dependency.id)).not.toContain('Orders');
+        },
+        30000
+    );
+
     describe('alarm recipients', () => {
         const emailsOf = (env: NodeJS.ProcessEnv) => {
             const template = createApp({ context: { stage: 'prod' } }, env)
